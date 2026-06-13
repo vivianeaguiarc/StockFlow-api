@@ -29,6 +29,7 @@ src/
 
 - Node.js >= 20
 - pnpm >= 11
+- Docker and Docker Compose
 
 ### Installation
 
@@ -36,6 +37,34 @@ src/
 pnpm install
 cp .env.example .env
 ```
+
+### Database (PostgreSQL)
+
+Start the local PostgreSQL container:
+
+```bash
+pnpm db:up
+```
+
+Other useful commands:
+
+```bash
+pnpm db:logs    # follow container logs
+pnpm db:down    # stop the container (data is preserved in the volume)
+```
+
+Connection details:
+
+| Variable       | Value              |
+| -------------- | ------------------ |
+| Host           | `localhost`        |
+| Port           | `5432`             |
+| User           | `stockflow`        |
+| Password       | `stockflow`        |
+| Database       | `stockflow_db`     |
+| `DATABASE_URL` | see `.env.example` |
+
+Data is persisted in the Docker volume `stockflow_postgres_data`.
 
 ### Development
 
