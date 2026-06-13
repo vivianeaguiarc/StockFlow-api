@@ -1,0 +1,37 @@
+# Dependencies
+node_modules
+dist
+coverage
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Git and CI
+.git
+.github
+.husky
+
+# Tests and docs
+tests
+prompts
+**/*.md
+!README.md
+
+# Editor and OS
+.vscode
+.idea
+*.log
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Misc
+*.tsbuildinfo
+agent-tools
+terminals

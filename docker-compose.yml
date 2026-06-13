@@ -19,6 +19,31 @@ services:
       retries: 5
       start_period: 10s
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stockflow-api
+    restart: unless-stopped
+    ports:
+      - '3333:3333'
+    environment:
+      NODE_ENV: production
+      PORT: 3333
+      API_PREFIX: ${API_PREFIX:-/api/v1}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-stockflow}:${POSTGRES_PASSWORD:-stockflow}@postgres:5432/${POSTGRES_DB:-stockflow_db}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3333/api/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
 volumes:
   postgres_data:
     name: stockflow_postgres_data
