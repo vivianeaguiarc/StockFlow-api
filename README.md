@@ -18,9 +18,11 @@ src/
 ├── shared/           # Cross-cutting concerns (errors, middlewares, utils)
 ├── config/           # Environment and app configuration
 ├── docs/             # API documentation (Swagger — future)
-├── app.ts            # Express app factory
-├── routes.ts         # Route registration
-└── server.ts         # Entry point
+├── app.ts            # Express app factory (middlewares + routes)
+├── server.ts         # Entry point — starts HTTP server
+├── shared/           # Cross-cutting concerns (errors, middlewares, utils)
+│   └── http/
+│       └── routes.ts # Central route registration
 ```
 
 ## Getting Started
@@ -101,10 +103,12 @@ pnpm format:check
 
 ## API Endpoints
 
-| Method | Path      | Description  |
-| ------ | --------- | ------------ |
-| GET    | `/health` | Health check |
-| GET    | `/api/v1` | API info     |
+| Method | Path          | Description             |
+| ------ | ------------- | ----------------------- |
+| GET    | `/health`     | Health check            |
+| GET    | `/api`        | API info                |
+| GET    | `/api/health` | Health check (prefixed) |
+| GET    | `/api/v1`     | API v1 info             |
 
 ## License
 
