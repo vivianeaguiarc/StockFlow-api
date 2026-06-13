@@ -60,14 +60,79 @@ export const swaggerPaths = {
   '/api/v1/health': {
     get: {
       tags: ['Health'],
-      summary: 'Health check',
-      description: 'Returns API health status.',
+      summary: 'Basic health check',
+      description: 'Legacy-compatible health endpoint. Returns basic API availability.',
       responses: {
         '200': {
-          description: 'Service is healthy',
+          description: 'Service is available',
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/HealthResponse' },
+            },
+          },
+        },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+  },
+  '/api/v1/health/live': {
+    get: {
+      tags: ['Health'],
+      summary: 'Liveness probe',
+      description:
+        'Indicates whether the application process is running. Does not check external dependencies.',
+      responses: {
+        '200': {
+          description: 'Application is alive',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/HealthLiveResponse' },
+            },
+          },
+        },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+  },
+  '/api/v1/health/ready': {
+    get: {
+      tags: ['Health'],
+      summary: 'Readiness probe',
+      description:
+        'Validates essential dependencies before accepting traffic. Returns 503 when PostgreSQL is unavailable.',
+      responses: {
+        '200': {
+          description: 'Application is ready to receive traffic',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/HealthReadyResponse' },
+            },
+          },
+        },
+        '503': {
+          description: 'Application is not ready (PostgreSQL unavailable)',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/HealthReadyResponse' },
+            },
+          },
+        },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+  },
+  '/api/v1/health/details': {
+    get: {
+      tags: ['Health'],
+      summary: 'Detailed health status',
+      description:
+        'Returns application metadata and dependency status for observability and diagnostics.',
+      responses: {
+        '200': {
+          description: 'Detailed health information',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/HealthDetailsResponse' },
             },
           },
         },

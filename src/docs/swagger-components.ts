@@ -33,6 +33,61 @@ export const swaggerComponents = {
         service: { type: 'string', example: 'StockFlow API' },
         timestamp: { type: 'string', format: 'date-time' },
       },
+      required: ['status', 'service', 'timestamp'],
+    },
+    HealthLiveResponse: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', example: 'ok' },
+        timestamp: { type: 'string', format: 'date-time' },
+      },
+      required: ['status', 'timestamp'],
+    },
+    HealthReadyResponse: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', enum: ['ready', 'not_ready'], example: 'ready' },
+        services: {
+          type: 'object',
+          properties: {
+            database: { type: 'string', enum: ['up', 'down'], example: 'up' },
+            redis: { type: 'string', enum: ['up', 'down'], example: 'up' },
+          },
+          required: ['database', 'redis'],
+        },
+      },
+      required: ['status', 'services'],
+    },
+    HealthDetailsResponse: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', enum: ['healthy', 'degraded', 'unhealthy'], example: 'healthy' },
+        version: { type: 'string', example: '1.0.0' },
+        environment: { type: 'string', example: 'development' },
+        uptime: { type: 'integer', example: 120 },
+        services: {
+          type: 'object',
+          properties: {
+            database: {
+              type: 'object',
+              properties: {
+                status: { type: 'string', enum: ['up', 'down'], example: 'up' },
+              },
+              required: ['status'],
+            },
+            redis: {
+              type: 'object',
+              properties: {
+                status: { type: 'string', enum: ['up', 'down'], example: 'up' },
+              },
+              required: ['status'],
+            },
+          },
+          required: ['database', 'redis'],
+        },
+        timestamp: { type: 'string', format: 'date-time' },
+      },
+      required: ['status', 'version', 'environment', 'uptime', 'services', 'timestamp'],
     },
     LoginRequest: {
       type: 'object',

@@ -160,9 +160,25 @@ Exemplos:
 
 ```http
 GET /api/v1/health
+GET /api/v1/health/live
+GET /api/v1/health/ready
+GET /api/v1/health/details
 POST /api/v1/auth/login
 GET /api/v1/products
 ```
+
+### Health checks
+
+| Endpoint                     | Propósito                                                        | Autenticação |
+| ---------------------------- | ---------------------------------------------------------------- | ------------ |
+| `GET /api/v1/health`         | Compatibilidade — status básico                                  | Não          |
+| `GET /api/v1/health/live`    | **Liveness** — processo vivo (Kubernetes)                        | Não          |
+| `GET /api/v1/health/ready`   | **Readiness** — PostgreSQL disponível (503 se DB down)           | Não          |
+| `GET /api/v1/health/details` | **Diagnóstico** — versão, ambiente, uptime, status de DB e Redis | Não          |
+
+- **Liveness (`/live`):** responde 200 se a aplicação está em execução; não consulta dependências externas.
+- **Readiness (`/ready`):** valida PostgreSQL (essencial). Redis é reportado, mas indisponibilidade do Redis não bloqueia tráfego (cache com fallback).
+- **Details (`/details`):** informações operacionais sem dados sensíveis; Redis aparece como `down` quando indisponível.
 
 ---
 
@@ -247,7 +263,9 @@ docker compose up --build -d
 Verificar saúde:
 
 ```bash
-curl http://localhost:3333/api/v1/health
+curl http://localhost:3333/api/v1/health/live
+curl http://localhost:3333/api/v1/health/ready
+curl http://localhost:3333/api/v1/health/details
 ```
 
 Ver logs:
@@ -383,14 +401,17 @@ Referência completa: [`.env.example`](.env.example)
 
 ### Públicas
 
-| Método | Rota                    | Descrição                 |
-| ------ | ----------------------- | ------------------------- |
-| GET    | `/api/v1/health`        | Health check              |
-| GET    | `/api/docs`             | Swagger UI                |
-| POST   | `/api/v1/auth/register` | Registrar empresa + admin |
-| POST   | `/api/v1/auth/login`    | Login (retorna JWT)       |
-| POST   | `/api/v1/auth/refresh`  | Renovar tokens            |
-| POST   | `/api/v1/auth/logout`   | Logout (revoga refresh)   |
+| Método | Rota                     | Descrição                    |
+| ------ | ------------------------ | ---------------------------- |
+| GET    | `/api/v1/health`         | Health check básico (legado) |
+| GET    | `/api/v1/health/live`    | Liveness probe               |
+| GET    | `/api/v1/health/ready`   | Readiness probe              |
+| GET    | `/api/v1/health/details` | Status detalhado             |
+| GET    | `/api/docs`              | Swagger UI                   |
+| POST   | `/api/v1/auth/register`  | Registrar empresa + admin    |
+| POST   | `/api/v1/auth/login`     | Login (retorna JWT)          |
+| POST   | `/api/v1/auth/refresh`   | Renovar tokens               |
+| POST   | `/api/v1/auth/logout`    | Logout (revoga refresh)      |
 
 ### Autenticadas
 
