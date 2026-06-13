@@ -5,7 +5,8 @@ import helmet from 'helmet'
 import { registerSwagger } from './docs/swagger.js'
 import { errorHandler } from './shared/http/middlewares/error-handler.js'
 import { registerRoutes } from './shared/http/routes.js'
-import { notFoundHandler, requestLogger } from './shared/middlewares/index.js'
+import { httpLogger } from './shared/logger/http-logger.js'
+import { notFoundHandler } from './shared/middlewares/index.js'
 
 export function createApp(): Express {
   const app = express()
@@ -23,7 +24,7 @@ export function createApp(): Express {
   )
   app.use(cors())
   app.use(express.json({ limit: '1mb' }))
-  app.use(requestLogger)
+  app.use(httpLogger)
 
   registerSwagger(app)
   registerRoutes(app)
