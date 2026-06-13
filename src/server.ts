@@ -1,5 +1,5 @@
-import 'dotenv/config';
+import 'dotenv/config'
 
-import { startServer } from './app.js';
+import { startServer } from './app.js'
 
-startServer();
+startServer()

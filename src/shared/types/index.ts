@@ -1,31 +1,31 @@
 export type ApiSuccessResponse<T> = {
-  status: 'success';
-  data: T;
-};
+  status: 'success'
+  data: T
+}
 
 export type ApiErrorResponse = {
-  status: 'error';
-  code: string;
-  message: string;
-  details?: Record<string, string[]>;
-};
+  status: 'error'
+  code: string
+  message: string
+  details?: Record<string, string[]>
+}
 
 export type PaginationMeta = {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-};
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
 
 export type PaginatedResponse<T> = ApiSuccessResponse<T> & {
-  meta: PaginationMeta;
-};
+  meta: PaginationMeta
+}
 
-export type UserRole = 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
+export type UserRole = 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
 
-export type ProductStatus = 'ACTIVE' | 'INACTIVE';
+export type ProductStatus = 'ACTIVE' | 'INACTIVE'
 
-export type InventoryMovementType = 'ENTRY' | 'EXIT' | 'ADJUSTMENT';
+export type InventoryMovementType = 'ENTRY' | 'EXIT' | 'ADJUSTMENT'
 
 export type AuditAction =
   | 'LOGIN'
@@ -34,10 +34,10 @@ export type AuditAction =
   | 'PRODUCT_CREATED'
   | 'PRODUCT_UPDATED'
   | 'PRODUCT_DELETED'
-  | 'PERMISSION_CHANGED';
+  | 'PERMISSION_CHANGED'
 
 export type TenantContext = {
-  companyId: string;
-  userId: string;
-  role: UserRole;
-};
+  companyId: string
+  userId: string
+  role: UserRole
+}

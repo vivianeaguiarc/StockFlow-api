@@ -1,6 +1,6 @@
-import type { Response } from 'express';
+import type { Response } from 'express'
 
-import type { ApiSuccessResponse, PaginatedResponse } from '../types/index.js';
+import type { ApiSuccessResponse, PaginatedResponse } from '../types/index.js'
 
 export function sendSuccess<T>(
   res: Response,
@@ -10,18 +10,15 @@ export function sendSuccess<T>(
   return res.status(statusCode).json({
     status: 'success',
     data,
-  });
+  })
 }
 
-export function sendCreated<T>(
-  res: Response,
-  data: T,
-): Response<ApiSuccessResponse<T>> {
-  return sendSuccess(res, data, 201);
+export function sendCreated<T>(res: Response, data: T): Response<ApiSuccessResponse<T>> {
+  return sendSuccess(res, data, 201)
 }
 
 export function sendNoContent(res: Response): Response {
-  return res.status(204).send();
+  return res.status(204).send()
 }
 
 export function sendPaginated<T>(
@@ -33,5 +30,5 @@ export function sendPaginated<T>(
     status: 'success',
     data,
     meta,
-  });
+  })
 }

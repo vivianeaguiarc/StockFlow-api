@@ -1,14 +1,10 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express'
 
-export function requestLogger(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void {
-  const start = Date.now();
+export function requestLogger(req: Request, res: Response, next: NextFunction): void {
+  const start = Date.now()
 
   res.on('finish', () => {
-    const duration = Date.now() - start;
+    const duration = Date.now() - start
 
     console.log(
       JSON.stringify({
@@ -19,8 +15,8 @@ export function requestLogger(
         durationMs: duration,
         timestamp: new Date().toISOString(),
       }),
-    );
-  });
+    )
+  })
 
-  next();
+  next()
 }

@@ -1,9 +1,9 @@
-import type { Request, Response, NextFunction } from 'express';
-import { ZodError } from 'zod';
+import type { NextFunction, Request, Response } from 'express'
+import { ZodError } from 'zod'
 
-import { env } from '../../config/env.js';
-import { AppError, ValidationError } from '../errors/index.js';
-import type { ApiErrorResponse } from '../types/index.js';
+import { env } from '../../config/env.js'
+import { AppError, ValidationError } from '../errors/index.js'
+import type { ApiErrorResponse } from '../types/index.js'
 
 export function errorHandler(
   error: Error,
@@ -12,15 +12,15 @@ export function errorHandler(
   _next: NextFunction,
 ): void {
   if (error instanceof ZodError) {
-    const details = error.flatten().fieldErrors as Record<string, string[]>;
+    const details = error.flatten().fieldErrors as Record<string, string[]>
 
     res.status(422).json({
       status: 'error',
       code: 'VALIDATION_ERROR',
       message: 'Validation failed',
       details,
-    });
-    return;
+    })
+    return
   }
 
   if (error instanceof ValidationError) {
@@ -29,8 +29,8 @@ export function errorHandler(
       code: error.code,
       message: error.message,
       ...(error.details && { details: error.details }),
-    });
-    return;
+    })
+    return
   }
 
   if (error instanceof AppError) {
@@ -38,19 +38,19 @@ export function errorHandler(
       status: 'error',
       code: error.code,
       message: error.message,
-    });
-    return;
+    })
+    return
   }
 
   console.error('[UnhandledError]', {
     name: error.name,
     message: error.message,
     stack: env.NODE_ENV === 'development' ? error.stack : undefined,
-  });
+  })
 
   res.status(500).json({
     status: 'error',
     code: 'INTERNAL_SERVER_ERROR',
     message: 'An unexpected error occurred',
-  });
+  })
 }

@@ -60,10 +60,10 @@ pnpm format:check
 
 ## API Endpoints
 
-| Method | Path        | Description        |
-|--------|-------------|--------------------|
-| GET    | `/health`   | Health check       |
-| GET    | `/api/v1`   | API info           |
+| Method | Path      | Description  |
+| ------ | --------- | ------------ |
+| GET    | `/health` | Health check |
+| GET    | `/api/v1` | API info     |
 
 ## License
 

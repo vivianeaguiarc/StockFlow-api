@@ -1,6 +1,7 @@
-import eslint from '@eslint/js';
-import prettier from 'eslint-config-prettier';
-import tseslint from 'typescript-eslint';
+import eslint from '@eslint/js'
+import prettier from 'eslint-config-prettier'
+import simpleImportSort from 'eslint-plugin-simple-import-sort'
+import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
   eslint.configs.recommended,
@@ -11,6 +12,9 @@ export default tseslint.config(
   },
   {
     files: ['src/**/*.ts'],
+    plugins: {
+      'simple-import-sort': simpleImportSort,
+    },
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -18,14 +22,15 @@ export default tseslint.config(
       },
     },
     rules: {
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'prefer-const': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
-      '@typescript-eslint/consistent-type-imports': [
-        'error',
-        { prefer: 'type-imports' },
-      ],
+      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
     },
   },
-);
+)
