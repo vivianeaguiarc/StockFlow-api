@@ -79,6 +79,8 @@ export const swaggerPaths = {
     post: {
       tags: ['Auth'],
       summary: 'Register company and admin user',
+      description:
+        'Rate limited to 10 requests per hour per IP (configurable via RATE_LIMIT_REGISTER_* env vars).',
       requestBody: {
         required: true,
         content: {
@@ -98,6 +100,7 @@ export const swaggerPaths = {
         },
         '400': { $ref: '#/components/responses/BadRequest' },
         '409': { $ref: '#/components/responses/Conflict' },
+        '429': { $ref: '#/components/responses/TooManyRequests' },
         '500': { $ref: '#/components/responses/InternalServerError' },
       },
     },
@@ -106,7 +109,8 @@ export const swaggerPaths = {
     post: {
       tags: ['Auth'],
       summary: 'Authenticate user',
-      description: 'Returns JWT access token for authenticated requests.',
+      description:
+        'Returns JWT access token for authenticated requests. Rate limited to 5 attempts per 15 minutes per IP (configurable via RATE_LIMIT_LOGIN_* env vars).',
       requestBody: {
         required: true,
         content: {
@@ -125,6 +129,7 @@ export const swaggerPaths = {
           },
         },
         '401': { $ref: '#/components/responses/Unauthorized' },
+        '429': { $ref: '#/components/responses/TooManyRequests' },
         '500': { $ref: '#/components/responses/InternalServerError' },
       },
     },

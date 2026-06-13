@@ -511,6 +511,21 @@ export const swaggerComponents = {
         },
       },
     },
+    TooManyRequests: {
+      description: 'Rate limit exceeded',
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              status: { type: 'string', example: 'error' },
+              message: { type: 'string', example: 'Too many requests' },
+            },
+            required: ['status', 'message'],
+          },
+        },
+      },
+    },
     InternalServerError: {
       description: 'Unexpected server error',
       content: {

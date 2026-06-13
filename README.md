@@ -87,6 +87,8 @@ src/
     ├── errors/            # AppError
     ├── http/              # Rotas centrais, middlewares, responses
     ├── middlewares/
+    ├── security/            # Rate limiting e proteções HTTP
+    ├── logger/              # Logs estruturados (Pino)
     ├── types/
     └── utils/             # Paginação, helpers
 ```
@@ -95,6 +97,7 @@ src/
 
 ```
 HTTP Request
+  → global rate limit
   → authenticate (JWT)
   → authorizeRoles (RBAC)
   → validateRequest (Zod)
@@ -127,6 +130,21 @@ HTTP Request
 - **EXIT** — reduz o estoque (bloqueia se insuficiente).
 - **ADJUSTMENT** — define quantidade final (campo `quantity` = valor final).
 - Movimentação e atualização do produto ocorrem na **mesma transação Prisma**.
+
+### Rate limiting
+
+Proteção contra abuso de API com `express-rate-limit`:
+
+| Escopo   | Padrão           | Janela     |
+| -------- | ---------------- | ---------- |
+| Global   | 100 req/IP       | 15 minutos |
+| Login    | 5 tentativas/IP  | 15 minutos |
+| Register | 10 tentativas/IP | 1 hora     |
+
+- Resposta ao exceder limite: `429` com `{ "status": "error", "message": "Too many requests" }`.
+- Swagger (`/api/docs`) **não** entra no rate limit global.
+- Desabilitado automaticamente quando `NODE_ENV=test` (testes E2E).
+- Limites configuráveis via variáveis `RATE_LIMIT_*` (ver `.env.example`).
 
 ### Auditoria
 

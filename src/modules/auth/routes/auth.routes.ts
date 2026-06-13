@@ -4,6 +4,7 @@ import { Router } from 'express'
 import { authenticate } from '../../../shared/http/middlewares/authenticate.js'
 import { authorizeRoles } from '../../../shared/http/middlewares/authorize-roles.js'
 import { validateRequest } from '../../../shared/http/middlewares/validate-request.js'
+import { loginRateLimiter, registerRateLimiter } from '../../../shared/security/rate-limit.js'
 import { AuthController } from '../controllers/AuthController.js'
 import { loginSchema } from '../dtos/login.dto.js'
 import { registerCompanySchema } from '../dtos/register-company.dto.js'
@@ -17,11 +18,14 @@ export function createAuthRoutes(): Router {
   const router = Router()
   const authController = createAuthController()
 
-  router.post('/register', validateRequest(registerCompanySchema), (req, res, next) =>
-    authController.register(req, res, next),
+  router.post(
+    '/register',
+    registerRateLimiter,
+    validateRequest(registerCompanySchema),
+    (req, res, next) => authController.register(req, res, next),
   )
 
-  router.post('/login', validateRequest(loginSchema), (req, res, next) =>
+  router.post('/login', loginRateLimiter, validateRequest(loginSchema), (req, res, next) =>
     authController.login(req, res, next),
   )
 

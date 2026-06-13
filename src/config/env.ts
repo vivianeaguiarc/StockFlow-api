@@ -7,6 +7,39 @@ const envSchema = z.object({
   DATABASE_URL: z.string().optional(),
   JWT_SECRET: z.string().optional(),
   JWT_EXPIRES_IN: z.string().default('7d'),
+  RATE_LIMIT_ENABLED: z.preprocess((value) => {
+    if (value === undefined || value === '') {
+      return undefined
+    }
+
+    if (value === true || value === 'true') {
+      return true
+    }
+
+    if (value === false || value === 'false') {
+      return false
+    }
+
+    return value
+  }, z.boolean().optional()),
+  RATE_LIMIT_GLOBAL_MAX: z.coerce.number().int().positive().default(100),
+  RATE_LIMIT_GLOBAL_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(15 * 60 * 1000),
+  RATE_LIMIT_LOGIN_MAX: z.coerce.number().int().positive().default(5),
+  RATE_LIMIT_LOGIN_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(15 * 60 * 1000),
+  RATE_LIMIT_REGISTER_MAX: z.coerce.number().int().positive().default(10),
+  RATE_LIMIT_REGISTER_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(60 * 60 * 1000),
 })
 
 const parsed = envSchema.safeParse(process.env)
