@@ -23,6 +23,11 @@ enum UserStatus {
   INACTIVE
 }
 
+enum CategoryStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model Company {
   id        String        @id @default(cuid())
   name      String
@@ -34,7 +39,8 @@ model Company {
   updatedAt DateTime      @updatedAt @map("updated_at")
   deletedAt DateTime?     @map("deleted_at")
 
-  users User[]
+  users      User[]
+  categories Category[]
 
   @@map("companies")
 }
@@ -55,4 +61,20 @@ model User {
   company Company @relation(fields: [companyId], references: [id])
 
   @@map("users")
+}
+
+model Category {
+  id          String         @id @default(cuid())
+  companyId   String         @map("company_id")
+  name        String
+  description String?
+  status      CategoryStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  deletedAt   DateTime?      @map("deleted_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, name])
+  @@map("categories")
 }

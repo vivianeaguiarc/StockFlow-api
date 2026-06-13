@@ -8,6 +8,7 @@ import {
   createManagementRouteHandlers,
   createMeRouteHandlers,
 } from '../../modules/auth/routes/auth.routes.js'
+import { createCategoriesRoutes } from '../../modules/categories/routes/categories.routes.js'
 import { createCompaniesRoutes } from '../../modules/companies/routes/companies.routes.js'
 import { createHealthRoutes } from '../../modules/health/routes/health.routes.js'
 import { createUsersRoutes } from '../../modules/users/routes/users.routes.js'
@@ -28,6 +29,7 @@ export function registerRoutes(app: Express): void {
   apiRouter.use('/auth', createAuthRoutes())
   apiRouter.use('/companies', createCompaniesRoutes())
   apiRouter.use('/users', createUsersRoutes())
+  apiRouter.use('/categories', createCategoriesRoutes())
   apiRouter.get('/me', ...createMeRouteHandlers())
   apiRouter.get('/admin-only', ...createAdminOnlyRouteHandlers())
   apiRouter.get('/management', ...createManagementRouteHandlers())
