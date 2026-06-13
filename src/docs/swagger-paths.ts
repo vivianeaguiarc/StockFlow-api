@@ -1,0 +1,667 @@
+const secured = [{ bearerAuth: [] as string[] }]
+
+const defaultErrors = {
+  '400': { $ref: '#/components/responses/BadRequest' },
+  '401': { $ref: '#/components/responses/Unauthorized' },
+  '403': { $ref: '#/components/responses/Forbidden' },
+  '404': { $ref: '#/components/responses/NotFound' },
+  '500': { $ref: '#/components/responses/InternalServerError' },
+}
+
+const paginationParams = [
+  { $ref: '#/components/parameters/PageQuery' },
+  { $ref: '#/components/parameters/LimitQuery' },
+]
+
+export const swaggerPaths = {
+  '/api/health': {
+    get: {
+      tags: ['Health'],
+      summary: 'Health check',
+      description: 'Returns API health status.',
+      responses: {
+        '200': {
+          description: 'Service is healthy',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/HealthResponse' },
+            },
+          },
+        },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+  },
+  '/api/auth/register': {
+    post: {
+      tags: ['Auth'],
+      summary: 'Register company and admin user',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/RegisterCompanyRequest' },
+          },
+        },
+      },
+      responses: {
+        '201': {
+          description: 'Company and admin created',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/RegisterCompanyResponse' },
+            },
+          },
+        },
+        '400': { $ref: '#/components/responses/BadRequest' },
+        '409': { $ref: '#/components/responses/Conflict' },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+  },
+  '/api/auth/login': {
+    post: {
+      tags: ['Auth'],
+      summary: 'Authenticate user',
+      description: 'Returns JWT access token for authenticated requests.',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/LoginRequest' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Login successful',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/LoginResponse' },
+            },
+          },
+        },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+  },
+  '/api/me': {
+    get: {
+      tags: ['Current User'],
+      summary: 'Get authenticated user profile',
+      security: secured,
+      responses: {
+        '200': {
+          description: 'Current user data',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CurrentUser' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/companies/me': {
+    get: {
+      tags: ['Companies'],
+      summary: 'Get company profile',
+      security: secured,
+      responses: {
+        '200': {
+          description: 'Company profile',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CompanyProfile' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+    patch: {
+      tags: ['Companies'],
+      summary: 'Update company profile',
+      description: 'Requires ADMIN role.',
+      security: secured,
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateCompanyRequest' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Updated company profile',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CompanyProfile' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/users': {
+    post: {
+      tags: ['Users'],
+      summary: 'Create user',
+      description: 'Requires ADMIN role.',
+      security: secured,
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateUserRequest' },
+          },
+        },
+      },
+      responses: {
+        '201': {
+          description: 'User created',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/User' },
+            },
+          },
+        },
+        ...defaultErrors,
+        '409': { $ref: '#/components/responses/Conflict' },
+      },
+    },
+    get: {
+      tags: ['Users'],
+      summary: 'List users',
+      description: 'Requires ADMIN or MANAGER role.',
+      security: secured,
+      parameters: paginationParams,
+      responses: {
+        '200': {
+          description: 'Paginated users list',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/PaginatedUsersResponse' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/users/{id}': {
+    get: {
+      tags: ['Users'],
+      summary: 'Get user by ID',
+      description: 'Requires ADMIN or MANAGER role.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      responses: {
+        '200': {
+          description: 'User details',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/User' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+    patch: {
+      tags: ['Users'],
+      summary: 'Update user',
+      description: 'Requires ADMIN role.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateUserRequest' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Updated user',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/User' },
+            },
+          },
+        },
+        ...defaultErrors,
+        '409': { $ref: '#/components/responses/Conflict' },
+      },
+    },
+    delete: {
+      tags: ['Users'],
+      summary: 'Soft delete user',
+      description: 'Requires ADMIN role.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      responses: {
+        '204': { description: 'User deleted' },
+        ...defaultErrors,
+        '409': { $ref: '#/components/responses/Conflict' },
+      },
+    },
+  },
+  '/api/categories': {
+    post: {
+      tags: ['Categories'],
+      summary: 'Create category',
+      description: 'Requires ADMIN or MANAGER role.',
+      security: secured,
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateCategoryRequest' },
+          },
+        },
+      },
+      responses: {
+        '201': {
+          description: 'Category created',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Category' },
+            },
+          },
+        },
+        ...defaultErrors,
+        '409': { $ref: '#/components/responses/Conflict' },
+      },
+    },
+    get: {
+      tags: ['Categories'],
+      summary: 'List categories',
+      security: secured,
+      parameters: paginationParams,
+      responses: {
+        '200': {
+          description: 'Paginated categories list',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/PaginatedCategoriesResponse' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/categories/{id}': {
+    get: {
+      tags: ['Categories'],
+      summary: 'Get category by ID',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      responses: {
+        '200': {
+          description: 'Category details',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Category' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+    patch: {
+      tags: ['Categories'],
+      summary: 'Update category',
+      description: 'Requires ADMIN or MANAGER role.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateCategoryRequest' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Updated category',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Category' },
+            },
+          },
+        },
+        ...defaultErrors,
+        '409': { $ref: '#/components/responses/Conflict' },
+      },
+    },
+    delete: {
+      tags: ['Categories'],
+      summary: 'Soft delete category',
+      description: 'Requires ADMIN role.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      responses: {
+        '204': { description: 'Category deleted' },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/suppliers': {
+    post: {
+      tags: ['Suppliers'],
+      summary: 'Create supplier',
+      description: 'Requires ADMIN or MANAGER role.',
+      security: secured,
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateSupplierRequest' },
+          },
+        },
+      },
+      responses: {
+        '201': {
+          description: 'Supplier created',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Supplier' },
+            },
+          },
+        },
+        ...defaultErrors,
+        '409': { $ref: '#/components/responses/Conflict' },
+      },
+    },
+    get: {
+      tags: ['Suppliers'],
+      summary: 'List suppliers',
+      security: secured,
+      parameters: paginationParams,
+      responses: {
+        '200': {
+          description: 'Paginated suppliers list',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/PaginatedSuppliersResponse' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/suppliers/{id}': {
+    get: {
+      tags: ['Suppliers'],
+      summary: 'Get supplier by ID',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      responses: {
+        '200': {
+          description: 'Supplier details',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Supplier' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+    patch: {
+      tags: ['Suppliers'],
+      summary: 'Update supplier',
+      description: 'Requires ADMIN or MANAGER role.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateSupplierRequest' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Updated supplier',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Supplier' },
+            },
+          },
+        },
+        ...defaultErrors,
+        '409': { $ref: '#/components/responses/Conflict' },
+      },
+    },
+    delete: {
+      tags: ['Suppliers'],
+      summary: 'Soft delete supplier',
+      description: 'Requires ADMIN role.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      responses: {
+        '204': { description: 'Supplier deleted' },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/products': {
+    post: {
+      tags: ['Products'],
+      summary: 'Create product',
+      description: 'Requires ADMIN or MANAGER role.',
+      security: secured,
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateProductRequest' },
+          },
+        },
+      },
+      responses: {
+        '201': {
+          description: 'Product created',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Product' },
+            },
+          },
+        },
+        ...defaultErrors,
+        '409': { $ref: '#/components/responses/Conflict' },
+      },
+    },
+    get: {
+      tags: ['Products'],
+      summary: 'List products',
+      security: secured,
+      parameters: paginationParams,
+      responses: {
+        '200': {
+          description: 'Paginated products list',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/PaginatedProductsResponse' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/products/{id}': {
+    get: {
+      tags: ['Products'],
+      summary: 'Get product by ID',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      responses: {
+        '200': {
+          description: 'Product details',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Product' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+    patch: {
+      tags: ['Products'],
+      summary: 'Update product',
+      description: 'Requires ADMIN or MANAGER role.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateProductRequest' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Updated product',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Product' },
+            },
+          },
+        },
+        ...defaultErrors,
+        '409': { $ref: '#/components/responses/Conflict' },
+      },
+    },
+    delete: {
+      tags: ['Products'],
+      summary: 'Soft delete product',
+      description: 'Requires ADMIN role.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      responses: {
+        '204': { description: 'Product deleted' },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/inventory/movements': {
+    post: {
+      tags: ['Inventory'],
+      summary: 'Create inventory movement',
+      description:
+        'Registers ENTRY, EXIT or ADJUSTMENT. ADJUSTMENT uses quantity as the final stock value.',
+      security: secured,
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateMovementRequest' },
+          },
+        },
+      },
+      responses: {
+        '201': {
+          description: 'Movement created',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/InventoryMovement' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+    get: {
+      tags: ['Inventory'],
+      summary: 'List inventory movements',
+      description: 'Requires ADMIN or MANAGER role.',
+      security: secured,
+      parameters: paginationParams,
+      responses: {
+        '200': {
+          description: 'Paginated movements list',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/PaginatedMovementsResponse' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/inventory/movements/{id}': {
+    get: {
+      tags: ['Inventory'],
+      summary: 'Get inventory movement by ID',
+      description: 'Requires ADMIN or MANAGER role.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      responses: {
+        '200': {
+          description: 'Movement details',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/InventoryMovement' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/audit/logs': {
+    get: {
+      tags: ['Audit'],
+      summary: 'List audit logs',
+      description: 'Requires ADMIN role. Returns logs for the authenticated company only.',
+      security: secured,
+      parameters: paginationParams,
+      responses: {
+        '200': {
+          description: 'Paginated audit logs',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/PaginatedAuditLogsResponse' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/audit/logs/{id}': {
+    get: {
+      tags: ['Audit'],
+      summary: 'Get audit log by ID',
+      description: 'Requires ADMIN role.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      responses: {
+        '200': {
+          description: 'Audit log details',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/AuditLog' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+  },
+} as const
