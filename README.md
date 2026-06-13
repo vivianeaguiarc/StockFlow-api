@@ -23,6 +23,8 @@ Demonstrar na prática a construção de uma API profissional de estoque, aplica
 
 Ideal para portfólio técnico e estudo de backends SaaS.
 
+> **Deploy em cloud:** consulte o guia completo em [`docs/deploy.md`](docs/deploy.md) (Render, Railway, Fly.io, VPS).
+
 ---
 
 ## Funcionalidades principais
@@ -37,7 +39,7 @@ Ideal para portfólio técnico e estudo de backends SaaS.
 | **Products**   | CRUD de produtos com SKU, preços e estoque                              |
 | **Inventory**  | Movimentações ENTRY, EXIT e ADJUSTMENT com transação                    |
 | **Audit**      | Trilha de auditoria imutável (somente ADMIN)                            |
-| **Health**     | Health check da aplicação                                               |
+| **Health**     | Health check da aplicação (live, ready, details)                        |
 | **Swagger**    | Documentação interativa em `/api/docs` (rotas versionadas em `/api/v1`) |
 
 ---
@@ -282,6 +284,12 @@ docker compose down
 
 > **Nota:** se a porta `3333` já estiver em uso (ex.: `pnpm dev`), pare o processo local antes de subir o container da API.
 
+### Deploy em cloud
+
+Para publicar em Render, Railway, Fly.io ou VPS (variáveis de ambiente, build, migrations, health check e checklists de segurança):
+
+**[docs/deploy.md](docs/deploy.md)**
+
 ---
 
 ## Migrations
@@ -512,6 +520,8 @@ Content-Type: application/json
 ```
 stockflow-api/
 ├── .github/workflows/     # CI (GitHub Actions)
+├── docs/
+│   └── deploy.md          # Guia de deploy em cloud
 ├── prisma/
 │   ├── migrations/        # Migrations SQL
 │   ├── schema.prisma      # Modelos e enums
@@ -541,6 +551,7 @@ stockflow-api/
 | Testes E2E (Vitest + Supertest)               | Concluído |
 | Docker + Docker Compose                       | Concluído |
 | CI/CD (GitHub Actions)                        | Concluído |
+| Deploy em cloud (documentação)                | Concluído |
 
 ---
 

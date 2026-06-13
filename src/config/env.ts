@@ -58,6 +58,8 @@ const envSchema = z.object({
 
     return value
   }, z.boolean().optional()),
+  PUBLIC_URL: z.string().url().optional(),
+  HOST: z.string().default('0.0.0.0'),
 })
 
 const parsed = envSchema.safeParse(process.env)

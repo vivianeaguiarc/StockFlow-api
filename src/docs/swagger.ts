@@ -6,6 +6,26 @@ import { env } from '../config/env.js'
 import { swaggerComponents } from './swagger-components.js'
 import { swaggerPaths } from './swagger-paths.js'
 
+function buildSwaggerServers() {
+  const servers = []
+
+  if (env.PUBLIC_URL) {
+    servers.push({
+      url: env.PUBLIC_URL,
+      description: env.NODE_ENV === 'production' ? 'Production' : 'Public URL',
+    })
+  }
+
+  if (env.NODE_ENV !== 'production' || !env.PUBLIC_URL) {
+    servers.push({
+      url: `http://localhost:${env.PORT}`,
+      description: 'Local development',
+    })
+  }
+
+  return servers
+}
+
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
@@ -14,12 +34,7 @@ const swaggerDefinition = {
     description:
       'SaaS multi-tenant inventory management platform. Authenticate via POST /api/v1/auth/login and use the Bearer token for protected routes. Legacy routes under /api remain available temporarily.',
   },
-  servers: [
-    {
-      url: `http://localhost:${env.PORT}`,
-      description: 'Local development',
-    },
-  ],
+  servers: buildSwaggerServers(),
   tags: [
     { name: 'Health', description: 'Service health checks' },
     { name: 'Auth', description: 'Authentication and registration' },
