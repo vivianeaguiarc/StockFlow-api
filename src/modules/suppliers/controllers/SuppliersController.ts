@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
 
+import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import { paginationSchema } from '../../../shared/utils/pagination.js'
 import type { CreateSupplierDto } from '../dtos/create-supplier.dto.js'
@@ -16,7 +17,12 @@ export class SuppliersController {
       }
 
       const data = req.body as CreateSupplierDto
-      const supplier = await this.suppliersService.create(req.user.companyId, data)
+      const supplier = await this.suppliersService.create(
+        req.user.companyId,
+        req.user.id,
+        data,
+        getAuditContext(req),
+      )
       res.status(201).json(supplier)
     } catch (error) {
       next(error)
@@ -62,8 +68,10 @@ export class SuppliersController {
       const data = req.body as UpdateSupplierDto
       const supplier = await this.suppliersService.update(
         req.user.companyId,
+        req.user.id,
         req.params['id'] as string,
         data,
+        getAuditContext(req),
       )
       res.status(200).json(supplier)
     } catch (error) {
@@ -77,7 +85,12 @@ export class SuppliersController {
         throw new AppError('Unauthorized', 401)
       }
 
-      await this.suppliersService.delete(req.user.companyId, req.params['id'] as string)
+      await this.suppliersService.delete(
+        req.user.companyId,
+        req.user.id,
+        req.params['id'] as string,
+        getAuditContext(req),
+      )
       res.status(204).send()
     } catch (error) {
       next(error)

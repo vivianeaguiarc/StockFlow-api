@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
 
+import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import { paginationSchema } from '../../../shared/utils/pagination.js'
 import type { CreateUserDto } from '../dtos/create-user.dto.js'
@@ -16,7 +17,12 @@ export class UsersController {
       }
 
       const data = req.body as CreateUserDto
-      const user = await this.usersService.create(req.user.companyId, data)
+      const user = await this.usersService.create(
+        req.user.companyId,
+        req.user.id,
+        data,
+        getAuditContext(req),
+      )
       res.status(201).json(user)
     } catch (error) {
       next(error)
@@ -59,8 +65,10 @@ export class UsersController {
       const data = req.body as UpdateUserDto
       const user = await this.usersService.update(
         req.user.companyId,
+        req.user.id,
         req.params['id'] as string,
         data,
+        getAuditContext(req),
       )
       res.status(200).json(user)
     } catch (error) {
@@ -74,7 +82,13 @@ export class UsersController {
         throw new AppError('Unauthorized', 401)
       }
 
-      await this.usersService.delete(req.user.companyId, req.params['id'] as string, req.user.id)
+      await this.usersService.delete(
+        req.user.companyId,
+        req.user.id,
+        req.params['id'] as string,
+        req.user.id,
+        getAuditContext(req),
+      )
       res.status(204).send()
     } catch (error) {
       next(error)

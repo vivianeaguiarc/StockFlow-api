@@ -1,10 +1,12 @@
-import { Prisma, UserRole } from '@prisma/client'
+import { AuditAction, Prisma, UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import jwt, { type SignOptions } from 'jsonwebtoken'
 
 import { env } from '../../../config/env.js'
+import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
+import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type { JwtPayload, LoginDto, LoginResponseDto } from '../dtos/login.dto.js'
 import type {
   RegisterCompanyDto,
@@ -66,7 +68,7 @@ export class AuthService {
     }
   }
 
-  async login(data: LoginDto): Promise<LoginResponseDto> {
+  async login(data: LoginDto, auditContext?: AuditContext): Promise<LoginResponseDto> {
     const user = await prisma.user.findUnique({
       where: { email: data.email },
       include: { company: true },
@@ -95,6 +97,19 @@ export class AuthService {
       this.getJwtSecret(),
       { expiresIn: env.JWT_EXPIRES_IN } as SignOptions,
     )
+
+    await auditLogger.log({
+      companyId: user.companyId,
+      userId: user.id,
+      action: AuditAction.LOGIN,
+      entity: 'User',
+      entityId: user.id,
+      newValue: {
+        email: user.email,
+        role: user.role,
+      },
+      ...auditContext,
+    })
 
     return {
       accessToken,

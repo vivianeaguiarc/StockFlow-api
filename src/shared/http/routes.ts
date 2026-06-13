@@ -2,6 +2,7 @@ import type { Express, Response } from 'express'
 import { Router } from 'express'
 
 import { env } from '../../config/env.js'
+import { createAuditRoutes } from '../../modules/audit/routes/audit.routes.js'
 import {
   createAdminOnlyRouteHandlers,
   createAuthRoutes,
@@ -36,6 +37,7 @@ export function registerRoutes(app: Express): void {
   apiRouter.use('/suppliers', createSuppliersRoutes())
   apiRouter.use('/products', createProductsRoutes())
   apiRouter.use('/inventory', createInventoryRoutes())
+  apiRouter.use('/audit', createAuditRoutes())
   apiRouter.get('/me', ...createMeRouteHandlers())
   apiRouter.get('/admin-only', ...createAdminOnlyRouteHandlers())
   apiRouter.get('/management', ...createManagementRouteHandlers())

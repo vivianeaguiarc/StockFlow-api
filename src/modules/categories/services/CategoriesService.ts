@@ -1,5 +1,6 @@
-import { CategoryStatus, Prisma } from '@prisma/client'
+import { AuditAction, CategoryStatus, Prisma } from '@prisma/client'
 
+import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
@@ -7,6 +8,7 @@ import {
   getPaginationOffset,
   type PaginationParams,
 } from '../../../shared/utils/pagination.js'
+import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type {
   CategoryResponseDto,
   PaginatedCategoriesResponseDto,
@@ -15,7 +17,12 @@ import type { CreateCategoryDto } from '../dtos/create-category.dto.js'
 import type { UpdateCategoryDto } from '../dtos/update-category.dto.js'
 
 export class CategoriesService {
-  async create(companyId: string, data: CreateCategoryDto): Promise<CategoryResponseDto> {
+  async create(
+    companyId: string,
+    actorUserId: string,
+    data: CreateCategoryDto,
+    auditContext?: AuditContext,
+  ): Promise<CategoryResponseDto> {
     try {
       const category = await prisma.category.create({
         data: {
@@ -25,7 +32,19 @@ export class CategoriesService {
         },
       })
 
-      return this.toResponse(category)
+      const response = this.toResponse(category)
+
+      await auditLogger.log({
+        companyId,
+        userId: actorUserId,
+        action: AuditAction.CREATE,
+        entity: 'Category',
+        entityId: category.id,
+        newValue: response,
+        ...auditContext,
+      })
+
+      return response
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new AppError('Category name already exists for this company', 409)
@@ -70,10 +89,13 @@ export class CategoriesService {
 
   async update(
     companyId: string,
+    actorUserId: string,
     categoryId: string,
     data: UpdateCategoryDto,
+    auditContext?: AuditContext,
   ): Promise<CategoryResponseDto> {
-    await this.findActiveCategoryInCompany(companyId, categoryId)
+    const category = await this.findActiveCategoryInCompany(companyId, categoryId)
+    const oldValue = this.toResponse(category)
 
     try {
       const updated = await prisma.category.update({
@@ -85,7 +107,20 @@ export class CategoriesService {
         },
       })
 
-      return this.toResponse(updated)
+      const response = this.toResponse(updated)
+
+      await auditLogger.log({
+        companyId,
+        userId: actorUserId,
+        action: AuditAction.UPDATE,
+        entity: 'Category',
+        entityId: categoryId,
+        oldValue,
+        newValue: response,
+        ...auditContext,
+      })
+
+      return response
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new AppError('Category name already exists for this company', 409)
@@ -95,15 +130,33 @@ export class CategoriesService {
     }
   }
 
-  async delete(companyId: string, categoryId: string): Promise<void> {
-    await this.findActiveCategoryInCompany(companyId, categoryId)
+  async delete(
+    companyId: string,
+    actorUserId: string,
+    categoryId: string,
+    auditContext?: AuditContext,
+  ): Promise<void> {
+    const category = await this.findActiveCategoryInCompany(companyId, categoryId)
+    const oldValue = this.toResponse(category)
+    const deletedAt = new Date()
 
     await prisma.category.update({
       where: { id: categoryId },
       data: {
-        deletedAt: new Date(),
+        deletedAt,
         status: CategoryStatus.INACTIVE,
       },
+    })
+
+    await auditLogger.log({
+      companyId,
+      userId: actorUserId,
+      action: AuditAction.DELETE,
+      entity: 'Category',
+      entityId: categoryId,
+      oldValue,
+      newValue: { deletedAt: deletedAt.toISOString(), status: CategoryStatus.INACTIVE },
+      ...auditContext,
     })
   }
 

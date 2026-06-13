@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
 
+import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import type { LoginDto } from '../dtos/login.dto.js'
 import type { RegisterCompanyDto } from '../dtos/register-company.dto.js'
@@ -21,7 +22,7 @@ export class AuthController {
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const data = req.body as LoginDto
-      const result = await this.authService.login(data)
+      const result = await this.authService.login(data, getAuditContext(req))
       res.status(200).json(result)
     } catch (error) {
       next(error)

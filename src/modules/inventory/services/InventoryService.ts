@@ -1,5 +1,11 @@
-import { type InventoryMovement, InventoryMovementType, ProductStatus } from '@prisma/client'
+import {
+  AuditAction,
+  type InventoryMovement,
+  InventoryMovementType,
+  ProductStatus,
+} from '@prisma/client'
 
+import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
@@ -7,6 +13,7 @@ import {
   getPaginationOffset,
   type PaginationParams,
 } from '../../../shared/utils/pagination.js'
+import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type {
   CreateMovementDto,
   MovementResponseDto,
@@ -18,6 +25,7 @@ export class InventoryService {
     companyId: string,
     userId: string,
     data: CreateMovementDto,
+    auditContext?: AuditContext,
   ): Promise<MovementResponseDto> {
     const movement = await prisma.$transaction(async (tx) => {
       const product = await tx.product.findFirst({
@@ -45,7 +53,7 @@ export class InventoryService {
         data: { quantity: newQuantity },
       })
 
-      return tx.inventoryMovement.create({
+      const createdMovement = await tx.inventoryMovement.create({
         data: {
           companyId,
           productId: product.id,
@@ -57,6 +65,28 @@ export class InventoryService {
           reason: data.reason,
         },
       })
+
+      await auditLogger.log({
+        companyId,
+        userId,
+        action: this.mapMovementTypeToAuditAction(data.type),
+        entity: 'InventoryMovement',
+        entityId: createdMovement.id,
+        oldValue: {
+          productId: product.id,
+          quantity: previousQuantity,
+        },
+        newValue: {
+          productId: product.id,
+          quantity: newQuantity,
+          type: data.type,
+          reason: data.reason,
+        },
+        tx,
+        ...auditContext,
+      })
+
+      return createdMovement
     })
 
     return this.toResponse(movement)
@@ -100,6 +130,21 @@ export class InventoryService {
     }
 
     return this.toResponse(movement)
+  }
+
+  private mapMovementTypeToAuditAction(type: InventoryMovementType): AuditAction {
+    switch (type) {
+      case InventoryMovementType.ENTRY:
+        return AuditAction.STOCK_ENTRY
+      case InventoryMovementType.EXIT:
+        return AuditAction.STOCK_EXIT
+      case InventoryMovementType.ADJUSTMENT:
+        return AuditAction.STOCK_ADJUSTMENT
+      default: {
+        const exhaustiveCheck: never = type
+        throw new AppError(`Unsupported movement type: ${String(exhaustiveCheck)}`, 400)
+      }
+    }
   }
 
   private calculateQuantities(

@@ -44,6 +44,17 @@ enum InventoryMovementType {
   ADJUSTMENT
 }
 
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  STOCK_ENTRY
+  STOCK_EXIT
+  STOCK_ADJUSTMENT
+}
+
 model Company {
   id        String        @id @default(cuid())
   name      String
@@ -60,6 +71,7 @@ model Company {
   suppliers  Supplier[]
   products           Product[]
   inventoryMovements InventoryMovement[]
+  auditLogs          AuditLog[]
 
   @@map("companies")
 }
@@ -79,6 +91,7 @@ model User {
 
   company            Company             @relation(fields: [companyId], references: [id])
   inventoryMovements InventoryMovement[]
+  auditLogs          AuditLog[]
 
   @@map("users")
 }
@@ -166,4 +179,23 @@ model InventoryMovement {
   user    User    @relation(fields: [userId], references: [id])
 
   @@map("inventory_movements")
+}
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  companyId String      @map("company_id")
+  userId    String      @map("user_id")
+  action    AuditAction
+  entity    String
+  entityId  String      @map("entity_id")
+  oldValue  Json?       @map("old_value")
+  newValue  Json?       @map("new_value")
+  ipAddress String?     @map("ip_address")
+  userAgent String?     @map("user_agent")
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
 }

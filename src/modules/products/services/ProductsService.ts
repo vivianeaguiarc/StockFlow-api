@@ -1,5 +1,6 @@
-import { Prisma, type Product, ProductStatus } from '@prisma/client'
+import { AuditAction, Prisma, type Product, ProductStatus } from '@prisma/client'
 
+import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
@@ -7,6 +8,7 @@ import {
   getPaginationOffset,
   type PaginationParams,
 } from '../../../shared/utils/pagination.js'
+import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type { CreateProductDto } from '../dtos/create-product.dto.js'
 import type {
   PaginatedProductsResponseDto,
@@ -15,7 +17,12 @@ import type {
 import type { UpdateProductDto } from '../dtos/update-product.dto.js'
 
 export class ProductsService {
-  async create(companyId: string, data: CreateProductDto): Promise<ProductResponseDto> {
+  async create(
+    companyId: string,
+    actorUserId: string,
+    data: CreateProductDto,
+    auditContext?: AuditContext,
+  ): Promise<ProductResponseDto> {
     await this.validateCategory(companyId, data.categoryId)
     await this.validateSupplier(companyId, data.supplierId)
 
@@ -36,7 +43,19 @@ export class ProductsService {
         },
       })
 
-      return this.toResponse(product)
+      const response = this.toResponse(product)
+
+      await auditLogger.log({
+        companyId,
+        userId: actorUserId,
+        action: AuditAction.CREATE,
+        entity: 'Product',
+        entityId: product.id,
+        newValue: response,
+        ...auditContext,
+      })
+
+      return response
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new AppError(this.getDuplicateMessage(error), 409)
@@ -81,10 +100,13 @@ export class ProductsService {
 
   async update(
     companyId: string,
+    actorUserId: string,
     productId: string,
     data: UpdateProductDto,
+    auditContext?: AuditContext,
   ): Promise<ProductResponseDto> {
-    await this.findActiveProductInCompany(companyId, productId)
+    const product = await this.findActiveProductInCompany(companyId, productId)
+    const oldValue = this.toResponse(product)
 
     if (data.categoryId !== undefined) {
       await this.validateCategory(companyId, data.categoryId)
@@ -112,7 +134,20 @@ export class ProductsService {
         },
       })
 
-      return this.toResponse(updated)
+      const response = this.toResponse(updated)
+
+      await auditLogger.log({
+        companyId,
+        userId: actorUserId,
+        action: AuditAction.UPDATE,
+        entity: 'Product',
+        entityId: productId,
+        oldValue,
+        newValue: response,
+        ...auditContext,
+      })
+
+      return response
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new AppError(this.getDuplicateMessage(error), 409)
@@ -122,15 +157,33 @@ export class ProductsService {
     }
   }
 
-  async delete(companyId: string, productId: string): Promise<void> {
-    await this.findActiveProductInCompany(companyId, productId)
+  async delete(
+    companyId: string,
+    actorUserId: string,
+    productId: string,
+    auditContext?: AuditContext,
+  ): Promise<void> {
+    const product = await this.findActiveProductInCompany(companyId, productId)
+    const oldValue = this.toResponse(product)
+    const deletedAt = new Date()
 
     await prisma.product.update({
       where: { id: productId },
       data: {
-        deletedAt: new Date(),
+        deletedAt,
         status: ProductStatus.INACTIVE,
       },
+    })
+
+    await auditLogger.log({
+      companyId,
+      userId: actorUserId,
+      action: AuditAction.DELETE,
+      entity: 'Product',
+      entityId: productId,
+      oldValue,
+      newValue: { deletedAt: deletedAt.toISOString(), status: ProductStatus.INACTIVE },
+      ...auditContext,
     })
   }
 

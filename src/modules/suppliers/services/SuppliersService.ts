@@ -1,5 +1,6 @@
-import { Prisma, SupplierStatus } from '@prisma/client'
+import { AuditAction, Prisma, SupplierStatus } from '@prisma/client'
 
+import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
@@ -7,6 +8,7 @@ import {
   getPaginationOffset,
   type PaginationParams,
 } from '../../../shared/utils/pagination.js'
+import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type { CreateSupplierDto } from '../dtos/create-supplier.dto.js'
 import type {
   PaginatedSuppliersResponseDto,
@@ -15,7 +17,12 @@ import type {
 import type { UpdateSupplierDto } from '../dtos/update-supplier.dto.js'
 
 export class SuppliersService {
-  async create(companyId: string, data: CreateSupplierDto): Promise<SupplierResponseDto> {
+  async create(
+    companyId: string,
+    actorUserId: string,
+    data: CreateSupplierDto,
+    auditContext?: AuditContext,
+  ): Promise<SupplierResponseDto> {
     try {
       const supplier = await prisma.supplier.create({
         data: {
@@ -28,7 +35,19 @@ export class SuppliersService {
         },
       })
 
-      return this.toResponse(supplier)
+      const response = this.toResponse(supplier)
+
+      await auditLogger.log({
+        companyId,
+        userId: actorUserId,
+        action: AuditAction.CREATE,
+        entity: 'Supplier',
+        entityId: supplier.id,
+        newValue: response,
+        ...auditContext,
+      })
+
+      return response
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new AppError(this.getDuplicateMessage(error), 409)
@@ -73,10 +92,13 @@ export class SuppliersService {
 
   async update(
     companyId: string,
+    actorUserId: string,
     supplierId: string,
     data: UpdateSupplierDto,
+    auditContext?: AuditContext,
   ): Promise<SupplierResponseDto> {
-    await this.findActiveSupplierInCompany(companyId, supplierId)
+    const supplier = await this.findActiveSupplierInCompany(companyId, supplierId)
+    const oldValue = this.toResponse(supplier)
 
     try {
       const updated = await prisma.supplier.update({
@@ -91,7 +113,20 @@ export class SuppliersService {
         },
       })
 
-      return this.toResponse(updated)
+      const response = this.toResponse(updated)
+
+      await auditLogger.log({
+        companyId,
+        userId: actorUserId,
+        action: AuditAction.UPDATE,
+        entity: 'Supplier',
+        entityId: supplierId,
+        oldValue,
+        newValue: response,
+        ...auditContext,
+      })
+
+      return response
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new AppError(this.getDuplicateMessage(error), 409)
@@ -101,15 +136,33 @@ export class SuppliersService {
     }
   }
 
-  async delete(companyId: string, supplierId: string): Promise<void> {
-    await this.findActiveSupplierInCompany(companyId, supplierId)
+  async delete(
+    companyId: string,
+    actorUserId: string,
+    supplierId: string,
+    auditContext?: AuditContext,
+  ): Promise<void> {
+    const supplier = await this.findActiveSupplierInCompany(companyId, supplierId)
+    const oldValue = this.toResponse(supplier)
+    const deletedAt = new Date()
 
     await prisma.supplier.update({
       where: { id: supplierId },
       data: {
-        deletedAt: new Date(),
+        deletedAt,
         status: SupplierStatus.INACTIVE,
       },
+    })
+
+    await auditLogger.log({
+      companyId,
+      userId: actorUserId,
+      action: AuditAction.DELETE,
+      entity: 'Supplier',
+      entityId: supplierId,
+      oldValue,
+      newValue: { deletedAt: deletedAt.toISOString(), status: SupplierStatus.INACTIVE },
+      ...auditContext,
     })
   }
 

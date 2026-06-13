@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
 
+import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import { paginationSchema } from '../../../shared/utils/pagination.js'
 import type { CreateMovementDto } from '../dtos/create-movement.dto.js'
@@ -19,6 +20,7 @@ export class InventoryController {
         req.user.companyId,
         req.user.id,
         data,
+        getAuditContext(req),
       )
       res.status(201).json(movement)
     } catch (error) {

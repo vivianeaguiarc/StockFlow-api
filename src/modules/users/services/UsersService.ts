@@ -1,6 +1,7 @@
-import { Prisma, UserRole } from '@prisma/client'
+import { AuditAction, Prisma, UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
+import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
@@ -8,6 +9,7 @@ import {
   getPaginationOffset,
   type PaginationParams,
 } from '../../../shared/utils/pagination.js'
+import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type { CreateUserDto } from '../dtos/create-user.dto.js'
 import type { UpdateUserDto } from '../dtos/update-user.dto.js'
 import type { PaginatedUsersResponseDto, UserResponseDto } from '../dtos/user-response.dto.js'
@@ -15,7 +17,12 @@ import type { PaginatedUsersResponseDto, UserResponseDto } from '../dtos/user-re
 const BCRYPT_SALT_ROUNDS = 12
 
 export class UsersService {
-  async create(companyId: string, data: CreateUserDto): Promise<UserResponseDto> {
+  async create(
+    companyId: string,
+    actorUserId: string,
+    data: CreateUserDto,
+    auditContext?: AuditContext,
+  ): Promise<UserResponseDto> {
     const passwordHash = await bcrypt.hash(data.password, BCRYPT_SALT_ROUNDS)
 
     try {
@@ -30,7 +37,19 @@ export class UsersService {
         },
       })
 
-      return this.toResponse(user)
+      const response = this.toResponse(user)
+
+      await auditLogger.log({
+        companyId,
+        userId: actorUserId,
+        action: AuditAction.CREATE,
+        entity: 'User',
+        entityId: user.id,
+        newValue: response,
+        ...auditContext,
+      })
+
+      return response
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new AppError('Email already registered', 409)
@@ -70,8 +89,15 @@ export class UsersService {
     return this.toResponse(user)
   }
 
-  async update(companyId: string, userId: string, data: UpdateUserDto): Promise<UserResponseDto> {
+  async update(
+    companyId: string,
+    actorUserId: string,
+    userId: string,
+    data: UpdateUserDto,
+    auditContext?: AuditContext,
+  ): Promise<UserResponseDto> {
     const user = await this.findActiveUserInCompany(companyId, userId)
+    const oldValue = this.toResponse(user)
 
     if (user.role === UserRole.ADMIN && (data.role !== undefined || data.status === 'INACTIVE')) {
       await this.ensureNotLastAdmin(companyId, userId)
@@ -93,7 +119,20 @@ export class UsersService {
         },
       })
 
-      return this.toResponse(updated)
+      const response = this.toResponse(updated)
+
+      await auditLogger.log({
+        companyId,
+        userId: actorUserId,
+        action: AuditAction.UPDATE,
+        entity: 'User',
+        entityId: userId,
+        oldValue,
+        newValue: response,
+        ...auditContext,
+      })
+
+      return response
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new AppError('Email already registered', 409)
@@ -103,20 +142,40 @@ export class UsersService {
     }
   }
 
-  async delete(companyId: string, userId: string, currentUserId: string): Promise<void> {
+  async delete(
+    companyId: string,
+    actorUserId: string,
+    userId: string,
+    currentUserId: string,
+    auditContext?: AuditContext,
+  ): Promise<void> {
     if (userId === currentUserId) {
       throw new AppError('Cannot delete yourself', 400)
     }
 
     const user = await this.findActiveUserInCompany(companyId, userId)
+    const oldValue = this.toResponse(user)
 
     if (user.role === UserRole.ADMIN) {
       await this.ensureNotLastAdmin(companyId, userId)
     }
 
+    const deletedAt = new Date()
+
     await prisma.user.update({
       where: { id: userId },
-      data: { deletedAt: new Date() },
+      data: { deletedAt },
+    })
+
+    await auditLogger.log({
+      companyId,
+      userId: actorUserId,
+      action: AuditAction.DELETE,
+      entity: 'User',
+      entityId: userId,
+      oldValue,
+      newValue: { deletedAt: deletedAt.toISOString() },
+      ...auditContext,
     })
   }
 
