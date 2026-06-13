@@ -57,7 +57,7 @@ const auditLogsListParams = [
 const paginationParams = basePaginationParams
 
 export const swaggerPaths = {
-  '/api/health': {
+  '/api/v1/health': {
     get: {
       tags: ['Health'],
       summary: 'Health check',
@@ -75,7 +75,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/auth/register': {
+  '/api/v1/auth/register': {
     post: {
       tags: ['Auth'],
       summary: 'Register company and admin user',
@@ -105,7 +105,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/auth/login': {
+  '/api/v1/auth/login': {
     post: {
       tags: ['Auth'],
       summary: 'Authenticate user',
@@ -134,7 +134,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/auth/refresh': {
+  '/api/v1/auth/refresh': {
     post: {
       tags: ['Auth'],
       summary: 'Refresh access token',
@@ -162,7 +162,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/auth/logout': {
+  '/api/v1/auth/logout': {
     post: {
       tags: ['Auth'],
       summary: 'Logout user',
@@ -182,7 +182,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/me': {
+  '/api/v1/me': {
     get: {
       tags: ['Current User'],
       summary: 'Get authenticated user profile',
@@ -200,7 +200,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/companies/me': {
+  '/api/v1/companies/me': {
     get: {
       tags: ['Companies'],
       summary: 'Get company profile',
@@ -243,7 +243,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/users': {
+  '/api/v1/users': {
     post: {
       tags: ['Users'],
       summary: 'Create user',
@@ -289,7 +289,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/users/{id}': {
+  '/api/v1/users/{id}': {
     get: {
       tags: ['Users'],
       summary: 'Get user by ID',
@@ -348,7 +348,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/categories': {
+  '/api/v1/categories': {
     post: {
       tags: ['Categories'],
       summary: 'Create category',
@@ -393,7 +393,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/categories/{id}': {
+  '/api/v1/categories/{id}': {
     get: {
       tags: ['Categories'],
       summary: 'Get category by ID',
@@ -450,7 +450,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/suppliers': {
+  '/api/v1/suppliers': {
     post: {
       tags: ['Suppliers'],
       summary: 'Create supplier',
@@ -495,7 +495,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/suppliers/{id}': {
+  '/api/v1/suppliers/{id}': {
     get: {
       tags: ['Suppliers'],
       summary: 'Get supplier by ID',
@@ -552,7 +552,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/products': {
+  '/api/v1/products': {
     post: {
       tags: ['Products'],
       summary: 'Create product',
@@ -597,7 +597,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/products/{id}': {
+  '/api/v1/products/{id}': {
     get: {
       tags: ['Products'],
       summary: 'Get product by ID',
@@ -654,7 +654,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/inventory/movements': {
+  '/api/v1/inventory/movements': {
     post: {
       tags: ['Inventory'],
       summary: 'Create inventory movement',
@@ -700,7 +700,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/inventory/movements/{id}': {
+  '/api/v1/inventory/movements/{id}': {
     get: {
       tags: ['Inventory'],
       summary: 'Get inventory movement by ID',
@@ -720,7 +720,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/audit/logs': {
+  '/api/v1/audit/logs': {
     get: {
       tags: ['Audit'],
       summary: 'List audit logs',
@@ -740,7 +740,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/audit/logs/{id}': {
+  '/api/v1/audit/logs/{id}': {
     get: {
       tags: ['Audit'],
       summary: 'Get audit log by ID',
@@ -760,7 +760,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/dashboard/summary': {
+  '/api/v1/dashboard/summary': {
     get: {
       tags: ['Dashboard'],
       summary: 'Get company dashboard summary',
@@ -780,7 +780,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/dashboard/low-stock-products': {
+  '/api/v1/dashboard/low-stock-products': {
     get: {
       tags: ['Dashboard'],
       summary: 'List low stock products',
@@ -803,7 +803,7 @@ export const swaggerPaths = {
       },
     },
   },
-  '/api/dashboard/recent-movements': {
+  '/api/v1/dashboard/recent-movements': {
     get: {
       tags: ['Dashboard'],
       summary: 'List recent inventory movements',

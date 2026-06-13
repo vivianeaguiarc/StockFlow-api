@@ -19,7 +19,7 @@ async function registerAndLogin(uniqueId: string): Promise<{
   const password = 'Test@123456'
 
   await request(app)
-    .post('/api/auth/register')
+    .post('/api/v1/auth/register')
     .send({
       company: {
         name: `Login Company ${uniqueId}`,
@@ -35,7 +35,10 @@ async function registerAndLogin(uniqueId: string): Promise<{
     })
     .expect(201)
 
-  const response = await request(app).post('/api/auth/login').send({ email, password }).expect(200)
+  const response = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ email, password })
+    .expect(200)
 
   return {
     email,
@@ -50,7 +53,7 @@ describe('POST /api/auth/register', () => {
     const uniqueId = createUniqueId()
 
     const response = await request(app)
-      .post('/api/auth/register')
+      .post('/api/v1/auth/register')
       .send({
         company: {
           name: `Test Company ${uniqueId}`,
@@ -99,7 +102,7 @@ describe('POST /api/auth/refresh', () => {
     const session = await registerAndLogin(uniqueId)
 
     const refreshed = await request(app)
-      .post('/api/auth/refresh')
+      .post('/api/v1/auth/refresh')
       .send({ refreshToken: session.refreshToken })
       .expect(200)
 
@@ -108,18 +111,21 @@ describe('POST /api/auth/refresh', () => {
     expect(refreshed.body.refreshToken).not.toBe(session.refreshToken)
 
     await request(app)
-      .post('/api/auth/refresh')
+      .post('/api/v1/auth/refresh')
       .send({ refreshToken: session.refreshToken })
       .expect(401)
 
     await request(app)
-      .get('/api/me')
+      .get('/api/v1/me')
       .set('Authorization', `Bearer ${refreshed.body.accessToken as string}`)
       .expect(200)
   })
 
   it('returns 401 for invalid refresh token', async () => {
-    await request(app).post('/api/auth/refresh').send({ refreshToken: 'invalid-token' }).expect(401)
+    await request(app)
+      .post('/api/v1/auth/refresh')
+      .send({ refreshToken: 'invalid-token' })
+      .expect(401)
   })
 })
 
@@ -129,17 +135,20 @@ describe('POST /api/auth/logout', () => {
     const session = await registerAndLogin(uniqueId)
 
     await request(app)
-      .post('/api/auth/logout')
+      .post('/api/v1/auth/logout')
       .send({ refreshToken: session.refreshToken })
       .expect(204)
 
     await request(app)
-      .post('/api/auth/refresh')
+      .post('/api/v1/auth/refresh')
       .send({ refreshToken: session.refreshToken })
       .expect(401)
   })
 
   it('returns 401 for invalid refresh token', async () => {
-    await request(app).post('/api/auth/logout').send({ refreshToken: 'invalid-token' }).expect(401)
+    await request(app)
+      .post('/api/v1/auth/logout')
+      .send({ refreshToken: 'invalid-token' })
+      .expect(401)
   })
 })

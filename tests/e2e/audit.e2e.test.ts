@@ -20,7 +20,7 @@ describe('Audit Logs E2E', () => {
     const managerEmail = `manager-${uniqueSuffix()}@test.com`
 
     await request(app)
-      .post('/api/users')
+      .post('/api/v1/users')
       .set(authHeader(admin.accessToken))
       .send({
         firstName: 'Manager',
@@ -32,12 +32,12 @@ describe('Audit Logs E2E', () => {
       .expect(201)
 
     const login = await request(app)
-      .post('/api/auth/login')
+      .post('/api/v1/auth/login')
       .send({ email: managerEmail, password: 'Test@123456' })
       .expect(200)
 
     await request(app)
-      .get('/api/audit/logs')
+      .get('/api/v1/audit/logs')
       .set(authHeader(login.body.accessToken as string))
       .expect(403)
   })
@@ -49,13 +49,13 @@ describe('Audit Logs E2E', () => {
     const suffix = uniqueSuffix()
 
     await request(app)
-      .post('/api/categories')
+      .post('/api/v1/categories')
       .set(authHeader(admin.accessToken))
       .send({ name: `Audit Category ${suffix}` })
       .expect(201)
 
     const list = await request(app)
-      .get('/api/audit/logs?page=1&pageSize=5&sortBy=createdAt&sortOrder=desc')
+      .get('/api/v1/audit/logs?page=1&pageSize=5&sortBy=createdAt&sortOrder=desc')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -68,7 +68,7 @@ describe('Audit Logs E2E', () => {
     expect(list.body.data.length).toBeGreaterThan(0)
 
     const createLogs = await request(app)
-      .get('/api/audit/logs?action=CREATE')
+      .get('/api/v1/audit/logs?action=CREATE')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -77,7 +77,7 @@ describe('Audit Logs E2E', () => {
     )
 
     const entityLogs = await request(app)
-      .get('/api/audit/logs?entity=Category')
+      .get('/api/v1/audit/logs?entity=Category')
       .set(authHeader(admin.accessToken))
       .expect(200)
 

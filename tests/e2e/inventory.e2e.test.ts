@@ -16,13 +16,13 @@ async function createProductWithStock(
   quantity: number,
 ): Promise<string> {
   const category = await request(app)
-    .post('/api/categories')
+    .post('/api/v1/categories')
     .set(authHeader(token))
     .send({ name: `Inv Category ${suffix}` })
     .expect(201)
 
   const supplier = await request(app)
-    .post('/api/suppliers')
+    .post('/api/v1/suppliers')
     .set(authHeader(token))
     .send({
       corporateName: `Inv Corp ${suffix}`,
@@ -32,7 +32,7 @@ async function createProductWithStock(
     .expect(201)
 
   const product = await request(app)
-    .post('/api/products')
+    .post('/api/v1/products')
     .set(authHeader(token))
     .send({
       categoryId: category.body.id as string,
@@ -58,7 +58,7 @@ describe('Inventory Movements E2E', () => {
 
   it('returns 401 when creating movement without token', async () => {
     await request(app)
-      .post('/api/inventory/movements')
+      .post('/api/v1/inventory/movements')
       .send({
         productId: 'fake',
         type: 'ENTRY',
@@ -76,7 +76,7 @@ describe('Inventory Movements E2E', () => {
     const productId = await createProductWithStock(admin.accessToken, suffix, 10)
 
     const movement = await request(app)
-      .post('/api/inventory/movements')
+      .post('/api/v1/inventory/movements')
       .set(authHeader(admin.accessToken))
       .send({
         productId,
@@ -109,7 +109,7 @@ describe('Inventory Movements E2E', () => {
     const productId = await createProductWithStock(admin.accessToken, suffix, 20)
 
     const movement = await request(app)
-      .post('/api/inventory/movements')
+      .post('/api/v1/inventory/movements')
       .set(authHeader(admin.accessToken))
       .send({
         productId,
@@ -141,7 +141,7 @@ describe('Inventory Movements E2E', () => {
     const productId = await createProductWithStock(admin.accessToken, suffix, 3)
 
     const response = await request(app)
-      .post('/api/inventory/movements')
+      .post('/api/v1/inventory/movements')
       .set(authHeader(admin.accessToken))
       .send({
         productId,
@@ -161,7 +161,7 @@ describe('Inventory Movements E2E', () => {
     const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
 
     await request(app)
-      .get('/api/inventory/movements')
+      .get('/api/v1/inventory/movements')
       .set(authHeader(employee.accessToken))
       .expect(403)
   })
@@ -175,7 +175,7 @@ describe('Inventory Movements E2E', () => {
     const productId = await createProductWithStock(admin.accessToken, suffix, 5)
 
     await request(app)
-      .post('/api/inventory/movements')
+      .post('/api/v1/inventory/movements')
       .set(authHeader(employee.accessToken))
       .send({
         productId,
@@ -186,7 +186,7 @@ describe('Inventory Movements E2E', () => {
       .expect(201)
 
     await request(app)
-      .get('/api/inventory/movements')
+      .get('/api/v1/inventory/movements')
       .set(authHeader(employee.accessToken))
       .expect(403)
   })
@@ -200,7 +200,7 @@ describe('Inventory Movements E2E', () => {
     const productId = await createProductWithStock(companyA.accessToken, suffix, 10)
 
     await request(app)
-      .post('/api/inventory/movements')
+      .post('/api/v1/inventory/movements')
       .set(authHeader(companyB.accessToken))
       .send({
         productId,

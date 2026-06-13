@@ -19,7 +19,7 @@ describe('Categories E2E', () => {
   })
 
   it('returns 401 when listing categories without token', async () => {
-    await request(app).get('/api/categories').expect(401)
+    await request(app).get('/api/v1/categories').expect(401)
   })
 
   it('supports create, list, get, update and soft delete', async () => {
@@ -30,7 +30,7 @@ describe('Categories E2E', () => {
     const name = `Category ${suffix}`
 
     const created = await request(app)
-      .post('/api/categories')
+      .post('/api/v1/categories')
       .set(authHeader(admin.accessToken))
       .send({ name, description: 'Test category' })
       .expect(201)
@@ -38,7 +38,7 @@ describe('Categories E2E', () => {
     const categoryId = created.body.id as string
 
     const list = await request(app)
-      .get('/api/categories')
+      .get('/api/v1/categories')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -77,7 +77,7 @@ describe('Categories E2E', () => {
     const manager = await createUserWithRole(admin.accessToken, 'MANAGER')
 
     const created = await request(app)
-      .post('/api/categories')
+      .post('/api/v1/categories')
       .set(authHeader(manager.accessToken))
       .send({ name: `Manager Category ${uniqueSuffix()}` })
       .expect(201)
@@ -94,7 +94,7 @@ describe('Categories E2E', () => {
     companyIds.push(companyA.companyId, companyB.companyId)
 
     const created = await request(app)
-      .post('/api/categories')
+      .post('/api/v1/categories')
       .set(authHeader(companyA.accessToken))
       .send({ name: `Private Category ${uniqueSuffix()}` })
       .expect(201)
@@ -107,7 +107,7 @@ describe('Categories E2E', () => {
       .expect(404)
 
     const listB = await request(app)
-      .get('/api/categories')
+      .get('/api/v1/categories')
       .set(authHeader(companyB.accessToken))
       .expect(200)
 
@@ -121,19 +121,19 @@ describe('Categories E2E', () => {
     const suffix = uniqueSuffix()
 
     await request(app)
-      .post('/api/categories')
+      .post('/api/v1/categories')
       .set(authHeader(admin.accessToken))
       .send({ name: `Eletrônicos ${suffix}`, description: 'Eletronicos' })
       .expect(201)
 
     await request(app)
-      .post('/api/categories')
+      .post('/api/v1/categories')
       .set(authHeader(admin.accessToken))
       .send({ name: `Móveis ${suffix}` })
       .expect(201)
 
     const search = await request(app)
-      .get('/api/categories?search=eletr')
+      .get('/api/v1/categories?search=eletr')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -143,7 +143,7 @@ describe('Categories E2E', () => {
     ).toBe(true)
 
     const paginated = await request(app)
-      .get('/api/categories?page=1&pageSize=1&sortBy=name&sortOrder=asc')
+      .get('/api/v1/categories?page=1&pageSize=1&sortBy=name&sortOrder=asc')
       .set(authHeader(admin.accessToken))
       .expect(200)
 

@@ -1,6 +1,7 @@
 import request from 'supertest'
 
 import { createApp } from '../../src/app.js'
+import { apiPath } from './api-paths.js'
 import { DEFAULT_TEST_PASSWORD, uniqueSuffix } from './test-data.js'
 
 export const app = createApp()
@@ -26,7 +27,7 @@ export async function registerCompanyAndAdmin(suffix = uniqueSuffix()): Promise<
   const companyName = `Test Company ${suffix}`
 
   const registerResponse = await request(app)
-    .post('/api/auth/register')
+    .post(apiPath('/auth/register'))
     .send({
       company: {
         name: companyName,
@@ -43,7 +44,7 @@ export async function registerCompanyAndAdmin(suffix = uniqueSuffix()): Promise<
     .expect(201)
 
   const loginResponse = await request(app)
-    .post('/api/auth/login')
+    .post(apiPath('/auth/login'))
     .send({ email: adminEmail, password: DEFAULT_TEST_PASSWORD })
     .expect(200)
 
@@ -58,7 +59,10 @@ export async function registerCompanyAndAdmin(suffix = uniqueSuffix()): Promise<
 }
 
 export async function login(email: string, password: string): Promise<AuthSession> {
-  const response = await request(app).post('/api/auth/login').send({ email, password }).expect(200)
+  const response = await request(app)
+    .post(apiPath('/auth/login'))
+    .send({ email, password })
+    .expect(200)
 
   return {
     accessToken: response.body.accessToken as string,
@@ -77,7 +81,7 @@ export async function createUserWithRole(
   const email = `${role.toLowerCase()}-${suffix}@test.com`
 
   await request(app)
-    .post('/api/users')
+    .post(apiPath('/users'))
     .set(authHeader(adminToken))
     .send({
       firstName: role,

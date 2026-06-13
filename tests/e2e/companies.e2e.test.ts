@@ -19,7 +19,7 @@ describe('Companies E2E', () => {
   })
 
   it('returns 401 when accessing /api/companies/me without token', async () => {
-    const response = await request(app).get('/api/companies/me').expect(401)
+    const response = await request(app).get('/api/v1/companies/me').expect(401)
 
     expect(response.body).toMatchObject({
       status: 'error',
@@ -32,7 +32,7 @@ describe('Companies E2E', () => {
     companyIds.push(admin.companyId)
 
     const response = await request(app)
-      .get('/api/companies/me')
+      .get('/api/v1/companies/me')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -49,7 +49,7 @@ describe('Companies E2E', () => {
     const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
 
     const response = await request(app)
-      .patch('/api/companies/me')
+      .patch('/api/v1/companies/me')
       .set(authHeader(employee.accessToken))
       .send({ name: 'Updated Name' })
       .expect(403)
@@ -64,7 +64,7 @@ describe('Companies E2E', () => {
     const updatedName = `Updated Company ${uniqueSuffix()}`
 
     const response = await request(app)
-      .patch('/api/companies/me')
+      .patch('/api/v1/companies/me')
       .set(authHeader(admin.accessToken))
       .send({ name: updatedName })
       .expect(200)
@@ -78,7 +78,7 @@ describe('Companies E2E', () => {
     companyIds.push(companyA.companyId, companyB.companyId)
 
     const profileB = await request(app)
-      .get('/api/companies/me')
+      .get('/api/v1/companies/me')
       .set(authHeader(companyB.accessToken))
       .expect(200)
 

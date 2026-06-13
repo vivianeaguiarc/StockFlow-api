@@ -20,7 +20,7 @@ describe('Users E2E', () => {
 
   it('returns 401 when creating user without token', async () => {
     const response = await request(app)
-      .post('/api/users')
+      .post('/api/v1/users')
       .send({
         firstName: 'No',
         lastName: 'Auth',
@@ -40,7 +40,7 @@ describe('Users E2E', () => {
     const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
 
     const response = await request(app)
-      .post('/api/users')
+      .post('/api/v1/users')
       .set(authHeader(employee.accessToken))
       .send({
         firstName: 'Blocked',
@@ -60,7 +60,7 @@ describe('Users E2E', () => {
 
     const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
 
-    await request(app).get('/api/users').set(authHeader(employee.accessToken)).expect(403)
+    await request(app).get('/api/v1/users').set(authHeader(employee.accessToken)).expect(403)
   })
 
   it('supports create, list, get, update and soft delete as admin', async () => {
@@ -71,7 +71,7 @@ describe('Users E2E', () => {
     const email = `manager-${suffix}@test.com`
 
     const created = await request(app)
-      .post('/api/users')
+      .post('/api/v1/users')
       .set(authHeader(admin.accessToken))
       .send({
         firstName: 'Manager',
@@ -84,7 +84,10 @@ describe('Users E2E', () => {
 
     const userId = created.body.id as string
 
-    const list = await request(app).get('/api/users').set(authHeader(admin.accessToken)).expect(200)
+    const list = await request(app)
+      .get('/api/v1/users')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
 
     expect(list.body.data.some((user: { id: string }) => user.id === userId)).toBe(true)
 
@@ -128,7 +131,7 @@ describe('Users E2E', () => {
     const suffix = uniqueSuffix()
 
     await request(app)
-      .post('/api/users')
+      .post('/api/v1/users')
       .set(authHeader(admin.accessToken))
       .send({
         firstName: 'Vivi',
@@ -142,7 +145,7 @@ describe('Users E2E', () => {
     const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
 
     const managers = await request(app)
-      .get('/api/users?role=MANAGER')
+      .get('/api/v1/users?role=MANAGER')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -155,7 +158,7 @@ describe('Users E2E', () => {
     expect(managers.body.data.every((user: { role: string }) => user.role === 'MANAGER')).toBe(true)
 
     const search = await request(app)
-      .get('/api/users?search=vivi')
+      .get('/api/v1/users?search=vivi')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -166,7 +169,7 @@ describe('Users E2E', () => {
     ).toBe(true)
 
     const page1 = await request(app)
-      .get('/api/users?page=1&pageSize=1&sortBy=createdAt&sortOrder=asc')
+      .get('/api/v1/users?page=1&pageSize=1&sortBy=createdAt&sortOrder=asc')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -179,7 +182,7 @@ describe('Users E2E', () => {
       .expect(204)
 
     const afterDelete = await request(app)
-      .get('/api/users')
+      .get('/api/v1/users')
       .set(authHeader(admin.accessToken))
       .expect(200)
 

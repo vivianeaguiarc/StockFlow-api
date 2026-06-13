@@ -4,7 +4,7 @@ export const swaggerComponents = {
       type: 'http',
       scheme: 'bearer',
       bearerFormat: 'JWT',
-      description: 'JWT token obtained from POST /api/auth/login',
+      description: 'JWT token obtained from POST /api/v1/auth/login',
     },
   },
   schemas: {

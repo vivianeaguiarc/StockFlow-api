@@ -27,18 +27,18 @@ Ideal para portfólio técnico e estudo de backends SaaS.
 
 ## Funcionalidades principais
 
-| Módulo         | Descrição                                            |
-| -------------- | ---------------------------------------------------- |
-| **Auth**       | Registro de empresa + admin, login com JWT           |
-| **Companies**  | Perfil da empresa autenticada                        |
-| **Users**      | CRUD de usuários com RBAC (ADMIN, MANAGER, EMPLOYEE) |
-| **Categories** | CRUD de categorias de produtos                       |
-| **Suppliers**  | CRUD de fornecedores                                 |
-| **Products**   | CRUD de produtos com SKU, preços e estoque           |
-| **Inventory**  | Movimentações ENTRY, EXIT e ADJUSTMENT com transação |
-| **Audit**      | Trilha de auditoria imutável (somente ADMIN)         |
-| **Health**     | Health check da aplicação                            |
-| **Swagger**    | Documentação interativa em `/api/docs`               |
+| Módulo         | Descrição                                                               |
+| -------------- | ----------------------------------------------------------------------- |
+| **Auth**       | Registro de empresa + admin, login com JWT                              |
+| **Companies**  | Perfil da empresa autenticada                                           |
+| **Users**      | CRUD de usuários com RBAC (ADMIN, MANAGER, EMPLOYEE)                    |
+| **Categories** | CRUD de categorias de produtos                                          |
+| **Suppliers**  | CRUD de fornecedores                                                    |
+| **Products**   | CRUD de produtos com SKU, preços e estoque                              |
+| **Inventory**  | Movimentações ENTRY, EXIT e ADJUSTMENT com transação                    |
+| **Audit**      | Trilha de auditoria imutável (somente ADMIN)                            |
+| **Health**     | Health check da aplicação                                               |
+| **Swagger**    | Documentação interativa em `/api/docs` (rotas versionadas em `/api/v1`) |
 
 ---
 
@@ -99,6 +99,8 @@ src/
 ```
 HTTP Request
   → global rate limit
+  → /api/v1/* (versão atual)
+  → /api/* (alias legado temporário)
   → authenticate (JWT)
   → authorizeRoles (RBAC)
   → validateRequest (Zod)
@@ -147,14 +149,29 @@ Proteção contra abuso de API com `express-rate-limit`:
 - Desabilitado automaticamente quando `NODE_ENV=test` (testes E2E).
 - Limites configuráveis via variáveis `RATE_LIMIT_*` (ver `.env.example`).
 
-### Cache (Redis)
+### Versionamento de API
+
+- **Versão atual:** `/api/v1` (configurável via `API_PREFIX`)
+- **Compatibilidade:** rotas legadas em `/api/*` permanecem disponíveis temporariamente com o mesmo comportamento
+- **Documentação:** Swagger descreve exclusivamente `/api/v1`
+- **Evolução:** novas versões (`/api/v2`) poderão ser adicionadas sem quebrar clientes em `/api/v1`
+
+Exemplos:
+
+```http
+GET /api/v1/health
+POST /api/v1/auth/login
+GET /api/v1/products
+```
+
+---
 
 Consultas pesadas de leitura usam cache Redis com fallback seguro para PostgreSQL:
 
-| Escopo    | Endpoints cacheados                                  |
-| --------- | ---------------------------------------------------- |
-| Dashboard | `summary`, `low-stock-products`, `recent-movements`  |
-| Products  | `GET /api/products` (por combinação de query params) |
+| Escopo    | Endpoints cacheados                                     |
+| --------- | ------------------------------------------------------- |
+| Dashboard | `summary`, `low-stock-products`, `recent-movements`     |
+| Products  | `GET /api/v1/products` (por combinação de query params) |
 
 - **TTL padrão:** 300 segundos (`CACHE_TTL_SECONDS`).
 - **Chaves:** `stockflow:{companyId}:...` — isolamento total por tenant.
@@ -230,7 +247,7 @@ docker compose up --build -d
 Verificar saúde:
 
 ```bash
-curl http://localhost:3333/api/health
+curl http://localhost:3333/api/v1/health
 ```
 
 Ver logs:
@@ -311,7 +328,7 @@ http://localhost:3333/api/docs
 
 **Como autenticar no Swagger:**
 
-1. Faça login em `POST /api/auth/login`.
+1. Faça login em `POST /api/v1/auth/login`.
 2. Copie o `accessToken` da resposta.
 3. Clique em **Authorize** e cole o token (sem o prefixo `Bearer`).
 
@@ -323,7 +340,7 @@ http://localhost:3333/api/docs
 | ------------------- | ---------------------------- | ------------------------- |
 | `NODE_ENV`          | Ambiente                     | `development`             |
 | `PORT`              | Porta HTTP                   | `3333`                    |
-| `API_PREFIX`        | Prefixo versionado           | `/api/v1`                 |
+| `API_PREFIX`        | Prefixo versionado da API    | `/api/v1`                 |
 | `DATABASE_URL`      | Connection string PostgreSQL | ver `.env.example`        |
 | `JWT_SECRET`        | Chave secreta do JWT         | _(defina um valor forte)_ |
 | `JWT_EXPIRES_IN`    | Expiração do token           | `7d`                      |
@@ -362,36 +379,41 @@ Referência completa: [`.env.example`](.env.example)
 
 ## Principais rotas
 
+> Rotas versionadas em **`/api/v1`**. O prefixo `/api` permanece como alias legado temporário.
+
 ### Públicas
 
-| Método | Rota                 | Descrição                 |
-| ------ | -------------------- | ------------------------- |
-| GET    | `/api/health`        | Health check              |
-| GET    | `/api/docs`          | Swagger UI                |
-| POST   | `/api/auth/register` | Registrar empresa + admin |
-| POST   | `/api/auth/login`    | Login (retorna JWT)       |
+| Método | Rota                    | Descrição                 |
+| ------ | ----------------------- | ------------------------- |
+| GET    | `/api/v1/health`        | Health check              |
+| GET    | `/api/docs`             | Swagger UI                |
+| POST   | `/api/v1/auth/register` | Registrar empresa + admin |
+| POST   | `/api/v1/auth/login`    | Login (retorna JWT)       |
+| POST   | `/api/v1/auth/refresh`  | Renovar tokens            |
+| POST   | `/api/v1/auth/logout`   | Logout (revoga refresh)   |
 
 ### Autenticadas
 
-| Método | Rota                       | RBAC                         | Descrição                  |
-| ------ | -------------------------- | ---------------------------- | -------------------------- |
-| GET    | `/api/me`                  | Todos                        | Usuário autenticado        |
-| GET    | `/api/companies/me`        | Todos                        | Perfil da empresa          |
-| PATCH  | `/api/companies/me`        | ADMIN                        | Atualizar empresa          |
-| CRUD   | `/api/users`               | ADMIN / MANAGER              | Gestão de usuários         |
-| CRUD   | `/api/categories`          | ADMIN / MANAGER / EMPLOYEE\* | Categorias                 |
-| CRUD   | `/api/suppliers`           | ADMIN / MANAGER / EMPLOYEE\* | Fornecedores               |
-| CRUD   | `/api/products`            | ADMIN / MANAGER / EMPLOYEE\* | Produtos                   |
-| POST   | `/api/inventory/movements` | ADMIN / MANAGER / EMPLOYEE   | Movimentar estoque         |
-| GET    | `/api/inventory/movements` | ADMIN / MANAGER              | Histórico de movimentações |
-| GET    | `/api/audit/logs`          | ADMIN                        | Logs de auditoria          |
+| Método | Rota                          | RBAC                         | Descrição                  |
+| ------ | ----------------------------- | ---------------------------- | -------------------------- |
+| GET    | `/api/v1/me`                  | Todos                        | Usuário autenticado        |
+| GET    | `/api/v1/companies/me`        | Todos                        | Perfil da empresa          |
+| PATCH  | `/api/v1/companies/me`        | ADMIN                        | Atualizar empresa          |
+| CRUD   | `/api/v1/users`               | ADMIN / MANAGER              | Gestão de usuários         |
+| CRUD   | `/api/v1/categories`          | ADMIN / MANAGER / EMPLOYEE\* | Categorias                 |
+| CRUD   | `/api/v1/suppliers`           | ADMIN / MANAGER / EMPLOYEE\* | Fornecedores               |
+| CRUD   | `/api/v1/products`            | ADMIN / MANAGER / EMPLOYEE\* | Produtos                   |
+| POST   | `/api/v1/inventory/movements` | ADMIN / MANAGER / EMPLOYEE   | Movimentar estoque         |
+| GET    | `/api/v1/inventory/movements` | ADMIN / MANAGER              | Histórico de movimentações |
+| GET    | `/api/v1/dashboard/summary`   | ADMIN / MANAGER              | Métricas do dashboard      |
+| GET    | `/api/v1/audit/logs`          | ADMIN                        | Logs de auditoria          |
 
 \* EMPLOYEE: somente leitura (GET).
 
 ### Exemplo — Login
 
 ```http
-POST /api/auth/login
+POST /api/v1/auth/login
 Content-Type: application/json
 
 {
@@ -403,7 +425,7 @@ Content-Type: application/json
 ### Exemplo — Movimentação de estoque
 
 ```http
-POST /api/inventory/movements
+POST /api/v1/inventory/movements
 Authorization: Bearer <token>
 Content-Type: application/json
 

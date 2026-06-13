@@ -12,7 +12,7 @@ const swaggerDefinition = {
     title: 'StockFlow API',
     version: '1.0.0',
     description:
-      'SaaS multi-tenant inventory management platform. Authenticate via POST /api/auth/login and use the Bearer token for protected routes.',
+      'SaaS multi-tenant inventory management platform. Authenticate via POST /api/v1/auth/login and use the Bearer token for protected routes. Legacy routes under /api remain available temporarily.',
   },
   servers: [
     {

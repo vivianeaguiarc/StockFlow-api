@@ -12,13 +12,13 @@ import { uniqueSuffix } from '../helpers/test-data.js'
 
 async function createLowStockProduct(token: string, suffix: string): Promise<string> {
   const category = await request(app)
-    .post('/api/categories')
+    .post('/api/v1/categories')
     .set(authHeader(token))
     .send({ name: `Dash Category ${suffix}` })
     .expect(201)
 
   const supplier = await request(app)
-    .post('/api/suppliers')
+    .post('/api/v1/suppliers')
     .set(authHeader(token))
     .send({
       corporateName: `Dash Corp ${suffix}`,
@@ -28,7 +28,7 @@ async function createLowStockProduct(token: string, suffix: string): Promise<str
     .expect(201)
 
   const product = await request(app)
-    .post('/api/products')
+    .post('/api/v1/products')
     .set(authHeader(token))
     .send({
       categoryId: category.body.id as string,
@@ -54,7 +54,7 @@ describe('Dashboard E2E', () => {
   })
 
   it('returns 401 when accessing dashboard without token', async () => {
-    await request(app).get('/api/dashboard/summary').expect(401)
+    await request(app).get('/api/v1/dashboard/summary').expect(401)
   })
 
   it('returns summary metrics for admin', async () => {
@@ -65,7 +65,7 @@ describe('Dashboard E2E', () => {
     await createLowStockProduct(admin.accessToken, suffix)
 
     await request(app)
-      .post('/api/inventory/movements')
+      .post('/api/v1/inventory/movements')
       .set(authHeader(admin.accessToken))
       .send({
         productId: await createLowStockProduct(admin.accessToken, `${suffix}-move`),
@@ -76,7 +76,7 @@ describe('Dashboard E2E', () => {
       .expect(201)
 
     const summary = await request(app)
-      .get('/api/dashboard/summary')
+      .get('/api/v1/dashboard/summary')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -107,7 +107,7 @@ describe('Dashboard E2E', () => {
     const productId = await createLowStockProduct(admin.accessToken, suffix)
 
     const response = await request(app)
-      .get('/api/dashboard/low-stock-products')
+      .get('/api/v1/dashboard/low-stock-products')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -140,7 +140,7 @@ describe('Dashboard E2E', () => {
     const productId = await createLowStockProduct(admin.accessToken, suffix)
 
     await request(app)
-      .post('/api/inventory/movements')
+      .post('/api/v1/inventory/movements')
       .set(authHeader(admin.accessToken))
       .send({
         productId,
@@ -151,7 +151,7 @@ describe('Dashboard E2E', () => {
       .expect(201)
 
     const response = await request(app)
-      .get('/api/dashboard/recent-movements?limit=5')
+      .get('/api/v1/dashboard/recent-movements?limit=5')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -191,12 +191,12 @@ describe('Dashboard E2E', () => {
     const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
 
     await request(app)
-      .get('/api/dashboard/summary')
+      .get('/api/v1/dashboard/summary')
       .set(authHeader(employee.accessToken))
       .expect(403)
 
     await request(app)
-      .get('/api/dashboard/recent-movements')
+      .get('/api/v1/dashboard/recent-movements')
       .set(authHeader(employee.accessToken))
       .expect(403)
   })
@@ -210,7 +210,7 @@ describe('Dashboard E2E', () => {
     await createLowStockProduct(admin.accessToken, suffix)
 
     const response = await request(app)
-      .get('/api/dashboard/low-stock-products')
+      .get('/api/v1/dashboard/low-stock-products')
       .set(authHeader(employee.accessToken))
       .expect(200)
 
@@ -226,12 +226,12 @@ describe('Dashboard E2E', () => {
     await createLowStockProduct(companyA.accessToken, suffix)
 
     const summaryB = await request(app)
-      .get('/api/dashboard/summary')
+      .get('/api/v1/dashboard/summary')
       .set(authHeader(companyB.accessToken))
       .expect(200)
 
     const lowStockB = await request(app)
-      .get('/api/dashboard/low-stock-products')
+      .get('/api/v1/dashboard/low-stock-products')
       .set(authHeader(companyB.accessToken))
       .expect(200)
 

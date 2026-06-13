@@ -12,7 +12,7 @@ import { uniqueSuffix } from '../helpers/test-data.js'
 
 async function createCategory(token: string, suffix: string): Promise<string> {
   const response = await request(app)
-    .post('/api/categories')
+    .post('/api/v1/categories')
     .set(authHeader(token))
     .send({ name: `Category ${suffix}` })
     .expect(201)
@@ -22,7 +22,7 @@ async function createCategory(token: string, suffix: string): Promise<string> {
 
 async function createSupplier(token: string, suffix: string): Promise<string> {
   const response = await request(app)
-    .post('/api/suppliers')
+    .post('/api/v1/suppliers')
     .set(authHeader(token))
     .send({
       corporateName: `Corporate ${suffix}`,
@@ -44,7 +44,7 @@ describe('Products E2E', () => {
 
   it('returns 401 when creating product without token', async () => {
     await request(app)
-      .post('/api/products')
+      .post('/api/v1/products')
       .send({
         categoryId: 'fake',
         supplierId: 'fake',
@@ -65,7 +65,7 @@ describe('Products E2E', () => {
     const supplierId = await createSupplier(admin.accessToken, suffix)
 
     const response = await request(app)
-      .post('/api/products')
+      .post('/api/v1/products')
       .set(authHeader(admin.accessToken))
       .send({
         categoryId,
@@ -97,7 +97,7 @@ describe('Products E2E', () => {
     const supplierId = await createSupplier(admin.accessToken, suffix)
 
     const created = await request(app)
-      .post('/api/products')
+      .post('/api/v1/products')
       .set(authHeader(admin.accessToken))
       .send({
         categoryId,
@@ -112,7 +112,7 @@ describe('Products E2E', () => {
     const productId = created.body.id as string
 
     const list = await request(app)
-      .get('/api/products')
+      .get('/api/v1/products')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -154,7 +154,7 @@ describe('Products E2E', () => {
     const supplierId = await createSupplier(admin.accessToken, suffix)
 
     await request(app)
-      .post('/api/products')
+      .post('/api/v1/products')
       .set(authHeader(employee.accessToken))
       .send({
         categoryId,
@@ -177,7 +177,7 @@ describe('Products E2E', () => {
     const supplierId = await createSupplier(companyA.accessToken, suffix)
 
     const created = await request(app)
-      .post('/api/products')
+      .post('/api/v1/products')
       .set(authHeader(companyA.accessToken))
       .send({
         categoryId,
@@ -206,7 +206,7 @@ describe('Products E2E', () => {
     const supplierId = await createSupplier(admin.accessToken, suffix)
 
     await request(app)
-      .post('/api/products')
+      .post('/api/v1/products')
       .set(authHeader(admin.accessToken))
       .send({
         categoryId,
@@ -221,7 +221,7 @@ describe('Products E2E', () => {
       .expect(201)
 
     await request(app)
-      .post('/api/products')
+      .post('/api/v1/products')
       .set(authHeader(admin.accessToken))
       .send({
         categoryId,
@@ -236,7 +236,7 @@ describe('Products E2E', () => {
       .expect(201)
 
     const search = await request(app)
-      .get('/api/products?search=notebook')
+      .get('/api/v1/products?search=notebook')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -244,7 +244,7 @@ describe('Products E2E', () => {
     expect(search.body.data[0].name.toLowerCase()).toContain('notebook')
 
     const lowStock = await request(app)
-      .get('/api/products?lowStock=true')
+      .get('/api/v1/products?lowStock=true')
       .set(authHeader(admin.accessToken))
       .expect(200)
 

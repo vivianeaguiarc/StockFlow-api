@@ -20,7 +20,7 @@ describe('Suppliers E2E', () => {
 
   it('returns 401 when creating supplier without token', async () => {
     await request(app)
-      .post('/api/suppliers')
+      .post('/api/v1/suppliers')
       .send({
         corporateName: 'Corp',
         tradeName: 'Trade',
@@ -36,7 +36,7 @@ describe('Suppliers E2E', () => {
     const suffix = uniqueSuffix()
 
     const created = await request(app)
-      .post('/api/suppliers')
+      .post('/api/v1/suppliers')
       .set(authHeader(admin.accessToken))
       .send({
         corporateName: `Corporate ${suffix}`,
@@ -49,7 +49,7 @@ describe('Suppliers E2E', () => {
     const supplierId = created.body.id as string
 
     const list = await request(app)
-      .get('/api/suppliers')
+      .get('/api/v1/suppliers')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -89,7 +89,7 @@ describe('Suppliers E2E', () => {
     const suffix = uniqueSuffix()
 
     const created = await request(app)
-      .post('/api/suppliers')
+      .post('/api/v1/suppliers')
       .set(authHeader(manager.accessToken))
       .send({
         corporateName: `Corp ${suffix}`,
@@ -112,7 +112,7 @@ describe('Suppliers E2E', () => {
     const suffix = uniqueSuffix()
 
     const created = await request(app)
-      .post('/api/suppliers')
+      .post('/api/v1/suppliers')
       .set(authHeader(companyA.accessToken))
       .send({
         corporateName: `Corp ${suffix}`,
@@ -136,7 +136,7 @@ describe('Suppliers E2E', () => {
     const suffix = uniqueSuffix()
 
     await request(app)
-      .post('/api/suppliers')
+      .post('/api/v1/suppliers')
       .set(authHeader(admin.accessToken))
       .send({
         corporateName: `Tech Solutions ${suffix}`,
@@ -146,7 +146,7 @@ describe('Suppliers E2E', () => {
       .expect(201)
 
     const search = await request(app)
-      .get('/api/suppliers?search=tech')
+      .get('/api/v1/suppliers?search=tech')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
@@ -160,7 +160,7 @@ describe('Suppliers E2E', () => {
     ).toBe(true)
 
     const paginated = await request(app)
-      .get('/api/suppliers?page=1&pageSize=1&sortBy=corporateName&sortOrder=asc')
+      .get('/api/v1/suppliers?page=1&pageSize=1&sortBy=corporateName&sortOrder=asc')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
