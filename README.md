@@ -103,12 +103,11 @@ pnpm format:check
 
 ## API Endpoints
 
-| Method | Path          | Description             |
-| ------ | ------------- | ----------------------- |
-| GET    | `/health`     | Health check            |
-| GET    | `/api`        | API info                |
-| GET    | `/api/health` | Health check (prefixed) |
-| GET    | `/api/v1`     | API v1 info             |
+| Method | Path          | Description           |
+| ------ | ------------- | --------------------- |
+| GET    | `/api`        | API info              |
+| GET    | `/api/health` | Health check (module) |
+| GET    | `/api/v1`     | API v1 info           |
 
 ## License
 
