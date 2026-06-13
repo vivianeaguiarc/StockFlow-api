@@ -1,9 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 
-export function notFoundHandler(req: Request, res: Response, _next: NextFunction): void {
-  res.status(404).json({
-    status: 'error',
-    code: 'NOT_FOUND',
-    message: `Route ${req.method} ${req.originalUrl} not found`,
-  })
+import { AppError } from '../errors/AppError.js'
+
+export function notFoundHandler(req: Request, _res: Response, next: NextFunction): void {
+  next(new AppError(`Route ${req.method} ${req.originalUrl} not found`, 404))
 }

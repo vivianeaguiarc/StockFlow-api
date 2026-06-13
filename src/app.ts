@@ -2,8 +2,9 @@ import cors from 'cors'
 import express, { type Express } from 'express'
 import helmet from 'helmet'
 
+import { errorHandler } from './shared/http/middlewares/error-handler.js'
 import { registerRoutes } from './shared/http/routes.js'
-import { errorHandler, notFoundHandler, requestLogger } from './shared/middlewares/index.js'
+import { notFoundHandler, requestLogger } from './shared/middlewares/index.js'
 
 export function createApp(): Express {
   const app = express()

@@ -5,9 +5,7 @@ export type ApiSuccessResponse<T> = {
 
 export type ApiErrorResponse = {
   status: 'error'
-  code: string
   message: string
-  details?: Record<string, string[]>
 }
 
 export type PaginationMeta = {
