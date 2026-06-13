@@ -1,8 +1,11 @@
 #!/bin/sh
+
 set -e
 
 echo "Running database migrations..."
-prisma migrate deploy
+
+pnpm db:migrate:deploy
 
 echo "Starting StockFlow API..."
+
 exec "$@"
