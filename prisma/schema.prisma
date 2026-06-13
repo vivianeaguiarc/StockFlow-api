@@ -33,6 +33,11 @@ enum SupplierStatus {
   INACTIVE
 }
 
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model Company {
   id        String        @id @default(cuid())
   name      String
@@ -47,6 +52,7 @@ model Company {
   users      User[]
   categories Category[]
   suppliers  Supplier[]
+  products   Product[]
 
   @@map("companies")
 }
@@ -79,7 +85,8 @@ model Category {
   updatedAt   DateTime       @updatedAt @map("updated_at")
   deletedAt   DateTime?      @map("deleted_at")
 
-  company Company @relation(fields: [companyId], references: [id])
+  company Company  @relation(fields: [companyId], references: [id])
+  products Product[]
 
   @@unique([companyId, name])
   @@map("categories")
@@ -98,9 +105,37 @@ model Supplier {
   updatedAt     DateTime       @updatedAt @map("updated_at")
   deletedAt     DateTime?      @map("deleted_at")
 
-  company Company @relation(fields: [companyId], references: [id])
+  company  Company  @relation(fields: [companyId], references: [id])
+  products Product[]
 
   @@unique([companyId, document])
   @@unique([companyId, email])
   @@map("suppliers")
+}
+
+model Product {
+  id           String        @id @default(cuid())
+  companyId    String        @map("company_id")
+  categoryId   String        @map("category_id")
+  supplierId   String        @map("supplier_id")
+  name         String
+  description  String?
+  sku          String
+  barcode      String?
+  costPrice    Decimal       @map("cost_price") @db.Decimal(10, 2)
+  salePrice    Decimal       @map("sale_price") @db.Decimal(10, 2)
+  quantity     Int           @default(0)
+  minimumStock Int           @default(0) @map("minimum_stock")
+  status       ProductStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  deletedAt    DateTime?     @map("deleted_at")
+
+  company  Company  @relation(fields: [companyId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  @@unique([companyId, sku])
+  @@unique([companyId, barcode])
+  @@map("products")
 }
