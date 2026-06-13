@@ -10,6 +10,7 @@ import {
 } from '../../modules/auth/routes/auth.routes.js'
 import { createCompaniesRoutes } from '../../modules/companies/routes/companies.routes.js'
 import { createHealthRoutes } from '../../modules/health/routes/health.routes.js'
+import { createUsersRoutes } from '../../modules/users/routes/users.routes.js'
 import { sendSuccess } from './response.js'
 
 export function registerRoutes(app: Express): void {
@@ -26,6 +27,7 @@ export function registerRoutes(app: Express): void {
   apiRouter.use('/health', createHealthRoutes())
   apiRouter.use('/auth', createAuthRoutes())
   apiRouter.use('/companies', createCompaniesRoutes())
+  apiRouter.use('/users', createUsersRoutes())
   apiRouter.get('/me', ...createMeRouteHandlers())
   apiRouter.get('/admin-only', ...createAdminOnlyRouteHandlers())
   apiRouter.get('/management', ...createManagementRouteHandlers())
