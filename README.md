@@ -73,6 +73,7 @@ pnpm db:generate   # generate Prisma Client after schema changes
 pnpm db:migrate    # create and apply migrations (dev)
 pnpm db:push       # push schema without migration (prototyping)
 pnpm db:studio     # open Prisma Studio GUI
+pnpm db:seed       # populate database with initial dev data
 ```
 
 Schema location: `prisma/schema.prisma`
