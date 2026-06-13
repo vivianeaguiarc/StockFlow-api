@@ -2,6 +2,8 @@
 
 API REST SaaS multiempresa para gestão de estoque, construída com Node.js, TypeScript e PostgreSQL.
 
+**API em produção:** [https://stockflow-api-l4x4.onrender.com/api/docs](https://stockflow-api-l4x4.onrender.com/api/docs) (Swagger)
+
 ---
 
 ## Descrição
@@ -29,18 +31,18 @@ Ideal para portfólio técnico e estudo de backends SaaS.
 
 ## Funcionalidades principais
 
-| Módulo         | Descrição                                                               |
-| -------------- | ----------------------------------------------------------------------- |
-| **Auth**       | Registro de empresa + admin, login com JWT                              |
-| **Companies**  | Perfil da empresa autenticada                                           |
-| **Users**      | CRUD de usuários com RBAC (ADMIN, MANAGER, EMPLOYEE)                    |
-| **Categories** | CRUD de categorias de produtos                                          |
-| **Suppliers**  | CRUD de fornecedores                                                    |
-| **Products**   | CRUD de produtos com SKU, preços e estoque                              |
-| **Inventory**  | Movimentações ENTRY, EXIT e ADJUSTMENT com transação                    |
-| **Audit**      | Trilha de auditoria imutável (somente ADMIN)                            |
-| **Health**     | Health check da aplicação (live, ready, details)                        |
-| **Swagger**    | Documentação interativa em `/api/docs` (rotas versionadas em `/api/v1`) |
+| Módulo         | Descrição                                                                                                  |
+| -------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Auth**       | Registro de empresa + admin, login com JWT                                                                 |
+| **Companies**  | Perfil da empresa autenticada                                                                              |
+| **Users**      | CRUD de usuários com RBAC (ADMIN, MANAGER, EMPLOYEE)                                                       |
+| **Categories** | CRUD de categorias de produtos                                                                             |
+| **Suppliers**  | CRUD de fornecedores                                                                                       |
+| **Products**   | CRUD de produtos com SKU, preços e estoque                                                                 |
+| **Inventory**  | Movimentações ENTRY, EXIT e ADJUSTMENT com transação                                                       |
+| **Audit**      | Trilha de auditoria imutável (somente ADMIN)                                                               |
+| **Health**     | Health check da aplicação (live, ready, details)                                                           |
+| **Swagger**    | Documentação interativa — [produção](https://stockflow-api-l4x4.onrender.com/api/docs) · local `/api/docs` |
 
 ---
 
@@ -409,9 +411,12 @@ tests/
 
 Documentação interativa disponível em:
 
-```
-http://localhost:3333/api/docs
-```
+| Ambiente              | URL                                                                                                  |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Produção (Render)** | [https://stockflow-api-l4x4.onrender.com/api/docs](https://stockflow-api-l4x4.onrender.com/api/docs) |
+| **Local**             | `http://localhost:3333/api/docs`                                                                     |
+
+Rotas versionadas em `/api/v1`.
 
 **Como autenticar no Swagger:**
 
@@ -475,6 +480,8 @@ Referência completa: [`.env.example`](.env.example)
 
 | Método | Rota                     | Descrição                    |
 | ------ | ------------------------ | ---------------------------- |
+| GET    | `/`                      | Metadados da API e links     |
+| HEAD   | `/`                      | Disponibilidade da raiz      |
 | GET    | `/api/v1/health`         | Health check básico (legado) |
 | GET    | `/api/v1/health/live`    | Liveness probe               |
 | GET    | `/api/v1/health/ready`   | Readiness probe              |

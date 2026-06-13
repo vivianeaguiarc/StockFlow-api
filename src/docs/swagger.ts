@@ -36,6 +36,7 @@ const swaggerDefinition = {
   },
   servers: buildSwaggerServers(),
   tags: [
+    { name: 'Root', description: 'API root and discovery' },
     { name: 'Health', description: 'Service health checks' },
     { name: 'Auth', description: 'Authentication and registration' },
     { name: 'Current User', description: 'Authenticated user profile' },

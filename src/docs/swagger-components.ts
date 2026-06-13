@@ -16,6 +16,25 @@ export const swaggerComponents = {
       },
       required: ['status', 'message'],
     },
+    RootResponse: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'StockFlow API' },
+        status: { type: 'string', example: 'running' },
+        version: { type: 'string', example: '1.0.0' },
+        environment: { type: 'string', example: 'production' },
+        links: {
+          type: 'object',
+          properties: {
+            docs: { type: 'string', example: '/api/docs' },
+            health: { type: 'string', example: '/api/v1/health/live' },
+            ready: { type: 'string', example: '/api/v1/health/ready' },
+          },
+          required: ['docs', 'health', 'ready'],
+        },
+      },
+      required: ['name', 'status', 'version', 'environment', 'links'],
+    },
     PaginationMeta: {
       type: 'object',
       properties: {

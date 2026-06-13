@@ -57,6 +57,33 @@ const auditLogsListParams = [
 const paginationParams = basePaginationParams
 
 export const swaggerPaths = {
+  '/': {
+    get: {
+      tags: ['Root'],
+      summary: 'API root',
+      description: 'Public metadata and links to documentation and health checks.',
+      responses: {
+        '200': {
+          description: 'API metadata',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/RootResponse' },
+            },
+          },
+        },
+      },
+    },
+    head: {
+      tags: ['Root'],
+      summary: 'API root (HEAD)',
+      description: 'Lightweight availability check for the API root.',
+      responses: {
+        '200': {
+          description: 'API is reachable',
+        },
+      },
+    },
+  },
   '/api/v1/health': {
     get: {
       tags: ['Health'],
