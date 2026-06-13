@@ -110,7 +110,7 @@ export const swaggerPaths = {
       tags: ['Auth'],
       summary: 'Authenticate user',
       description:
-        'Returns JWT access token for authenticated requests. Rate limited to 5 attempts per 15 minutes per IP (configurable via RATE_LIMIT_LOGIN_* env vars).',
+        'Returns JWT access and refresh tokens. Rate limited to 5 attempts per 15 minutes per IP (configurable via RATE_LIMIT_LOGIN_* env vars).',
       requestBody: {
         required: true,
         content: {
@@ -130,6 +130,54 @@ export const swaggerPaths = {
         },
         '401': { $ref: '#/components/responses/Unauthorized' },
         '429': { $ref: '#/components/responses/TooManyRequests' },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+  },
+  '/api/auth/refresh': {
+    post: {
+      tags: ['Auth'],
+      summary: 'Refresh access token',
+      description:
+        'Rotates the refresh token and returns a new access token pair. The previous refresh token is revoked.',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/RefreshTokenRequest' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Tokens refreshed',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/RefreshTokenResponse' },
+            },
+          },
+        },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+  },
+  '/api/auth/logout': {
+    post: {
+      tags: ['Auth'],
+      summary: 'Logout user',
+      description: 'Revokes the provided refresh token.',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/RefreshTokenRequest' },
+          },
+        },
+      },
+      responses: {
+        '204': { description: 'Logout successful' },
+        '401': { $ref: '#/components/responses/Unauthorized' },
         '500': { $ref: '#/components/responses/InternalServerError' },
       },
     },

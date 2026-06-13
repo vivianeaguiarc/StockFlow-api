@@ -1,4 +1,4 @@
-import { AuditAction, Prisma, UserRole } from '@prisma/client'
+import { AuditAction, Prisma, type User, UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import jwt, { type SignOptions } from 'jsonwebtoken'
 
@@ -9,12 +9,19 @@ import { AppError } from '../../../shared/errors/AppError.js'
 import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type { JwtPayload, LoginDto, LoginResponseDto } from '../dtos/login.dto.js'
 import type {
+  LogoutDto,
+  RefreshTokenDto,
+  RefreshTokenResponseDto,
+} from '../dtos/refresh-token.dto.js'
+import type {
   RegisterCompanyDto,
   RegisterCompanyResponseDto,
 } from '../dtos/register-company.dto.js'
+import { refreshTokenService } from './RefreshTokenService.js'
 
 const BCRYPT_SALT_ROUNDS = 12
 const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password'
+const INVALID_REFRESH_TOKEN_MESSAGE = 'Unauthorized'
 
 export class AuthService {
   async register(data: RegisterCompanyDto): Promise<RegisterCompanyResponseDto> {
@@ -88,15 +95,8 @@ export class AuthService {
       throw new AppError(INVALID_CREDENTIALS_MESSAGE, 401)
     }
 
-    const accessToken = jwt.sign(
-      {
-        userId: user.id,
-        companyId: user.companyId,
-        role: user.role,
-      } satisfies JwtPayload,
-      this.getJwtSecret(),
-      { expiresIn: env.JWT_EXPIRES_IN } as SignOptions,
-    )
+    const accessToken = this.signAccessToken(user)
+    const refreshToken = await refreshTokenService.issue(user.id)
 
     await auditLogger.log({
       companyId: user.companyId,
@@ -113,6 +113,7 @@ export class AuthService {
 
     return {
       accessToken,
+      refreshToken,
       user: {
         id: user.id,
         companyId: user.companyId,
@@ -122,6 +123,65 @@ export class AuthService {
         role: user.role,
       },
     }
+  }
+
+  async refresh(
+    data: RefreshTokenDto,
+    auditContext?: AuditContext,
+  ): Promise<RefreshTokenResponseDto> {
+    const { token: refreshToken, user } = await refreshTokenService.rotate(data.refreshToken)
+    const accessToken = this.signAccessToken(user)
+
+    await auditLogger.log({
+      companyId: user.companyId,
+      userId: user.id,
+      action: AuditAction.REFRESH,
+      entity: 'User',
+      entityId: user.id,
+      newValue: {
+        email: user.email,
+        role: user.role,
+      },
+      ...auditContext,
+    })
+
+    return {
+      accessToken,
+      refreshToken,
+    }
+  }
+
+  async logout(data: LogoutDto, auditContext?: AuditContext): Promise<void> {
+    const user = await refreshTokenService.revoke(data.refreshToken)
+
+    if (!user) {
+      throw new AppError(INVALID_REFRESH_TOKEN_MESSAGE, 401)
+    }
+
+    await auditLogger.log({
+      companyId: user.companyId,
+      userId: user.id,
+      action: AuditAction.LOGOUT,
+      entity: 'User',
+      entityId: user.id,
+      newValue: {
+        email: user.email,
+        role: user.role,
+      },
+      ...auditContext,
+    })
+  }
+
+  private signAccessToken(user: Pick<User, 'id' | 'companyId' | 'role'>): string {
+    return jwt.sign(
+      {
+        userId: user.id,
+        companyId: user.companyId,
+        role: user.role,
+      } satisfies JwtPayload,
+      this.getJwtSecret(),
+      { expiresIn: env.JWT_EXPIRES_IN } as SignOptions,
+    )
   }
 
   private getJwtSecret(): string {

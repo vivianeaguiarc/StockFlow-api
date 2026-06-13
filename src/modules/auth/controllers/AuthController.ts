@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from 'express'
 import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import type { LoginDto } from '../dtos/login.dto.js'
+import type { LogoutDto, RefreshTokenDto } from '../dtos/refresh-token.dto.js'
 import type { RegisterCompanyDto } from '../dtos/register-company.dto.js'
 import type { AuthService } from '../services/AuthService.js'
 
@@ -24,6 +25,26 @@ export class AuthController {
       const data = req.body as LoginDto
       const result = await this.authService.login(data, getAuditContext(req))
       res.status(200).json(result)
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  async refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = req.body as RefreshTokenDto
+      const result = await this.authService.refresh(data, getAuditContext(req))
+      res.status(200).json(result)
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = req.body as LogoutDto
+      await this.authService.logout(data, getAuditContext(req))
+      res.status(204).send()
     } catch (error) {
       next(error)
     }

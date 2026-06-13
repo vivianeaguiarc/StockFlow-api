@@ -9,6 +9,7 @@ export type LoginDto = z.infer<typeof loginSchema>
 
 export type LoginResponseDto = {
   accessToken: string
+  refreshToken: string
   user: {
     id: string
     companyId: string

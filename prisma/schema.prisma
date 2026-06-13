@@ -50,6 +50,7 @@ enum AuditAction {
   DELETE
   LOGIN
   LOGOUT
+  REFRESH
   STOCK_ENTRY
   STOCK_EXIT
   STOCK_ADJUSTMENT
@@ -92,8 +93,24 @@ model User {
   company            Company             @relation(fields: [companyId], references: [id])
   inventoryMovements InventoryMovement[]
   auditLogs          AuditLog[]
+  refreshTokens      RefreshToken[]
 
   @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
 }
 
 model Category {

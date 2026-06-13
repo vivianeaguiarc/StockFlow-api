@@ -46,8 +46,25 @@ export const swaggerComponents = {
       type: 'object',
       properties: {
         accessToken: { type: 'string' },
+        refreshToken: { type: 'string' },
         user: { $ref: '#/components/schemas/AuthUser' },
       },
+      required: ['accessToken', 'refreshToken', 'user'],
+    },
+    RefreshTokenRequest: {
+      type: 'object',
+      properties: {
+        refreshToken: { type: 'string' },
+      },
+      required: ['refreshToken'],
+    },
+    RefreshTokenResponse: {
+      type: 'object',
+      properties: {
+        accessToken: { type: 'string' },
+        refreshToken: { type: 'string' },
+      },
+      required: ['accessToken', 'refreshToken'],
     },
     RegisterCompanyRequest: {
       type: 'object',
@@ -366,6 +383,7 @@ export const swaggerComponents = {
             'DELETE',
             'LOGIN',
             'LOGOUT',
+            'REFRESH',
             'STOCK_ENTRY',
             'STOCK_EXIT',
             'STOCK_ADJUSTMENT',
@@ -631,6 +649,7 @@ export const swaggerComponents = {
           'DELETE',
           'LOGIN',
           'LOGOUT',
+          'REFRESH',
           'STOCK_ENTRY',
           'STOCK_EXIT',
           'STOCK_ADJUSTMENT',

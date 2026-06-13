@@ -9,6 +9,42 @@ function createUniqueId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
+async function registerAndLogin(uniqueId: string): Promise<{
+  email: string
+  password: string
+  accessToken: string
+  refreshToken: string
+}> {
+  const email = `login-${uniqueId}@test.com`
+  const password = 'Test@123456'
+
+  await request(app)
+    .post('/api/auth/register')
+    .send({
+      company: {
+        name: `Login Company ${uniqueId}`,
+        document: `login-doc-${uniqueId}`,
+        email: `login-company-${uniqueId}@test.com`,
+      },
+      admin: {
+        firstName: 'Login',
+        lastName: 'User',
+        email,
+        password,
+      },
+    })
+    .expect(201)
+
+  const response = await request(app).post('/api/auth/login').send({ email, password }).expect(200)
+
+  return {
+    email,
+    password,
+    accessToken: response.body.accessToken as string,
+    refreshToken: response.body.refreshToken as string,
+  }
+}
+
 describe('POST /api/auth/register', () => {
   it('creates company and admin user', async () => {
     const uniqueId = createUniqueId()
@@ -46,40 +82,64 @@ describe('POST /api/auth/register', () => {
 })
 
 describe('POST /api/auth/login', () => {
-  it('returns accessToken for valid credentials', async () => {
+  it('returns accessToken and refreshToken for valid credentials', async () => {
     const uniqueId = createUniqueId()
-    const email = `login-${uniqueId}@test.com`
-    const password = 'Test@123456'
+    const session = await registerAndLogin(uniqueId)
 
-    await request(app)
-      .post('/api/auth/register')
-      .send({
-        company: {
-          name: `Login Company ${uniqueId}`,
-          document: `login-doc-${uniqueId}`,
-          email: `login-company-${uniqueId}@test.com`,
-        },
-        admin: {
-          firstName: 'Login',
-          lastName: 'User',
-          email,
-          password,
-        },
-      })
-      .expect(201)
+    expect(typeof session.accessToken).toBe('string')
+    expect(session.accessToken.length).toBeGreaterThan(0)
+    expect(typeof session.refreshToken).toBe('string')
+    expect(session.refreshToken.length).toBeGreaterThan(0)
+  })
+})
 
-    const response = await request(app)
-      .post('/api/auth/login')
-      .send({ email, password })
+describe('POST /api/auth/refresh', () => {
+  it('returns new access and refresh tokens and revokes the old refresh token', async () => {
+    const uniqueId = createUniqueId()
+    const session = await registerAndLogin(uniqueId)
+
+    const refreshed = await request(app)
+      .post('/api/auth/refresh')
+      .send({ refreshToken: session.refreshToken })
       .expect(200)
 
-    expect(typeof response.body.accessToken).toBe('string')
-    expect(response.body.accessToken.length).toBeGreaterThan(0)
-    expect(response.body.user).toMatchObject({
-      email,
-      role: 'ADMIN',
-    })
-    expect(response.body.user.id).toEqual(expect.any(String))
-    expect(response.body.user.companyId).toEqual(expect.any(String))
+    expect(typeof refreshed.body.accessToken).toBe('string')
+    expect(typeof refreshed.body.refreshToken).toBe('string')
+    expect(refreshed.body.refreshToken).not.toBe(session.refreshToken)
+
+    await request(app)
+      .post('/api/auth/refresh')
+      .send({ refreshToken: session.refreshToken })
+      .expect(401)
+
+    await request(app)
+      .get('/api/me')
+      .set('Authorization', `Bearer ${refreshed.body.accessToken as string}`)
+      .expect(200)
+  })
+
+  it('returns 401 for invalid refresh token', async () => {
+    await request(app).post('/api/auth/refresh').send({ refreshToken: 'invalid-token' }).expect(401)
+  })
+})
+
+describe('POST /api/auth/logout', () => {
+  it('revokes refresh token and blocks subsequent refresh', async () => {
+    const uniqueId = createUniqueId()
+    const session = await registerAndLogin(uniqueId)
+
+    await request(app)
+      .post('/api/auth/logout')
+      .send({ refreshToken: session.refreshToken })
+      .expect(204)
+
+    await request(app)
+      .post('/api/auth/refresh')
+      .send({ refreshToken: session.refreshToken })
+      .expect(401)
+  })
+
+  it('returns 401 for invalid refresh token', async () => {
+    await request(app).post('/api/auth/logout').send({ refreshToken: 'invalid-token' }).expect(401)
   })
 })

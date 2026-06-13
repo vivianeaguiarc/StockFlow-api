@@ -7,6 +7,7 @@ import { validateRequest } from '../../../shared/http/middlewares/validate-reque
 import { loginRateLimiter, registerRateLimiter } from '../../../shared/security/rate-limit.js'
 import { AuthController } from '../controllers/AuthController.js'
 import { loginSchema } from '../dtos/login.dto.js'
+import { logoutSchema, refreshTokenSchema } from '../dtos/refresh-token.dto.js'
 import { registerCompanySchema } from '../dtos/register-company.dto.js'
 import { AuthService } from '../services/AuthService.js'
 
@@ -27,6 +28,14 @@ export function createAuthRoutes(): Router {
 
   router.post('/login', loginRateLimiter, validateRequest(loginSchema), (req, res, next) =>
     authController.login(req, res, next),
+  )
+
+  router.post('/refresh', validateRequest(refreshTokenSchema), (req, res, next) =>
+    authController.refresh(req, res, next),
+  )
+
+  router.post('/logout', validateRequest(logoutSchema), (req, res, next) =>
+    authController.logout(req, res, next),
   )
 
   return router
