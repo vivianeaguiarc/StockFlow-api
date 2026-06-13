@@ -1,5 +1,11 @@
 import { InventoryMovementType, ProductStatus } from '@prisma/client'
 
+import {
+  dashboardLowStockProductsKey,
+  dashboardRecentMovementsKey,
+  dashboardSummaryKey,
+} from '../../../shared/cache/cache-keys.js'
+import { cacheService } from '../../../shared/cache/CacheService.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import type {
   DashboardLowStockProductDto,
@@ -21,6 +27,25 @@ function getUtcTodayRange(): { start: Date; end: Date } {
 
 export class DashboardService {
   async getSummary(companyId: string): Promise<DashboardSummaryDto> {
+    return cacheService.getOrSet(dashboardSummaryKey(companyId), () => this.fetchSummary(companyId))
+  }
+
+  async getLowStockProducts(companyId: string): Promise<DashboardLowStockProductDto[]> {
+    return cacheService.getOrSet(dashboardLowStockProductsKey(companyId), () =>
+      this.fetchLowStockProducts(companyId),
+    )
+  }
+
+  async getRecentMovements(
+    companyId: string,
+    limit: number,
+  ): Promise<DashboardRecentMovementDto[]> {
+    return cacheService.getOrSet(dashboardRecentMovementsKey(companyId, limit), () =>
+      this.fetchRecentMovements(companyId, limit),
+    )
+  }
+
+  private async fetchSummary(companyId: string): Promise<DashboardSummaryDto> {
     const { start, end } = getUtcTodayRange()
     const activeProductWhere = {
       companyId,
@@ -102,7 +127,7 @@ export class DashboardService {
     }
   }
 
-  async getLowStockProducts(companyId: string): Promise<DashboardLowStockProductDto[]> {
+  private async fetchLowStockProducts(companyId: string): Promise<DashboardLowStockProductDto[]> {
     const products = await prisma.product.findMany({
       where: {
         companyId,
@@ -148,7 +173,7 @@ export class DashboardService {
     }))
   }
 
-  async getRecentMovements(
+  private async fetchRecentMovements(
     companyId: string,
     limit: number,
   ): Promise<DashboardRecentMovementDto[]> {

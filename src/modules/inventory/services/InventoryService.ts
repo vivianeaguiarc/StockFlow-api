@@ -6,6 +6,7 @@ import {
 } from '@prisma/client'
 
 import type { AuditContext } from '../../../shared/audit/audit-context.js'
+import { invalidateProductRelatedCache } from '../../../shared/cache/cache-invalidation.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import type { PaginationQuery } from '../../../shared/dtos/pagination-query.dto.js'
 import { AppError } from '../../../shared/errors/AppError.js'
@@ -85,6 +86,8 @@ export class InventoryService {
 
       return createdMovement
     })
+
+    await invalidateProductRelatedCache(companyId)
 
     return this.toResponse(movement)
   }

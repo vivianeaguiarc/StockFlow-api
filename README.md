@@ -88,6 +88,7 @@ src/
     ├── http/              # Rotas centrais, middlewares, responses
     ├── middlewares/
     ├── security/            # Rate limiting e proteções HTTP
+    ├── cache/               # Redis client e CacheService
     ├── logger/              # Logs estruturados (Pino)
     ├── types/
     └── utils/             # Paginação, helpers
@@ -145,6 +146,23 @@ Proteção contra abuso de API com `express-rate-limit`:
 - Swagger (`/api/docs`) **não** entra no rate limit global.
 - Desabilitado automaticamente quando `NODE_ENV=test` (testes E2E).
 - Limites configuráveis via variáveis `RATE_LIMIT_*` (ver `.env.example`).
+
+### Cache (Redis)
+
+Consultas pesadas de leitura usam cache Redis com fallback seguro para PostgreSQL:
+
+| Escopo    | Endpoints cacheados                                  |
+| --------- | ---------------------------------------------------- |
+| Dashboard | `summary`, `low-stock-products`, `recent-movements`  |
+| Products  | `GET /api/products` (por combinação de query params) |
+
+- **TTL padrão:** 300 segundos (`CACHE_TTL_SECONDS`).
+- **Chaves:** `stockflow:{companyId}:...` — isolamento total por tenant.
+- **Invalidação:** automática após create/update/delete de produto ou movimentação de estoque.
+- **Resiliência:** se Redis estiver indisponível, a API continua respondendo via banco.
+- **Testes:** cache desabilitado automaticamente quando `NODE_ENV=test`.
+
+Subir Redis localmente: `docker compose up -d redis`
 
 ### Auditoria
 

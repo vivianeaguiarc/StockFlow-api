@@ -1,6 +1,9 @@
 import { AuditAction, Prisma, type Product, ProductStatus } from '@prisma/client'
 
 import type { AuditContext } from '../../../shared/audit/audit-context.js'
+import { invalidateProductRelatedCache } from '../../../shared/cache/cache-invalidation.js'
+import { hashProductsListQuery, productsListKey } from '../../../shared/cache/cache-keys.js'
+import { cacheService } from '../../../shared/cache/CacheService.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
@@ -56,6 +59,8 @@ export class ProductsService {
         ...auditContext,
       })
 
+      await invalidateProductRelatedCache(companyId)
+
       return response
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -67,6 +72,15 @@ export class ProductsService {
   }
 
   async list(companyId: string, query: ListProductsQuery): Promise<PaginatedProductsResponseDto> {
+    const cacheKey = productsListKey(companyId, hashProductsListQuery(query))
+
+    return cacheService.getOrSet(cacheKey, () => this.fetchProductList(companyId, query))
+  }
+
+  private async fetchProductList(
+    companyId: string,
+    query: ListProductsQuery,
+  ): Promise<PaginatedProductsResponseDto> {
     const { page, pageSize, sortBy, sortOrder, status, categoryId, supplierId, lowStock, search } =
       query
     const searchFilter = buildContainsSearchFilter(search, ['name', 'sku', 'barcode'])
@@ -164,6 +178,8 @@ export class ProductsService {
         ...auditContext,
       })
 
+      await invalidateProductRelatedCache(companyId)
+
       return response
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -202,6 +218,8 @@ export class ProductsService {
       newValue: { deletedAt: deletedAt.toISOString(), status: ProductStatus.INACTIVE },
       ...auditContext,
     })
+
+    await invalidateProductRelatedCache(companyId)
   }
 
   private async validateCategory(companyId: string, categoryId: string): Promise<void> {

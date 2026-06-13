@@ -40,6 +40,23 @@ const envSchema = z.object({
     .int()
     .positive()
     .default(60 * 60 * 1000),
+  REDIS_URL: z.string().default('redis://localhost:6379'),
+  CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
+  CACHE_ENABLED: z.preprocess((value) => {
+    if (value === undefined || value === '') {
+      return undefined
+    }
+
+    if (value === true || value === 'true') {
+      return true
+    }
+
+    if (value === false || value === 'false') {
+      return false
+    }
+
+    return value
+  }, z.boolean().optional()),
 })
 
 const parsed = envSchema.safeParse(process.env)
