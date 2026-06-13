@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: stockflow
+          POSTGRES_PASSWORD: stockflow
+          POSTGRES_DB: stockflow_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U stockflow -d stockflow_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      HUSKY: '0'
+      NODE_ENV: test
+      DATABASE_URL: postgresql://stockflow:stockflow@localhost:5432/stockflow_db?schema=public
+      JWT_SECRET: ci-test-jwt-secret
+      JWT_EXPIRES_IN: 7d
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Run database migrations
+        run: pnpm prisma migrate deploy
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
