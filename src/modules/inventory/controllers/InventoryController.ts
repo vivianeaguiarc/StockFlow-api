@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from 'express'
 
 import { getAuditContext } from '../../../shared/audit/audit-context.js'
+import type { PaginationQuery } from '../../../shared/dtos/pagination-query.dto.js'
 import { AppError } from '../../../shared/errors/AppError.js'
-import { paginationSchema } from '../../../shared/utils/pagination.js'
 import type { CreateMovementDto } from '../dtos/create-movement.dto.js'
 import type { InventoryService } from '../services/InventoryService.js'
 
@@ -34,8 +34,8 @@ export class InventoryController {
         throw new AppError('Unauthorized', 401)
       }
 
-      const pagination = paginationSchema.parse(req.query)
-      const result = await this.inventoryService.listMovements(req.user.companyId, pagination)
+      const query = req.query as unknown as PaginationQuery
+      const result = await this.inventoryService.listMovements(req.user.companyId, query)
       res.status(200).json(result)
     } catch (error) {
       next(error)

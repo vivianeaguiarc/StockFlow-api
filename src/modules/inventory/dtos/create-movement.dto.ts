@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { PaginatedResponse } from '../../../shared/types/paginated-response.js'
+
 export const createMovementSchema = z
   .object({
     productId: z.string().trim().min(1, 'Product is required'),
@@ -42,12 +44,4 @@ export type MovementResponseDto = {
   createdAt: Date
 }
 
-export type PaginatedMovementsResponseDto = {
-  data: MovementResponseDto[]
-  meta: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
-}
+export type PaginatedMovementsResponseDto = PaginatedResponse<MovementResponseDto>

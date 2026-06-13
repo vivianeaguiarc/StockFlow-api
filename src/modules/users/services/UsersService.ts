@@ -5,12 +5,13 @@ import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
-  buildPaginationMeta,
-  getPaginationOffset,
-  type PaginationParams,
+  buildContainsSearchFilter,
+  buildOrderBy,
+  executePaginatedQuery,
 } from '../../../shared/utils/pagination.js'
 import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type { CreateUserDto } from '../dtos/create-user.dto.js'
+import type { ListUsersQuery } from '../dtos/list-users-query.dto.js'
 import type { UpdateUserDto } from '../dtos/update-user.dto.js'
 import type { PaginatedUsersResponseDto, UserResponseDto } from '../dtos/user-response.dto.js'
 
@@ -59,28 +60,40 @@ export class UsersService {
     }
   }
 
-  async list(companyId: string, pagination: PaginationParams): Promise<PaginatedUsersResponseDto> {
-    const { page, limit } = pagination
-    const offset = getPaginationOffset(page, limit)
+  async list(companyId: string, query: ListUsersQuery): Promise<PaginatedUsersResponseDto> {
+    const { page, pageSize, sortBy, sortOrder, role, status, search } = query
+    const searchFilter = buildContainsSearchFilter(search, ['firstName', 'lastName', 'email'])
+    const orderBy = buildOrderBy(
+      sortBy,
+      sortOrder,
+      ['createdAt', 'firstName', 'lastName', 'email', 'role', 'status'] as const,
+      'createdAt',
+    )
 
-    const where = {
+    const where: Prisma.UserWhereInput = {
       companyId,
       deletedAt: null,
+      ...(role && { role }),
+      ...(status && { status }),
+      ...(searchFilter && { OR: searchFilter }),
     }
 
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        skip: offset,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.user.count({ where }),
-    ])
+    const result = await executePaginatedQuery({
+      page,
+      pageSize,
+      findMany: (skip, take) =>
+        prisma.user.findMany({
+          where,
+          skip,
+          take,
+          orderBy,
+        }),
+      count: () => prisma.user.count({ where }),
+    })
 
     return {
-      data: users.map((user) => this.toResponse(user)),
-      meta: buildPaginationMeta(page, limit, total),
+      data: result.data.map((user) => this.toResponse(user)),
+      meta: result.meta,
     }
   }
 

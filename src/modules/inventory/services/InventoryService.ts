@@ -7,12 +7,9 @@ import {
 
 import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
+import type { PaginationQuery } from '../../../shared/dtos/pagination-query.dto.js'
 import { AppError } from '../../../shared/errors/AppError.js'
-import {
-  buildPaginationMeta,
-  getPaginationOffset,
-  type PaginationParams,
-} from '../../../shared/utils/pagination.js'
+import { buildOrderBy, executePaginatedQuery } from '../../../shared/utils/pagination.js'
 import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type {
   CreateMovementDto,
@@ -94,26 +91,29 @@ export class InventoryService {
 
   async listMovements(
     companyId: string,
-    pagination: PaginationParams,
+    query: PaginationQuery,
   ): Promise<PaginatedMovementsResponseDto> {
-    const { page, limit } = pagination
-    const offset = getPaginationOffset(page, limit)
+    const { page, pageSize, sortOrder } = query
+    const orderBy = buildOrderBy('createdAt', sortOrder, ['createdAt'] as const, 'createdAt')
 
     const where = { companyId }
 
-    const [movements, total] = await Promise.all([
-      prisma.inventoryMovement.findMany({
-        where,
-        skip: offset,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.inventoryMovement.count({ where }),
-    ])
+    const result = await executePaginatedQuery({
+      page,
+      pageSize,
+      findMany: (skip, take) =>
+        prisma.inventoryMovement.findMany({
+          where,
+          skip,
+          take,
+          orderBy,
+        }),
+      count: () => prisma.inventoryMovement.count({ where }),
+    })
 
     return {
-      data: movements.map((movement) => this.toResponse(movement)),
-      meta: buildPaginationMeta(page, limit, total),
+      data: result.data.map((movement) => this.toResponse(movement)),
+      meta: result.meta,
     }
   }
 

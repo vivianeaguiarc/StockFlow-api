@@ -3,9 +3,9 @@ import { Router } from 'express'
 import { authenticate } from '../../../shared/http/middlewares/authenticate.js'
 import { authorizeRoles } from '../../../shared/http/middlewares/authorize-roles.js'
 import { validateRequest } from '../../../shared/http/middlewares/validate-request.js'
-import { paginationSchema } from '../../../shared/utils/pagination.js'
 import { SuppliersController } from '../controllers/SuppliersController.js'
 import { createSupplierSchema } from '../dtos/create-supplier.dto.js'
+import { listSuppliersQuerySchema } from '../dtos/list-suppliers-query.dto.js'
 import { updateSupplierSchema } from '../dtos/update-supplier.dto.js'
 import { SuppliersService } from '../services/SuppliersService.js'
 
@@ -25,7 +25,7 @@ export function createSuppliersRoutes(): Router {
     '/',
     authenticate,
     authorizeRoles('ADMIN', 'MANAGER', 'EMPLOYEE'),
-    validateRequest(paginationSchema, 'query'),
+    validateRequest(listSuppliersQuerySchema, 'query'),
     (req, res, next) => suppliersController.list(req, res, next),
   )
 

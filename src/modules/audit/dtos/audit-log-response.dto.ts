@@ -1,5 +1,7 @@
 import type { AuditAction } from '@prisma/client'
 
+import type { PaginatedResponse } from '../../../shared/types/paginated-response.js'
+
 export type AuditLogResponseDto = {
   id: string
   companyId: string
@@ -14,12 +16,4 @@ export type AuditLogResponseDto = {
   createdAt: Date
 }
 
-export type PaginatedAuditLogsResponseDto = {
-  data: AuditLogResponseDto[]
-  meta: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
-}
+export type PaginatedAuditLogsResponseDto = PaginatedResponse<AuditLogResponseDto>

@@ -3,9 +3,9 @@ import { Router } from 'express'
 import { authenticate } from '../../../shared/http/middlewares/authenticate.js'
 import { authorizeRoles } from '../../../shared/http/middlewares/authorize-roles.js'
 import { validateRequest } from '../../../shared/http/middlewares/validate-request.js'
-import { paginationSchema } from '../../../shared/utils/pagination.js'
 import { UsersController } from '../controllers/UsersController.js'
 import { createUserSchema } from '../dtos/create-user.dto.js'
+import { listUsersQuerySchema } from '../dtos/list-users-query.dto.js'
 import { updateUserSchema } from '../dtos/update-user.dto.js'
 import { UsersService } from '../services/UsersService.js'
 
@@ -25,7 +25,7 @@ export function createUsersRoutes(): Router {
     '/',
     authenticate,
     authorizeRoles('ADMIN', 'MANAGER'),
-    validateRequest(paginationSchema, 'query'),
+    validateRequest(listUsersQuerySchema, 'query'),
     (req, res, next) => usersController.list(req, res, next),
   )
 

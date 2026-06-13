@@ -120,4 +120,71 @@ describe('Users E2E', () => {
       .set(authHeader(companyB.accessToken))
       .expect(404)
   })
+
+  it('supports pagination, sorting and filters on list', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+
+    await request(app)
+      .post('/api/users')
+      .set(authHeader(admin.accessToken))
+      .send({
+        firstName: 'Vivi',
+        lastName: 'Searchable',
+        email: `vivi-${suffix}@test.com`,
+        password: 'Test@123456',
+        role: 'MANAGER',
+      })
+      .expect(201)
+
+    const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
+
+    const managers = await request(app)
+      .get('/api/users?role=MANAGER')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(managers.body.meta).toMatchObject({
+      page: 1,
+      pageSize: 10,
+      totalItems: expect.any(Number),
+      totalPages: expect.any(Number),
+    })
+    expect(managers.body.data.every((user: { role: string }) => user.role === 'MANAGER')).toBe(true)
+
+    const search = await request(app)
+      .get('/api/users?search=vivi')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(
+      search.body.data.some((user: { firstName: string }) =>
+        user.firstName.toLowerCase().includes('vivi'),
+      ),
+    ).toBe(true)
+
+    const page1 = await request(app)
+      .get('/api/users?page=1&pageSize=1&sortBy=createdAt&sortOrder=asc')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(page1.body.data).toHaveLength(1)
+    expect(page1.body.meta.pageSize).toBe(1)
+
+    await request(app)
+      .delete(`/api/users/${employee.userId}`)
+      .set(authHeader(admin.accessToken))
+      .expect(204)
+
+    const afterDelete = await request(app)
+      .get('/api/users')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(afterDelete.body.data.some((user: { id: string }) => user.id === employee.userId)).toBe(
+      false,
+    )
+  })
 })

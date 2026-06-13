@@ -1,21 +1,62 @@
-import { z } from 'zod'
+import type { PaginationMeta } from '../types/paginated-response.js'
 
-export const paginationSchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
-})
-
-export type PaginationParams = z.infer<typeof paginationSchema>
-
-export function buildPaginationMeta(page: number, limit: number, total: number) {
+export function buildPaginationMeta(
+  page: number,
+  pageSize: number,
+  totalItems: number,
+): PaginationMeta {
   return {
     page,
-    limit,
-    total,
-    totalPages: Math.ceil(total / limit) || 0,
+    pageSize,
+    totalItems,
+    totalPages: Math.ceil(totalItems / pageSize) || 0,
   }
 }
 
-export function getPaginationOffset(page: number, limit: number): number {
-  return (page - 1) * limit
+export function getPaginationOffset(page: number, pageSize: number): number {
+  return (page - 1) * pageSize
+}
+
+export function buildOrderBy<T extends string>(
+  sortBy: T,
+  sortOrder: 'asc' | 'desc',
+  allowedFields: readonly T[],
+  defaultField: T,
+): Record<T, 'asc' | 'desc'> {
+  const field = allowedFields.includes(sortBy) ? sortBy : defaultField
+
+  return { [field]: sortOrder } as Record<T, 'asc' | 'desc'>
+}
+
+export function buildContainsSearchFilter<T extends string>(
+  search: string | undefined,
+  fields: readonly T[],
+): Array<Record<T, { contains: string; mode: 'insensitive' }>> | undefined {
+  if (!search) {
+    return undefined
+  }
+
+  return fields.map((field) => ({
+    [field]: {
+      contains: search,
+      mode: 'insensitive' as const,
+    },
+  })) as Array<Record<T, { contains: string; mode: 'insensitive' }>>
+}
+
+export async function executePaginatedQuery<T>(options: {
+  page: number
+  pageSize: number
+  findMany: (skip: number, take: number) => Promise<T[]>
+  count: () => Promise<number>
+}): Promise<{ data: T[]; meta: PaginationMeta }> {
+  const { page, pageSize, findMany, count } = options
+  const offset = getPaginationOffset(page, pageSize)
+
+  const [data, totalItems] = await Promise.all([findMany(offset, pageSize), count()])
+
+  return {
+    data,
+    meta: buildPaginationMeta(page, pageSize, totalItems),
+  }
 }

@@ -1,5 +1,7 @@
 import type { CategoryStatus } from '@prisma/client'
 
+import type { PaginatedResponse } from '../../../shared/types/paginated-response.js'
+
 export type CategoryResponseDto = {
   id: string
   companyId: string
@@ -10,12 +12,4 @@ export type CategoryResponseDto = {
   updatedAt: Date
 }
 
-export type PaginatedCategoriesResponseDto = {
-  data: CategoryResponseDto[]
-  meta: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
-}
+export type PaginatedCategoriesResponseDto = PaginatedResponse<CategoryResponseDto>

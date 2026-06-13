@@ -2,8 +2,8 @@ import type { NextFunction, Request, Response } from 'express'
 
 import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
-import { paginationSchema } from '../../../shared/utils/pagination.js'
 import type { CreateSupplierDto } from '../dtos/create-supplier.dto.js'
+import type { ListSuppliersQuery } from '../dtos/list-suppliers-query.dto.js'
 import type { UpdateSupplierDto } from '../dtos/update-supplier.dto.js'
 import type { SuppliersService } from '../services/SuppliersService.js'
 
@@ -35,8 +35,8 @@ export class SuppliersController {
         throw new AppError('Unauthorized', 401)
       }
 
-      const pagination = paginationSchema.parse(req.query)
-      const result = await this.suppliersService.list(req.user.companyId, pagination)
+      const query = req.query as unknown as ListSuppliersQuery
+      const result = await this.suppliersService.list(req.user.companyId, query)
       res.status(200).json(result)
     } catch (error) {
       next(error)

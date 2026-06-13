@@ -20,11 +20,11 @@ export const swaggerComponents = {
       type: 'object',
       properties: {
         page: { type: 'integer', example: 1 },
-        limit: { type: 'integer', example: 20 },
-        total: { type: 'integer', example: 100 },
-        totalPages: { type: 'integer', example: 5 },
+        pageSize: { type: 'integer', example: 10 },
+        totalItems: { type: 'integer', example: 100 },
+        totalPages: { type: 'integer', example: 10 },
       },
-      required: ['page', 'limit', 'total', 'totalPages'],
+      required: ['page', 'pageSize', 'totalItems', 'totalPages'],
     },
     HealthResponse: {
       type: 'object',
@@ -444,10 +444,111 @@ export const swaggerComponents = {
       in: 'query',
       schema: { type: 'integer', minimum: 1, default: 1 },
     },
-    LimitQuery: {
-      name: 'limit',
+    PageSizeQuery: {
+      name: 'pageSize',
       in: 'query',
-      schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+      schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+    },
+    SortOrderQuery: {
+      name: 'sortOrder',
+      in: 'query',
+      schema: { type: 'string', enum: ['asc', 'desc'], default: 'desc' },
+    },
+    SearchQuery: {
+      name: 'search',
+      in: 'query',
+      schema: { type: 'string' },
+      description: 'Case-insensitive search',
+    },
+    StatusFilterQuery: {
+      name: 'status',
+      in: 'query',
+      schema: { type: 'string', enum: ['ACTIVE', 'INACTIVE'] },
+    },
+    UsersSortByQuery: {
+      name: 'sortBy',
+      in: 'query',
+      schema: {
+        type: 'string',
+        enum: ['createdAt', 'firstName', 'lastName', 'email', 'role', 'status'],
+        default: 'createdAt',
+      },
+    },
+    UserRoleFilterQuery: {
+      name: 'role',
+      in: 'query',
+      schema: { type: 'string', enum: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+    },
+    CategoriesSortByQuery: {
+      name: 'sortBy',
+      in: 'query',
+      schema: { type: 'string', enum: ['name', 'createdAt', 'status'], default: 'name' },
+    },
+    SuppliersSortByQuery: {
+      name: 'sortBy',
+      in: 'query',
+      schema: {
+        type: 'string',
+        enum: ['corporateName', 'tradeName', 'createdAt', 'status'],
+        default: 'corporateName',
+      },
+    },
+    ProductsSortByQuery: {
+      name: 'sortBy',
+      in: 'query',
+      schema: {
+        type: 'string',
+        enum: ['name', 'sku', 'quantity', 'createdAt', 'salePrice'],
+        default: 'name',
+      },
+    },
+    CategoryIdFilterQuery: {
+      name: 'categoryId',
+      in: 'query',
+      schema: { type: 'string' },
+    },
+    SupplierIdFilterQuery: {
+      name: 'supplierId',
+      in: 'query',
+      schema: { type: 'string' },
+    },
+    LowStockFilterQuery: {
+      name: 'lowStock',
+      in: 'query',
+      schema: { type: 'boolean' },
+      description: 'When true, returns products where quantity <= minimumStock',
+    },
+    AuditSortByQuery: {
+      name: 'sortBy',
+      in: 'query',
+      schema: { type: 'string', enum: ['createdAt', 'action', 'entity'], default: 'createdAt' },
+    },
+    AuditActionFilterQuery: {
+      name: 'action',
+      in: 'query',
+      schema: {
+        type: 'string',
+        enum: [
+          'CREATE',
+          'UPDATE',
+          'DELETE',
+          'LOGIN',
+          'LOGOUT',
+          'STOCK_ENTRY',
+          'STOCK_EXIT',
+          'STOCK_ADJUSTMENT',
+        ],
+      },
+    },
+    AuditEntityFilterQuery: {
+      name: 'entity',
+      in: 'query',
+      schema: { type: 'string', example: 'PRODUCT' },
+    },
+    AuditUserIdFilterQuery: {
+      name: 'userId',
+      in: 'query',
+      schema: { type: 'string' },
     },
     IdPath: {
       name: 'id',

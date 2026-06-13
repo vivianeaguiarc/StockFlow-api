@@ -113,4 +113,46 @@ describe('Categories E2E', () => {
 
     expect(listB.body.data.some((item: { id: string }) => item.id === categoryId)).toBe(false)
   })
+
+  it('supports pagination, sorting and filters on list', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+
+    await request(app)
+      .post('/api/categories')
+      .set(authHeader(admin.accessToken))
+      .send({ name: `Eletrônicos ${suffix}`, description: 'Eletronicos' })
+      .expect(201)
+
+    await request(app)
+      .post('/api/categories')
+      .set(authHeader(admin.accessToken))
+      .send({ name: `Móveis ${suffix}` })
+      .expect(201)
+
+    const search = await request(app)
+      .get('/api/categories?search=eletr')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(search.body.data.length).toBeGreaterThan(0)
+    expect(
+      search.body.data.every((item: { name: string }) => item.name.toLowerCase().includes('eletr')),
+    ).toBe(true)
+
+    const paginated = await request(app)
+      .get('/api/categories?page=1&pageSize=1&sortBy=name&sortOrder=asc')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(paginated.body.data).toHaveLength(1)
+    expect(paginated.body.meta).toMatchObject({
+      page: 1,
+      pageSize: 1,
+      totalItems: expect.any(Number),
+      totalPages: expect.any(Number),
+    })
+  })
 })

@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 
 import { AppError } from '../../../shared/errors/AppError.js'
-import { paginationSchema } from '../../../shared/utils/pagination.js'
+import type { ListAuditLogsQuery } from '../dtos/list-audit-logs-query.dto.js'
 import type { AuditService } from '../services/AuditService.js'
 
 export class AuditController {
@@ -13,8 +13,8 @@ export class AuditController {
         throw new AppError('Unauthorized', 401)
       }
 
-      const pagination = paginationSchema.parse(req.query)
-      const result = await this.auditService.listLogs(req.user.companyId, pagination)
+      const query = req.query as unknown as ListAuditLogsQuery
+      const result = await this.auditService.listLogs(req.user.companyId, query)
       res.status(200).json(result)
     } catch (error) {
       next(error)

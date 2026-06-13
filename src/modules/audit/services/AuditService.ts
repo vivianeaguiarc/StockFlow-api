@@ -1,40 +1,50 @@
-import type { AuditLog } from '@prisma/client'
+import type { AuditLog, Prisma } from '@prisma/client'
 
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
-import {
-  buildPaginationMeta,
-  getPaginationOffset,
-  type PaginationParams,
-} from '../../../shared/utils/pagination.js'
+import { buildOrderBy, executePaginatedQuery } from '../../../shared/utils/pagination.js'
 import type {
   AuditLogResponseDto,
   PaginatedAuditLogsResponseDto,
 } from '../dtos/audit-log-response.dto.js'
+import type { ListAuditLogsQuery } from '../dtos/list-audit-logs-query.dto.js'
 
 export class AuditService {
   async listLogs(
     companyId: string,
-    pagination: PaginationParams,
+    query: ListAuditLogsQuery,
   ): Promise<PaginatedAuditLogsResponseDto> {
-    const { page, limit } = pagination
-    const offset = getPaginationOffset(page, limit)
+    const { page, pageSize, sortBy, sortOrder, action, entity, userId } = query
+    const orderBy = buildOrderBy(
+      sortBy,
+      sortOrder,
+      ['createdAt', 'action', 'entity'] as const,
+      'createdAt',
+    )
 
-    const where = { companyId }
+    const where: Prisma.AuditLogWhereInput = {
+      companyId,
+      ...(action && { action }),
+      ...(userId && { userId }),
+      ...(entity && { entity: { equals: entity, mode: 'insensitive' } }),
+    }
 
-    const [logs, total] = await Promise.all([
-      prisma.auditLog.findMany({
-        where,
-        skip: offset,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.auditLog.count({ where }),
-    ])
+    const result = await executePaginatedQuery({
+      page,
+      pageSize,
+      findMany: (skip, take) =>
+        prisma.auditLog.findMany({
+          where,
+          skip,
+          take,
+          orderBy,
+        }),
+      count: () => prisma.auditLog.count({ where }),
+    })
 
     return {
-      data: logs.map((log) => this.toResponse(log)),
-      meta: buildPaginationMeta(page, limit, total),
+      data: result.data.map((log) => this.toResponse(log)),
+      meta: result.meta,
     }
   }
 

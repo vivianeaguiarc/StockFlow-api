@@ -3,9 +3,9 @@ import { Router } from 'express'
 import { authenticate } from '../../../shared/http/middlewares/authenticate.js'
 import { authorizeRoles } from '../../../shared/http/middlewares/authorize-roles.js'
 import { validateRequest } from '../../../shared/http/middlewares/validate-request.js'
-import { paginationSchema } from '../../../shared/utils/pagination.js'
 import { CategoriesController } from '../controllers/CategoriesController.js'
 import { createCategorySchema } from '../dtos/create-category.dto.js'
+import { listCategoriesQuerySchema } from '../dtos/list-categories-query.dto.js'
 import { updateCategorySchema } from '../dtos/update-category.dto.js'
 import { CategoriesService } from '../services/CategoriesService.js'
 
@@ -25,7 +25,7 @@ export function createCategoriesRoutes(): Router {
     '/',
     authenticate,
     authorizeRoles('ADMIN', 'MANAGER', 'EMPLOYEE'),
-    validateRequest(paginationSchema, 'query'),
+    validateRequest(listCategoriesQuerySchema, 'query'),
     (req, res, next) => categoriesController.list(req, res, next),
   )
 

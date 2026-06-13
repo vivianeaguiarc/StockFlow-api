@@ -196,4 +196,71 @@ describe('Products E2E', () => {
       .set(authHeader(companyB.accessToken))
       .expect(404)
   })
+
+  it('supports pagination, sorting and filters on list', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+    const categoryId = await createCategory(admin.accessToken, suffix)
+    const supplierId = await createSupplier(admin.accessToken, suffix)
+
+    await request(app)
+      .post('/api/products')
+      .set(authHeader(admin.accessToken))
+      .send({
+        categoryId,
+        supplierId,
+        name: `Notebook ${suffix}`,
+        sku: `notebook-${suffix}`,
+        costPrice: 10,
+        salePrice: 20,
+        quantity: 1,
+        minimumStock: 5,
+      })
+      .expect(201)
+
+    await request(app)
+      .post('/api/products')
+      .set(authHeader(admin.accessToken))
+      .send({
+        categoryId,
+        supplierId,
+        name: `Mouse ${suffix}`,
+        sku: `mouse-${suffix}`,
+        costPrice: 5,
+        salePrice: 10,
+        quantity: 20,
+        minimumStock: 2,
+      })
+      .expect(201)
+
+    const search = await request(app)
+      .get('/api/products?search=notebook')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(search.body.data.length).toBe(1)
+    expect(search.body.data[0].name.toLowerCase()).toContain('notebook')
+
+    const lowStock = await request(app)
+      .get('/api/products?lowStock=true')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(lowStock.body.data.length).toBeGreaterThan(0)
+    expect(
+      lowStock.body.data.every(
+        (item: { quantity: number; minimumStock: number }) => item.quantity <= item.minimumStock,
+      ),
+    ).toBe(true)
+
+    const filtered = await request(app)
+      .get(`/api/products?categoryId=${categoryId}&supplierId=${supplierId}&pageSize=1`)
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(filtered.body.data).toHaveLength(1)
+    expect(filtered.body.meta.totalItems).toBeGreaterThanOrEqual(2)
+  })
 })

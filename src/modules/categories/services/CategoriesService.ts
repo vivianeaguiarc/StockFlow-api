@@ -4,9 +4,9 @@ import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
-  buildPaginationMeta,
-  getPaginationOffset,
-  type PaginationParams,
+  buildContainsSearchFilter,
+  buildOrderBy,
+  executePaginatedQuery,
 } from '../../../shared/utils/pagination.js'
 import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type {
@@ -14,6 +14,7 @@ import type {
   PaginatedCategoriesResponseDto,
 } from '../dtos/category-response.dto.js'
 import type { CreateCategoryDto } from '../dtos/create-category.dto.js'
+import type { ListCategoriesQuery } from '../dtos/list-categories-query.dto.js'
 import type { UpdateCategoryDto } from '../dtos/update-category.dto.js'
 
 export class CategoriesService {
@@ -56,29 +57,40 @@ export class CategoriesService {
 
   async list(
     companyId: string,
-    pagination: PaginationParams,
+    query: ListCategoriesQuery,
   ): Promise<PaginatedCategoriesResponseDto> {
-    const { page, limit } = pagination
-    const offset = getPaginationOffset(page, limit)
+    const { page, pageSize, sortBy, sortOrder, status, search } = query
+    const searchFilter = buildContainsSearchFilter(search, ['name', 'description'])
+    const orderBy = buildOrderBy(
+      sortBy,
+      sortOrder,
+      ['name', 'createdAt', 'status'] as const,
+      'name',
+    )
 
-    const where = {
+    const where: Prisma.CategoryWhereInput = {
       companyId,
       deletedAt: null,
+      ...(status && { status }),
+      ...(searchFilter && { OR: searchFilter }),
     }
 
-    const [categories, total] = await Promise.all([
-      prisma.category.findMany({
-        where,
-        skip: offset,
-        take: limit,
-        orderBy: { name: 'asc' },
-      }),
-      prisma.category.count({ where }),
-    ])
+    const result = await executePaginatedQuery({
+      page,
+      pageSize,
+      findMany: (skip, take) =>
+        prisma.category.findMany({
+          where,
+          skip,
+          take,
+          orderBy,
+        }),
+      count: () => prisma.category.count({ where }),
+    })
 
     return {
-      data: categories.map((category) => this.toResponse(category)),
-      meta: buildPaginationMeta(page, limit, total),
+      data: result.data.map((category) => this.toResponse(category)),
+      meta: result.meta,
     }
   }
 

@@ -128,4 +128,43 @@ describe('Suppliers E2E', () => {
       .set(authHeader(companyB.accessToken))
       .expect(404)
   })
+
+  it('supports pagination, sorting and filters on list', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+
+    await request(app)
+      .post('/api/suppliers')
+      .set(authHeader(admin.accessToken))
+      .send({
+        corporateName: `Tech Solutions ${suffix}`,
+        tradeName: `Tech ${suffix}`,
+        document: `tech-doc-${suffix}`,
+      })
+      .expect(201)
+
+    const search = await request(app)
+      .get('/api/suppliers?search=tech')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(search.body.data.length).toBeGreaterThan(0)
+    expect(
+      search.body.data.some(
+        (item: { corporateName: string; tradeName: string }) =>
+          item.corporateName.toLowerCase().includes('tech') ||
+          item.tradeName.toLowerCase().includes('tech'),
+      ),
+    ).toBe(true)
+
+    const paginated = await request(app)
+      .get('/api/suppliers?page=1&pageSize=1&sortBy=corporateName&sortOrder=asc')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(paginated.body.data).toHaveLength(1)
+    expect(paginated.body.meta.pageSize).toBe(1)
+  })
 })

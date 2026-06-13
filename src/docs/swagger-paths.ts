@@ -8,10 +8,53 @@ const defaultErrors = {
   '500': { $ref: '#/components/responses/InternalServerError' },
 }
 
-const paginationParams = [
+const basePaginationParams = [
   { $ref: '#/components/parameters/PageQuery' },
-  { $ref: '#/components/parameters/LimitQuery' },
+  { $ref: '#/components/parameters/PageSizeQuery' },
+  { $ref: '#/components/parameters/SortOrderQuery' },
 ]
+
+const usersListParams = [
+  ...basePaginationParams,
+  { $ref: '#/components/parameters/UsersSortByQuery' },
+  { $ref: '#/components/parameters/UserRoleFilterQuery' },
+  { $ref: '#/components/parameters/StatusFilterQuery' },
+  { $ref: '#/components/parameters/SearchQuery' },
+]
+
+const categoriesListParams = [
+  ...basePaginationParams,
+  { $ref: '#/components/parameters/CategoriesSortByQuery' },
+  { $ref: '#/components/parameters/StatusFilterQuery' },
+  { $ref: '#/components/parameters/SearchQuery' },
+]
+
+const suppliersListParams = [
+  ...basePaginationParams,
+  { $ref: '#/components/parameters/SuppliersSortByQuery' },
+  { $ref: '#/components/parameters/StatusFilterQuery' },
+  { $ref: '#/components/parameters/SearchQuery' },
+]
+
+const productsListParams = [
+  ...basePaginationParams,
+  { $ref: '#/components/parameters/ProductsSortByQuery' },
+  { $ref: '#/components/parameters/StatusFilterQuery' },
+  { $ref: '#/components/parameters/CategoryIdFilterQuery' },
+  { $ref: '#/components/parameters/SupplierIdFilterQuery' },
+  { $ref: '#/components/parameters/LowStockFilterQuery' },
+  { $ref: '#/components/parameters/SearchQuery' },
+]
+
+const auditLogsListParams = [
+  ...basePaginationParams,
+  { $ref: '#/components/parameters/AuditSortByQuery' },
+  { $ref: '#/components/parameters/AuditActionFilterQuery' },
+  { $ref: '#/components/parameters/AuditEntityFilterQuery' },
+  { $ref: '#/components/parameters/AuditUserIdFilterQuery' },
+]
+
+const paginationParams = basePaginationParams
 
 export const swaggerPaths = {
   '/api/health': {
@@ -179,7 +222,7 @@ export const swaggerPaths = {
       summary: 'List users',
       description: 'Requires ADMIN or MANAGER role.',
       security: secured,
-      parameters: paginationParams,
+      parameters: usersListParams,
       responses: {
         '200': {
           description: 'Paginated users list',
@@ -283,7 +326,7 @@ export const swaggerPaths = {
       tags: ['Categories'],
       summary: 'List categories',
       security: secured,
-      parameters: paginationParams,
+      parameters: categoriesListParams,
       responses: {
         '200': {
           description: 'Paginated categories list',
@@ -385,7 +428,7 @@ export const swaggerPaths = {
       tags: ['Suppliers'],
       summary: 'List suppliers',
       security: secured,
-      parameters: paginationParams,
+      parameters: suppliersListParams,
       responses: {
         '200': {
           description: 'Paginated suppliers list',
@@ -487,7 +530,7 @@ export const swaggerPaths = {
       tags: ['Products'],
       summary: 'List products',
       security: secured,
-      parameters: paginationParams,
+      parameters: productsListParams,
       responses: {
         '200': {
           description: 'Paginated products list',
@@ -630,7 +673,7 @@ export const swaggerPaths = {
       summary: 'List audit logs',
       description: 'Requires ADMIN role. Returns logs for the authenticated company only.',
       security: secured,
-      parameters: paginationParams,
+      parameters: auditLogsListParams,
       responses: {
         '200': {
           description: 'Paginated audit logs',

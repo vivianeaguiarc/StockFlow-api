@@ -2,8 +2,8 @@ import type { NextFunction, Request, Response } from 'express'
 
 import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
-import { paginationSchema } from '../../../shared/utils/pagination.js'
 import type { CreateUserDto } from '../dtos/create-user.dto.js'
+import type { ListUsersQuery } from '../dtos/list-users-query.dto.js'
 import type { UpdateUserDto } from '../dtos/update-user.dto.js'
 import type { UsersService } from '../services/UsersService.js'
 
@@ -35,8 +35,8 @@ export class UsersController {
         throw new AppError('Unauthorized', 401)
       }
 
-      const pagination = paginationSchema.parse(req.query)
-      const result = await this.usersService.list(req.user.companyId, pagination)
+      const query = req.query as unknown as ListUsersQuery
+      const result = await this.usersService.list(req.user.companyId, query)
       res.status(200).json(result)
     } catch (error) {
       next(error)

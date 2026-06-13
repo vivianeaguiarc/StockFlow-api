@@ -2,8 +2,8 @@ import type { NextFunction, Request, Response } from 'express'
 
 import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
-import { paginationSchema } from '../../../shared/utils/pagination.js'
 import type { CreateCategoryDto } from '../dtos/create-category.dto.js'
+import type { ListCategoriesQuery } from '../dtos/list-categories-query.dto.js'
 import type { UpdateCategoryDto } from '../dtos/update-category.dto.js'
 import type { CategoriesService } from '../services/CategoriesService.js'
 
@@ -35,8 +35,8 @@ export class CategoriesController {
         throw new AppError('Unauthorized', 401)
       }
 
-      const pagination = paginationSchema.parse(req.query)
-      const result = await this.categoriesService.list(req.user.companyId, pagination)
+      const query = req.query as unknown as ListCategoriesQuery
+      const result = await this.categoriesService.list(req.user.companyId, query)
       res.status(200).json(result)
     } catch (error) {
       next(error)

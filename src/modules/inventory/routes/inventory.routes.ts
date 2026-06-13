@@ -1,9 +1,9 @@
 import { Router } from 'express'
 
+import { paginationQuerySchema } from '../../../shared/dtos/pagination-query.dto.js'
 import { authenticate } from '../../../shared/http/middlewares/authenticate.js'
 import { authorizeRoles } from '../../../shared/http/middlewares/authorize-roles.js'
 import { validateRequest } from '../../../shared/http/middlewares/validate-request.js'
-import { paginationSchema } from '../../../shared/utils/pagination.js'
 import { InventoryController } from '../controllers/InventoryController.js'
 import { createMovementSchema } from '../dtos/create-movement.dto.js'
 import { InventoryService } from '../services/InventoryService.js'
@@ -24,7 +24,7 @@ export function createInventoryRoutes(): Router {
     '/movements',
     authenticate,
     authorizeRoles('ADMIN', 'MANAGER'),
-    validateRequest(paginationSchema, 'query'),
+    validateRequest(paginationQuerySchema, 'query'),
     (req, res, next) => inventoryController.listMovements(req, res, next),
   )
 

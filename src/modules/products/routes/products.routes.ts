@@ -3,9 +3,9 @@ import { Router } from 'express'
 import { authenticate } from '../../../shared/http/middlewares/authenticate.js'
 import { authorizeRoles } from '../../../shared/http/middlewares/authorize-roles.js'
 import { validateRequest } from '../../../shared/http/middlewares/validate-request.js'
-import { paginationSchema } from '../../../shared/utils/pagination.js'
 import { ProductsController } from '../controllers/ProductsController.js'
 import { createProductSchema } from '../dtos/create-product.dto.js'
+import { listProductsQuerySchema } from '../dtos/list-products-query.dto.js'
 import { updateProductSchema } from '../dtos/update-product.dto.js'
 import { ProductsService } from '../services/ProductsService.js'
 
@@ -25,7 +25,7 @@ export function createProductsRoutes(): Router {
     '/',
     authenticate,
     authorizeRoles('ADMIN', 'MANAGER', 'EMPLOYEE'),
-    validateRequest(paginationSchema, 'query'),
+    validateRequest(listProductsQuerySchema, 'query'),
     (req, res, next) => productsController.list(req, res, next),
   )
 

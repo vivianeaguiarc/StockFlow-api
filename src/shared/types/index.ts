@@ -8,16 +8,7 @@ export type ApiErrorResponse = {
   message: string
 }
 
-export type PaginationMeta = {
-  page: number
-  limit: number
-  total: number
-  totalPages: number
-}
-
-export type PaginatedResponse<T> = ApiSuccessResponse<T> & {
-  meta: PaginationMeta
-}
+export type { PaginatedResponse, PaginationMeta } from './paginated-response.js'
 
 export type UserRole = 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
 

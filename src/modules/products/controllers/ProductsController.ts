@@ -2,8 +2,8 @@ import type { NextFunction, Request, Response } from 'express'
 
 import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
-import { paginationSchema } from '../../../shared/utils/pagination.js'
 import type { CreateProductDto } from '../dtos/create-product.dto.js'
+import type { ListProductsQuery } from '../dtos/list-products-query.dto.js'
 import type { UpdateProductDto } from '../dtos/update-product.dto.js'
 import type { ProductsService } from '../services/ProductsService.js'
 
@@ -35,8 +35,8 @@ export class ProductsController {
         throw new AppError('Unauthorized', 401)
       }
 
-      const pagination = paginationSchema.parse(req.query)
-      const result = await this.productsService.list(req.user.companyId, pagination)
+      const query = req.query as unknown as ListProductsQuery
+      const result = await this.productsService.list(req.user.companyId, query)
       res.status(200).json(result)
     } catch (error) {
       next(error)

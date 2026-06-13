@@ -4,12 +4,13 @@ import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
-  buildPaginationMeta,
-  getPaginationOffset,
-  type PaginationParams,
+  buildContainsSearchFilter,
+  buildOrderBy,
+  executePaginatedQuery,
 } from '../../../shared/utils/pagination.js'
 import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type { CreateProductDto } from '../dtos/create-product.dto.js'
+import type { ListProductsQuery } from '../dtos/list-products-query.dto.js'
 import type {
   PaginatedProductsResponseDto,
   ProductResponseDto,
@@ -65,31 +66,47 @@ export class ProductsService {
     }
   }
 
-  async list(
-    companyId: string,
-    pagination: PaginationParams,
-  ): Promise<PaginatedProductsResponseDto> {
-    const { page, limit } = pagination
-    const offset = getPaginationOffset(page, limit)
+  async list(companyId: string, query: ListProductsQuery): Promise<PaginatedProductsResponseDto> {
+    const { page, pageSize, sortBy, sortOrder, status, categoryId, supplierId, lowStock, search } =
+      query
+    const searchFilter = buildContainsSearchFilter(search, ['name', 'sku', 'barcode'])
+    const orderBy = buildOrderBy(
+      sortBy,
+      sortOrder,
+      ['name', 'sku', 'quantity', 'createdAt', 'salePrice'] as const,
+      'name',
+    )
 
-    const where = {
+    const where: Prisma.ProductWhereInput = {
       companyId,
       deletedAt: null,
+      ...(status && { status }),
+      ...(categoryId && { categoryId }),
+      ...(supplierId && { supplierId }),
+      ...(lowStock === true && {
+        quantity: {
+          lte: prisma.product.fields.minimumStock,
+        },
+      }),
+      ...(searchFilter && { OR: searchFilter }),
     }
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        skip: offset,
-        take: limit,
-        orderBy: { name: 'asc' },
-      }),
-      prisma.product.count({ where }),
-    ])
+    const result = await executePaginatedQuery({
+      page,
+      pageSize,
+      findMany: (skip, take) =>
+        prisma.product.findMany({
+          where,
+          skip,
+          take,
+          orderBy,
+        }),
+      count: () => prisma.product.count({ where }),
+    })
 
     return {
-      data: products.map((product) => this.toResponse(product)),
-      meta: buildPaginationMeta(page, limit, total),
+      data: result.data.map((product) => this.toResponse(product)),
+      meta: result.meta,
     }
   }
 

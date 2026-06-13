@@ -4,12 +4,13 @@ import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
-  buildPaginationMeta,
-  getPaginationOffset,
-  type PaginationParams,
+  buildContainsSearchFilter,
+  buildOrderBy,
+  executePaginatedQuery,
 } from '../../../shared/utils/pagination.js'
 import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type { CreateSupplierDto } from '../dtos/create-supplier.dto.js'
+import type { ListSuppliersQuery } from '../dtos/list-suppliers-query.dto.js'
 import type {
   PaginatedSuppliersResponseDto,
   SupplierResponseDto,
@@ -57,31 +58,44 @@ export class SuppliersService {
     }
   }
 
-  async list(
-    companyId: string,
-    pagination: PaginationParams,
-  ): Promise<PaginatedSuppliersResponseDto> {
-    const { page, limit } = pagination
-    const offset = getPaginationOffset(page, limit)
+  async list(companyId: string, query: ListSuppliersQuery): Promise<PaginatedSuppliersResponseDto> {
+    const { page, pageSize, sortBy, sortOrder, status, search } = query
+    const searchFilter = buildContainsSearchFilter(search, [
+      'corporateName',
+      'tradeName',
+      'document',
+      'email',
+    ])
+    const orderBy = buildOrderBy(
+      sortBy,
+      sortOrder,
+      ['corporateName', 'tradeName', 'createdAt', 'status'] as const,
+      'corporateName',
+    )
 
-    const where = {
+    const where: Prisma.SupplierWhereInput = {
       companyId,
       deletedAt: null,
+      ...(status && { status }),
+      ...(searchFilter && { OR: searchFilter }),
     }
 
-    const [suppliers, total] = await Promise.all([
-      prisma.supplier.findMany({
-        where,
-        skip: offset,
-        take: limit,
-        orderBy: { corporateName: 'asc' },
-      }),
-      prisma.supplier.count({ where }),
-    ])
+    const result = await executePaginatedQuery({
+      page,
+      pageSize,
+      findMany: (skip, take) =>
+        prisma.supplier.findMany({
+          where,
+          skip,
+          take,
+          orderBy,
+        }),
+      count: () => prisma.supplier.count({ where }),
+    })
 
     return {
-      data: suppliers.map((supplier) => this.toResponse(supplier)),
-      meta: buildPaginationMeta(page, limit, total),
+      data: result.data.map((supplier) => this.toResponse(supplier)),
+      meta: result.meta,
     }
   }
 
