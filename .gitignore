@@ -31,3 +31,9 @@ coverage/
 # Prisma
 prisma/*.db
 prisma/*.db-journal
+
+# Database backups (local/dev only — never commit real dumps)
+backups/*
+!backups/.gitkeep
+backups/*.sql
+backups/*.dump

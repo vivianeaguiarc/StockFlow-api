@@ -298,6 +298,51 @@ Schema: `prisma/schema.prisma`
 
 ---
 
+## Backup e restore (PostgreSQL)
+
+Scripts para ambiente **local/desenvolvimento**. Credenciais vêm do `.env` (`POSTGRES_*` ou `DATABASE_URL`) — nunca são commitadas.
+
+### Pré-requisitos
+
+- PostgreSQL acessível (via `pnpm db:up` / Docker Compose ou instalação local)
+- Bash disponível (Git Bash, WSL ou Linux/macOS)
+- Para modo local (sem Docker): `pg_dump`, `pg_restore` e `psql` no PATH
+
+### Gerar backup
+
+```bash
+pnpm db:backup
+```
+
+Gera um arquivo em `backups/` com timestamp, por exemplo:
+
+```text
+backups/stockflow_db_20260613_120000.dump
+```
+
+Formato: PostgreSQL custom (`pg_dump -F c`), compacto e adequado para `pg_restore`.
+
+### Restaurar backup
+
+```bash
+pnpm db:restore backups/stockflow_db_20260613_120000.dump
+```
+
+Também aceita dumps `.sql` (plain SQL). O script aguarda 5 segundos antes de executar — use `Ctrl+C` para cancelar.
+
+> **Atenção:** restore sobrescreve dados do banco alvo. Use apenas em desenvolvimento.
+
+### Comportamento
+
+| Cenário                                         | Ferramenta                                       |
+| ----------------------------------------------- | ------------------------------------------------ |
+| Container `postgres` rodando (`docker compose`) | `pg_dump` / `pg_restore` / `psql` via Docker     |
+| PostgreSQL local na máquina                     | Clientes PostgreSQL locais + variáveis do `.env` |
+
+Arquivos em `backups/*.sql` e `backups/*.dump` estão no `.gitignore` — dumps reais **não** são versionados.
+
+---
+
 ## Seed
 
 Popula empresa demo e usuário admin:
@@ -392,6 +437,8 @@ Referência completa: [`.env.example`](.env.example)
 | `pnpm db:migrate`    | `prisma migrate dev`             |
 | `pnpm db:studio`     | Prisma Studio (GUI)              |
 | `pnpm db:seed`       | Seed do banco                    |
+| `pnpm db:backup`     | Backup PostgreSQL → `backups/`   |
+| `pnpm db:restore`    | Restore a partir de arquivo      |
 
 ---
 
