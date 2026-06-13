@@ -9,6 +9,11 @@ describe('Root endpoint', () => {
   it('GET / returns API metadata and useful links', async () => {
     const response = await request(app).get('/').expect(200)
 
+    expect(response.headers['x-request-id']).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    )
+    expect(response.headers['x-correlation-id']).toBeDefined()
+
     expect(response.body).toMatchObject({
       name: 'StockFlow API',
       status: 'running',

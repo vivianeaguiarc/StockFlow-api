@@ -15,6 +15,8 @@ export function errorHandler(
     logger.warn(
       {
         err: error,
+        requestId: req.requestId,
+        correlationId: req.correlationId,
         method: req.method,
         route: req.originalUrl,
         statusCode: error.statusCode,
@@ -32,6 +34,8 @@ export function errorHandler(
   logger.error(
     {
       err: error,
+      requestId: req.requestId,
+      correlationId: req.correlationId,
       method: req.method,
       route: req.originalUrl,
       ...(env.NODE_ENV === 'development' && { stack: error.stack }),

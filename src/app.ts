@@ -7,6 +7,7 @@ import { errorHandler } from './shared/http/middlewares/error-handler.js'
 import { registerRoutes } from './shared/http/routes.js'
 import { httpLogger } from './shared/logger/http-logger.js'
 import { notFoundHandler } from './shared/middlewares/index.js'
+import { correlationIdMiddleware, requestIdMiddleware } from './shared/observability/index.js'
 import { globalRateLimiter } from './shared/security/rate-limit.js'
 
 export function createApp(): Express {
@@ -25,6 +26,8 @@ export function createApp(): Express {
   )
   app.use(cors())
   app.use(express.json({ limit: '1mb' }))
+  app.use(requestIdMiddleware)
+  app.use(correlationIdMiddleware)
   app.use(httpLogger)
   app.use(globalRateLimiter)
 
