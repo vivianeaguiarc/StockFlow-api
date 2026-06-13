@@ -1,0 +1,303 @@
+@baseUrl = http://localhost:3333/api/v1
+@accessToken = paste_access_token_here
+@refreshToken = paste_refresh_token_here
+@userId = paste_user_id_here
+@categoryId = paste_category_id_here
+@supplierId = paste_supplier_id_here
+@productId = paste_product_id_here
+@movementId = paste_movement_id_here
+@auditLogId = paste_audit_log_id_here
+
+### Health Check
+GET {{baseUrl}}/health
+
+### Register Company + Admin
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "company": {
+    "name": "Minha Empresa",
+    "document": "12345678000199",
+    "email": "empresa@email.com",
+    "phone": "+5532999999999"
+  },
+  "admin": {
+    "firstName": "Viviane",
+    "lastName": "Aguiar",
+    "email": "admin@email.com",
+    "password": "Admin@123456"
+  }
+}
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@email.com",
+  "password": "Admin@123456"
+}
+
+### Refresh Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Logout
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Current User
+GET {{baseUrl}}/me
+Authorization: Bearer {{accessToken}}
+
+### Get Company Profile
+GET {{baseUrl}}/companies/me
+Authorization: Bearer {{accessToken}}
+
+### Update Company Profile
+PATCH {{baseUrl}}/companies/me
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "StockFlow LTDA",
+  "phone": "+5532998888888"
+}
+
+### Create User
+POST {{baseUrl}}/users
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "firstName": "João",
+  "lastName": "Silva",
+  "email": "joao@empresa.com",
+  "password": "Senha@123",
+  "role": "EMPLOYEE"
+}
+
+### List Users
+GET {{baseUrl}}/users?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
+Authorization: Bearer {{accessToken}}
+
+### Search Users
+GET {{baseUrl}}/users?search=joao&role=EMPLOYEE&status=ACTIVE
+Authorization: Bearer {{accessToken}}
+
+### Get User By Id
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+
+### Update User
+PATCH {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "firstName": "João Atualizado",
+  "status": "ACTIVE"
+}
+
+### Delete User
+DELETE {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+
+### Create Category
+POST {{baseUrl}}/categories
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Eletrônicos",
+  "description": "Produtos eletrônicos e acessórios"
+}
+
+### List Categories
+GET {{baseUrl}}/categories?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
+Authorization: Bearer {{accessToken}}
+
+### Search Categories
+GET {{baseUrl}}/categories?search=eletr&status=ACTIVE
+Authorization: Bearer {{accessToken}}
+
+### Get Category By Id
+GET {{baseUrl}}/categories/{{categoryId}}
+Authorization: Bearer {{accessToken}}
+
+### Update Category
+PATCH {{baseUrl}}/categories/{{categoryId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "description": "Nova descrição da categoria"
+}
+
+### Delete Category
+DELETE {{baseUrl}}/categories/{{categoryId}}
+Authorization: Bearer {{accessToken}}
+
+### Create Supplier
+POST {{baseUrl}}/suppliers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "corporateName": "Tech Distribuidora LTDA",
+  "tradeName": "Tech Distribuidora",
+  "document": "11222333000144",
+  "email": "contato@techdistribuidora.com",
+  "phone": "+5532999999999"
+}
+
+### List Suppliers
+GET {{baseUrl}}/suppliers?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
+Authorization: Bearer {{accessToken}}
+
+### Search Suppliers
+GET {{baseUrl}}/suppliers?search=tech&status=ACTIVE
+Authorization: Bearer {{accessToken}}
+
+### Get Supplier By Id
+GET {{baseUrl}}/suppliers/{{supplierId}}
+Authorization: Bearer {{accessToken}}
+
+### Update Supplier
+PATCH {{baseUrl}}/suppliers/{{supplierId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "phone": "+5532988888888"
+}
+
+### Delete Supplier
+DELETE {{baseUrl}}/suppliers/{{supplierId}}
+Authorization: Bearer {{accessToken}}
+
+### Create Product
+POST {{baseUrl}}/products
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "categoryId": "{{categoryId}}",
+  "supplierId": "{{supplierId}}",
+  "name": "Notebook Dell Inspiron",
+  "description": "Notebook para uso corporativo",
+  "sku": "NOTE-DELL-001",
+  "barcode": "7891234567890",
+  "costPrice": 2800,
+  "salePrice": 3500,
+  "quantity": 10,
+  "minimumStock": 2
+}
+
+### List Products
+GET {{baseUrl}}/products?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
+Authorization: Bearer {{accessToken}}
+
+### Search Products
+GET {{baseUrl}}/products?search=notebook&status=ACTIVE&lowStock=false
+Authorization: Bearer {{accessToken}}
+
+### Filter Products By Category And Supplier
+GET {{baseUrl}}/products?categoryId={{categoryId}}&supplierId={{supplierId}}
+Authorization: Bearer {{accessToken}}
+
+### Get Product By Id
+GET {{baseUrl}}/products/{{productId}}
+Authorization: Bearer {{accessToken}}
+
+### Update Product
+PATCH {{baseUrl}}/products/{{productId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "salePrice": 3700,
+  "minimumStock": 3
+}
+
+### Delete Product
+DELETE {{baseUrl}}/products/{{productId}}
+Authorization: Bearer {{accessToken}}
+
+### Create Inventory Movement - ENTRY
+POST {{baseUrl}}/inventory/movements
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{productId}}",
+  "type": "ENTRY",
+  "quantity": 5,
+  "reason": "Initial stock entry"
+}
+
+### Create Inventory Movement - EXIT
+POST {{baseUrl}}/inventory/movements
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{productId}}",
+  "type": "EXIT",
+  "quantity": 2,
+  "reason": "Customer sale"
+}
+
+### Create Inventory Movement - ADJUSTMENT
+POST {{baseUrl}}/inventory/movements
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{productId}}",
+  "type": "ADJUSTMENT",
+  "quantity": 20,
+  "reason": "Inventory correction after manual count"
+}
+
+### List Inventory Movements
+GET {{baseUrl}}/inventory/movements?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
+Authorization: Bearer {{accessToken}}
+
+### Get Inventory Movement By Id
+GET {{baseUrl}}/inventory/movements/{{movementId}}
+Authorization: Bearer {{accessToken}}
+
+### Dashboard Summary
+GET {{baseUrl}}/dashboard/summary
+Authorization: Bearer {{accessToken}}
+
+### Dashboard Low Stock Products
+GET {{baseUrl}}/dashboard/low-stock-products
+Authorization: Bearer {{accessToken}}
+
+### Dashboard Recent Movements
+GET {{baseUrl}}/dashboard/recent-movements?limit=10
+Authorization: Bearer {{accessToken}}
+
+### List Audit Logs
+GET {{baseUrl}}/audit/logs?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
+Authorization: Bearer {{accessToken}}
+
+### Filter Audit Logs
+GET {{baseUrl}}/audit/logs?action=CREATE&entity=PRODUCT
+Authorization: Bearer {{accessToken}}
+
+### Get Audit Log By Id
+GET {{baseUrl}}/audit/logs/{{auditLogId}}
+Authorization: Bearer {{accessToken}}
