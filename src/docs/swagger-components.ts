@@ -387,6 +387,88 @@ export const swaggerComponents = {
         meta: { $ref: '#/components/schemas/PaginationMeta' },
       },
     },
+    DashboardSummary: {
+      type: 'object',
+      properties: {
+        totalUsers: { type: 'integer', example: 10 },
+        totalCategories: { type: 'integer', example: 8 },
+        totalSuppliers: { type: 'integer', example: 5 },
+        totalProducts: { type: 'integer', example: 120 },
+        activeProducts: { type: 'integer', example: 110 },
+        inactiveProducts: { type: 'integer', example: 10 },
+        lowStockProducts: { type: 'integer', example: 7 },
+        totalInventoryMovements: { type: 'integer', example: 350 },
+        entriesToday: { type: 'integer', example: 20 },
+        exitsToday: { type: 'integer', example: 12 },
+        adjustmentsToday: { type: 'integer', example: 2 },
+      },
+      required: [
+        'totalUsers',
+        'totalCategories',
+        'totalSuppliers',
+        'totalProducts',
+        'activeProducts',
+        'inactiveProducts',
+        'lowStockProducts',
+        'totalInventoryMovements',
+        'entriesToday',
+        'exitsToday',
+        'adjustmentsToday',
+      ],
+    },
+    DashboardLowStockProduct: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        name: { type: 'string' },
+        sku: { type: 'string' },
+        quantity: { type: 'integer' },
+        minimumStock: { type: 'integer' },
+        category: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+          },
+        },
+        supplier: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+          },
+        },
+      },
+    },
+    DashboardRecentMovement: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        type: { type: 'string', enum: ['ENTRY', 'EXIT', 'ADJUSTMENT'] },
+        quantity: { type: 'integer' },
+        previousQuantity: { type: 'integer' },
+        newQuantity: { type: 'integer' },
+        reason: { type: 'string' },
+        createdAt: { type: 'string', format: 'date-time' },
+        product: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            sku: { type: 'string' },
+          },
+        },
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            firstName: { type: 'string' },
+            lastName: { type: 'string' },
+            email: { type: 'string', format: 'email' },
+          },
+        },
+      },
+    },
   },
   responses: {
     BadRequest: {
@@ -549,6 +631,11 @@ export const swaggerComponents = {
       name: 'userId',
       in: 'query',
       schema: { type: 'string' },
+    },
+    RecentMovementsLimitQuery: {
+      name: 'limit',
+      in: 'query',
+      schema: { type: 'integer', minimum: 1, maximum: 50, default: 10 },
     },
     IdPath: {
       name: 'id',

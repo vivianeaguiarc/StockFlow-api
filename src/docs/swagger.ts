@@ -30,6 +30,7 @@ const swaggerDefinition = {
     { name: 'Suppliers', description: 'Supplier management' },
     { name: 'Products', description: 'Product catalog and stock' },
     { name: 'Inventory', description: 'Stock movements (ENTRY, EXIT, ADJUSTMENT)' },
+    { name: 'Dashboard', description: 'Company metrics and operational insights' },
     { name: 'Audit', description: 'Audit trail (ADMIN only)' },
   ],
   paths: swaggerPaths,

@@ -707,4 +707,71 @@ export const swaggerPaths = {
       },
     },
   },
+  '/api/dashboard/summary': {
+    get: {
+      tags: ['Dashboard'],
+      summary: 'Get company dashboard summary',
+      description:
+        'Requires ADMIN or MANAGER role. Returns consolidated metrics for the authenticated company.',
+      security: secured,
+      responses: {
+        '200': {
+          description: 'Dashboard summary metrics',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/DashboardSummary' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/dashboard/low-stock-products': {
+    get: {
+      tags: ['Dashboard'],
+      summary: 'List low stock products',
+      description:
+        'Requires ADMIN, MANAGER or EMPLOYEE role. Returns active non-deleted products where quantity <= minimumStock.',
+      security: secured,
+      responses: {
+        '200': {
+          description: 'Low stock products',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'array',
+                items: { $ref: '#/components/schemas/DashboardLowStockProduct' },
+              },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+  },
+  '/api/dashboard/recent-movements': {
+    get: {
+      tags: ['Dashboard'],
+      summary: 'List recent inventory movements',
+      description:
+        'Requires ADMIN or MANAGER role. Returns the most recent stock movements for the authenticated company.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/RecentMovementsLimitQuery' }],
+      responses: {
+        '200': {
+          description: 'Recent inventory movements',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'array',
+                items: { $ref: '#/components/schemas/DashboardRecentMovement' },
+              },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
+  },
 } as const

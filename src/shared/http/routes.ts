@@ -11,6 +11,7 @@ import {
 } from '../../modules/auth/routes/auth.routes.js'
 import { createCategoriesRoutes } from '../../modules/categories/routes/categories.routes.js'
 import { createCompaniesRoutes } from '../../modules/companies/routes/companies.routes.js'
+import { createDashboardRoutes } from '../../modules/dashboard/routes/dashboard.routes.js'
 import { createHealthRoutes } from '../../modules/health/routes/health.routes.js'
 import { createInventoryRoutes } from '../../modules/inventory/routes/inventory.routes.js'
 import { createProductsRoutes } from '../../modules/products/routes/products.routes.js'
@@ -37,6 +38,7 @@ export function registerRoutes(app: Express): void {
   apiRouter.use('/suppliers', createSuppliersRoutes())
   apiRouter.use('/products', createProductsRoutes())
   apiRouter.use('/inventory', createInventoryRoutes())
+  apiRouter.use('/dashboard', createDashboardRoutes())
   apiRouter.use('/audit', createAuditRoutes())
   apiRouter.get('/me', ...createMeRouteHandlers())
   apiRouter.get('/admin-only', ...createAdminOnlyRouteHandlers())
