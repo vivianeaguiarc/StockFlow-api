@@ -2,6 +2,12 @@ import type { Express, Response } from 'express'
 import { Router } from 'express'
 
 import { env } from '../../config/env.js'
+import {
+  createAdminOnlyRouteHandlers,
+  createAuthRoutes,
+  createManagementRouteHandlers,
+  createMeRouteHandlers,
+} from '../../modules/auth/routes/auth.routes.js'
 import { createHealthRoutes } from '../../modules/health/routes/health.routes.js'
 import { sendSuccess } from './response.js'
 
@@ -17,6 +23,10 @@ export function registerRoutes(app: Express): void {
   })
 
   apiRouter.use('/health', createHealthRoutes())
+  apiRouter.use('/auth', createAuthRoutes())
+  apiRouter.get('/me', ...createMeRouteHandlers())
+  apiRouter.get('/admin-only', ...createAdminOnlyRouteHandlers())
+  apiRouter.get('/management', ...createManagementRouteHandlers())
 
   app.use('/api', apiRouter)
 
