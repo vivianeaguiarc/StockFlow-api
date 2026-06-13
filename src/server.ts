@@ -5,13 +5,16 @@ import { env } from './config/env.js'
 
 const app = createApp()
 
-app.listen(env.PORT, env.HOST, () => {
+// Render injects PORT via process.env; validated in config/env.ts (default 3333)
+const port = env.PORT
+
+app.listen(port, env.HOST, () => {
   console.warn(
     JSON.stringify({
       level: 'info',
       message: 'StockFlow API started',
       host: env.HOST,
-      port: env.PORT,
+      port,
       environment: env.NODE_ENV,
       apiPrefix: env.API_PREFIX,
       timestamp: new Date().toISOString(),

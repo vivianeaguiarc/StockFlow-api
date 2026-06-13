@@ -241,24 +241,28 @@ Use esta lista antes de cada deploy em produção:
 
 ## Exemplo: Render
 
+Guia passo a passo dedicado: **[render-deploy.md](render-deploy.md)**
+
 ### Web Service (API)
 
-| Campo                 | Valor                                                              |
-| --------------------- | ------------------------------------------------------------------ |
-| **Runtime**           | Node                                                               |
-| **Build Command**     | `pnpm install --frozen-lockfile && pnpm db:generate && pnpm build` |
-| **Start Command**     | `pnpm prisma migrate deploy && node dist/server.js`                |
-| **Health Check Path** | `/api/v1/health/ready`                                             |
+| Campo                  | Valor                                                              |
+| ---------------------- | ------------------------------------------------------------------ |
+| **Runtime**            | Node                                                               |
+| **Build Command**      | `pnpm install --frozen-lockfile && pnpm db:generate && pnpm build` |
+| **Pre-Deploy Command** | `pnpm db:migrate:deploy`                                           |
+| **Start Command**      | `pnpm start`                                                       |
+| **Health Check Path**  | `/api/v1/health/ready`                                             |
 
 ### Environment Variables
 
 ```env
 NODE_ENV=production
 HOST=0.0.0.0
+HUSKY=0
 API_PREFIX=/api/v1
 PUBLIC_URL=https://stockflow-api.onrender.com
 DATABASE_URL=<Internal Database URL do Render PostgreSQL>
-REDIS_URL=<URL do Redis externo, ex.: Upstash>
+REDIS_URL=<Render Key Value ou Upstash URL>
 JWT_SECRET=<secret-gerado>
 JWT_EXPIRES_IN=7d
 REFRESH_TOKEN_EXPIRES_IN_DAYS=30
@@ -274,10 +278,8 @@ CACHE_TTL_SECONDS=300
 
 ### Redis no Render
 
-Render não inclui Redis nativo no plano free. Opções:
-
-- [Upstash Redis](https://upstash.com/) (serverless, free tier)
-- Redis addon de terceiros
+- **Key Value** (Render) — compatível com Redis; use Internal URL em `REDIS_URL`
+- [Upstash Redis](https://upstash.com/) — alternativa serverless (free tier)
 
 ---
 

@@ -23,7 +23,7 @@ Demonstrar na prática a construção de uma API profissional de estoque, aplica
 
 Ideal para portfólio técnico e estudo de backends SaaS.
 
-> **Deploy em cloud:** consulte o guia completo em [`docs/deploy.md`](docs/deploy.md) (Render, Railway, Fly.io, VPS).
+> **Deploy em cloud:** guia Render passo a passo em [`docs/render-deploy.md`](docs/render-deploy.md) · visão geral em [`docs/deploy.md`](docs/deploy.md).
 
 ---
 
@@ -284,11 +284,27 @@ docker compose down
 
 > **Nota:** se a porta `3333` já estiver em uso (ex.: `pnpm dev`), pare o processo local antes de subir o container da API.
 
-### Deploy em cloud
+### Deploy no Render
 
-Para publicar em Render, Railway, Fly.io ou VPS (variáveis de ambiente, build, migrations, health check e checklists de segurança):
+Guia completo: **[docs/render-deploy.md](docs/render-deploy.md)**
 
-**[docs/deploy.md](docs/deploy.md)**
+Resumo rápido:
+
+1. Crie **PostgreSQL** e **Key Value (Redis)** no Render (mesma região).
+2. Crie **Web Service** conectado ao repositório Git.
+3. Configure os comandos:
+
+| Campo              | Valor                                                              |
+| ------------------ | ------------------------------------------------------------------ |
+| Build Command      | `pnpm install --frozen-lockfile && pnpm db:generate && pnpm build` |
+| Pre-Deploy Command | `pnpm db:migrate:deploy`                                           |
+| Start Command      | `pnpm start`                                                       |
+| Health Check Path  | `/api/v1/health/ready`                                             |
+
+4. Defina variáveis de ambiente (`DATABASE_URL`, `JWT_SECRET`, `REDIS_URL`, `HUSKY=0`, etc.) — ver [`.env.example`](.env.example) e [`docs/render-deploy.md`](docs/render-deploy.md).
+5. Deploy automático a cada push; valide com `GET /api/v1/health/ready`.
+
+Outras plataformas (Railway, Fly.io, VPS): **[docs/deploy.md](docs/deploy.md)**
 
 ---
 
@@ -298,8 +314,8 @@ Para publicar em Render, Railway, Fly.io ou VPS (variáveis de ambiente, build, 
 # Desenvolvimento — cria e aplica migration
 pnpm db:migrate
 
-# Produção / CI — aplica migrations existentes
-pnpm prisma migrate deploy
+# Produção / CI / Render — aplica migrations existentes
+pnpm db:migrate:deploy
 ```
 
 Schema: `prisma/schema.prisma`
@@ -425,28 +441,29 @@ Referência completa: [`.env.example`](.env.example)
 
 ## Scripts disponíveis
 
-| Script               | Descrição                        |
-| -------------------- | -------------------------------- |
-| `pnpm dev`           | Desenvolvimento com hot reload   |
-| `pnpm build`         | Compila TypeScript → `dist/`     |
-| `pnpm start`         | Produção (`node dist/server.js`) |
-| `pnpm lint`          | ESLint                           |
-| `pnpm lint:fix`      | ESLint com auto-fix              |
-| `pnpm format`        | Prettier (write)                 |
-| `pnpm format:check`  | Prettier (check)                 |
-| `pnpm typecheck`     | Verificação de tipos             |
-| `pnpm test`          | Testes (Vitest)                  |
-| `pnpm test:watch`    | Testes em watch mode             |
-| `pnpm test:coverage` | Cobertura de testes              |
-| `pnpm db:up`         | `docker compose up -d`           |
-| `pnpm db:down`       | `docker compose down`            |
-| `pnpm db:logs`       | Logs do PostgreSQL               |
-| `pnpm db:generate`   | `prisma generate`                |
-| `pnpm db:migrate`    | `prisma migrate dev`             |
-| `pnpm db:studio`     | Prisma Studio (GUI)              |
-| `pnpm db:seed`       | Seed do banco                    |
-| `pnpm db:backup`     | Backup PostgreSQL → `backups/`   |
-| `pnpm db:restore`    | Restore a partir de arquivo      |
+| Script                   | Descrição                          |
+| ------------------------ | ---------------------------------- |
+| `pnpm dev`               | Desenvolvimento com hot reload     |
+| `pnpm build`             | Compila TypeScript → `dist/`       |
+| `pnpm start`             | Produção (`node dist/server.js`)   |
+| `pnpm lint`              | ESLint                             |
+| `pnpm lint:fix`          | ESLint com auto-fix                |
+| `pnpm format`            | Prettier (write)                   |
+| `pnpm format:check`      | Prettier (check)                   |
+| `pnpm typecheck`         | Verificação de tipos               |
+| `pnpm test`              | Testes (Vitest)                    |
+| `pnpm test:watch`        | Testes em watch mode               |
+| `pnpm test:coverage`     | Cobertura de testes                |
+| `pnpm db:up`             | `docker compose up -d`             |
+| `pnpm db:down`           | `docker compose down`              |
+| `pnpm db:logs`           | Logs do PostgreSQL                 |
+| `pnpm db:generate`       | `prisma generate`                  |
+| `pnpm db:migrate`        | `prisma migrate dev`               |
+| `pnpm db:migrate:deploy` | `prisma migrate deploy` (produção) |
+| `pnpm db:studio`         | Prisma Studio (GUI)                |
+| `pnpm db:seed`           | Seed do banco                      |
+| `pnpm db:backup`         | Backup PostgreSQL → `backups/`     |
+| `pnpm db:restore`        | Restore a partir de arquivo        |
 
 ---
 
@@ -521,7 +538,8 @@ Content-Type: application/json
 stockflow-api/
 ├── .github/workflows/     # CI (GitHub Actions)
 ├── docs/
-│   └── deploy.md          # Guia de deploy em cloud
+│   ├── deploy.md          # Guia de deploy em cloud (geral)
+│   └── render-deploy.md   # Deploy passo a passo no Render
 ├── prisma/
 │   ├── migrations/        # Migrations SQL
 │   ├── schema.prisma      # Modelos e enums
