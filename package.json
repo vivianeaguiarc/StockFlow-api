@@ -16,7 +16,11 @@
     "prepare": "husky",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "db:logs": "docker compose logs -f postgres"
+    "db:logs": "docker compose logs -f postgres",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:push": "prisma db push"
   },
   "lint-staged": {
     "*.ts": [
@@ -44,6 +48,7 @@
     }
   },
   "dependencies": {
+    "@prisma/client": "^6.9.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
@@ -63,6 +68,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
     "prettier": "^3.5.3",
+    "prisma": "^6.9.0",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.34.1"

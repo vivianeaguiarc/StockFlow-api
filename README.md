@@ -66,6 +66,17 @@ Connection details:
 
 Data is persisted in the Docker volume `stockflow_postgres_data`.
 
+### Prisma ORM
+
+```bash
+pnpm db:generate   # generate Prisma Client after schema changes
+pnpm db:migrate    # create and apply migrations (dev)
+pnpm db:push       # push schema without migration (prototyping)
+pnpm db:studio     # open Prisma Studio GUI
+```
+
+Schema location: `prisma/schema.prisma`
+
 ### Development
 
 ```bash
