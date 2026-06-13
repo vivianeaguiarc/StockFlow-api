@@ -38,6 +38,12 @@ enum ProductStatus {
   INACTIVE
 }
 
+enum InventoryMovementType {
+  ENTRY
+  EXIT
+  ADJUSTMENT
+}
+
 model Company {
   id        String        @id @default(cuid())
   name      String
@@ -52,7 +58,8 @@ model Company {
   users      User[]
   categories Category[]
   suppliers  Supplier[]
-  products   Product[]
+  products           Product[]
+  inventoryMovements InventoryMovement[]
 
   @@map("companies")
 }
@@ -70,7 +77,8 @@ model User {
   updatedAt    DateTime   @updatedAt @map("updated_at")
   deletedAt    DateTime?  @map("deleted_at")
 
-  company Company @relation(fields: [companyId], references: [id])
+  company            Company             @relation(fields: [companyId], references: [id])
+  inventoryMovements InventoryMovement[]
 
   @@map("users")
 }
@@ -131,11 +139,31 @@ model Product {
   updatedAt    DateTime      @updatedAt @map("updated_at")
   deletedAt    DateTime?     @map("deleted_at")
 
-  company  Company  @relation(fields: [companyId], references: [id])
-  category Category @relation(fields: [categoryId], references: [id])
-  supplier Supplier @relation(fields: [supplierId], references: [id])
+  company            Company             @relation(fields: [companyId], references: [id])
+  category           Category            @relation(fields: [categoryId], references: [id])
+  supplier           Supplier            @relation(fields: [supplierId], references: [id])
+  inventoryMovements InventoryMovement[]
 
   @@unique([companyId, sku])
   @@unique([companyId, barcode])
   @@map("products")
+}
+
+model InventoryMovement {
+  id               String                @id @default(cuid())
+  companyId        String                @map("company_id")
+  productId        String                @map("product_id")
+  userId           String                @map("user_id")
+  type             InventoryMovementType
+  quantity         Int
+  previousQuantity Int                   @map("previous_quantity")
+  newQuantity      Int                   @map("new_quantity")
+  reason           String
+  createdAt        DateTime              @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("inventory_movements")
 }

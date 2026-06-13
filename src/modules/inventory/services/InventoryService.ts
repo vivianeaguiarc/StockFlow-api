@@ -1,0 +1,154 @@
+import { type InventoryMovement, InventoryMovementType, ProductStatus } from '@prisma/client'
+
+import { prisma } from '../../../shared/database/prisma.js'
+import { AppError } from '../../../shared/errors/AppError.js'
+import {
+  buildPaginationMeta,
+  getPaginationOffset,
+  type PaginationParams,
+} from '../../../shared/utils/pagination.js'
+import type {
+  CreateMovementDto,
+  MovementResponseDto,
+  PaginatedMovementsResponseDto,
+} from '../dtos/create-movement.dto.js'
+
+export class InventoryService {
+  async createMovement(
+    companyId: string,
+    userId: string,
+    data: CreateMovementDto,
+  ): Promise<MovementResponseDto> {
+    const movement = await prisma.$transaction(async (tx) => {
+      const product = await tx.product.findFirst({
+        where: {
+          id: data.productId,
+          companyId,
+          deletedAt: null,
+          status: ProductStatus.ACTIVE,
+        },
+      })
+
+      if (!product) {
+        throw new AppError('Product not found or inactive', 404)
+      }
+
+      const previousQuantity = product.quantity
+      const { newQuantity, movementQuantity } = this.calculateQuantities(
+        data.type,
+        data.quantity,
+        previousQuantity,
+      )
+
+      await tx.product.update({
+        where: { id: product.id },
+        data: { quantity: newQuantity },
+      })
+
+      return tx.inventoryMovement.create({
+        data: {
+          companyId,
+          productId: product.id,
+          userId,
+          type: data.type,
+          quantity: movementQuantity,
+          previousQuantity,
+          newQuantity,
+          reason: data.reason,
+        },
+      })
+    })
+
+    return this.toResponse(movement)
+  }
+
+  async listMovements(
+    companyId: string,
+    pagination: PaginationParams,
+  ): Promise<PaginatedMovementsResponseDto> {
+    const { page, limit } = pagination
+    const offset = getPaginationOffset(page, limit)
+
+    const where = { companyId }
+
+    const [movements, total] = await Promise.all([
+      prisma.inventoryMovement.findMany({
+        where,
+        skip: offset,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.inventoryMovement.count({ where }),
+    ])
+
+    return {
+      data: movements.map((movement) => this.toResponse(movement)),
+      meta: buildPaginationMeta(page, limit, total),
+    }
+  }
+
+  async getMovementById(companyId: string, movementId: string): Promise<MovementResponseDto> {
+    const movement = await prisma.inventoryMovement.findFirst({
+      where: {
+        id: movementId,
+        companyId,
+      },
+    })
+
+    if (!movement) {
+      throw new AppError('Movement not found', 404)
+    }
+
+    return this.toResponse(movement)
+  }
+
+  private calculateQuantities(
+    type: InventoryMovementType,
+    quantity: number,
+    previousQuantity: number,
+  ): { newQuantity: number; movementQuantity: number } {
+    switch (type) {
+      case InventoryMovementType.ENTRY:
+        return {
+          newQuantity: previousQuantity + quantity,
+          movementQuantity: quantity,
+        }
+
+      case InventoryMovementType.EXIT:
+        if (previousQuantity < quantity) {
+          throw new AppError('Insufficient stock', 400)
+        }
+
+        return {
+          newQuantity: previousQuantity - quantity,
+          movementQuantity: quantity,
+        }
+
+      case InventoryMovementType.ADJUSTMENT:
+        return {
+          newQuantity: quantity,
+          movementQuantity: quantity,
+        }
+
+      default: {
+        const exhaustiveCheck: never = type
+        throw new AppError(`Unsupported movement type: ${String(exhaustiveCheck)}`, 400)
+      }
+    }
+  }
+
+  private toResponse(movement: InventoryMovement): MovementResponseDto {
+    return {
+      id: movement.id,
+      companyId: movement.companyId,
+      productId: movement.productId,
+      userId: movement.userId,
+      type: movement.type,
+      quantity: movement.quantity,
+      previousQuantity: movement.previousQuantity,
+      newQuantity: movement.newQuantity,
+      reason: movement.reason,
+      createdAt: movement.createdAt,
+    }
+  }
+}
