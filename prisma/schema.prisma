@@ -28,6 +28,11 @@ enum CategoryStatus {
   INACTIVE
 }
 
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model Company {
   id        String        @id @default(cuid())
   name      String
@@ -41,6 +46,7 @@ model Company {
 
   users      User[]
   categories Category[]
+  suppliers  Supplier[]
 
   @@map("companies")
 }
@@ -77,4 +83,24 @@ model Category {
 
   @@unique([companyId, name])
   @@map("categories")
+}
+
+model Supplier {
+  id            String         @id @default(cuid())
+  companyId     String         @map("company_id")
+  corporateName String         @map("corporate_name")
+  tradeName     String         @map("trade_name")
+  document      String
+  email         String?
+  phone         String?
+  status        SupplierStatus @default(ACTIVE)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  deletedAt     DateTime?      @map("deleted_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, document])
+  @@unique([companyId, email])
+  @@map("suppliers")
 }
