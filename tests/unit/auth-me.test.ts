@@ -2,8 +2,15 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { AuthMeResponseDto } from '../../src/modules/auth/dtos/auth-me-response.dto.js'
 import { AuthService } from '../../src/modules/auth/services/AuthService.js'
+import { cacheService } from '../../src/shared/cache/CacheService.js'
 import { AppError } from '../../src/shared/errors/AppError.js'
 import { prisma } from '../../src/shared/database/prisma.js'
+
+vi.mock('../../src/shared/cache/CacheService.js', () => ({
+  cacheService: {
+    getOrSet: vi.fn((_key: string, fetcher: () => Promise<unknown>) => fetcher()),
+  },
+}))
 
 describe('AuthService.getMe', () => {
   it('returns safe user profile fields', async () => {
@@ -31,6 +38,12 @@ describe('AuthService.getMe', () => {
       createdAt,
       updatedAt,
     } satisfies AuthMeResponseDto)
+
+    expect(cacheService.getOrSet).toHaveBeenCalledWith(
+      'stockflow:auth:me:user-1',
+      expect.any(Function),
+      300,
+    )
 
     vi.restoreAllMocks()
   })

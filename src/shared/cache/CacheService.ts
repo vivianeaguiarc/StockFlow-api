@@ -1,5 +1,5 @@
 import { env } from '../../config/env.js'
-import { logWarn } from '../logger/logger.js'
+import { logDebug, logInfo, logWarn } from '../logger/logger.js'
 import { getRedisClient } from './redis-client.js'
 
 export class CacheService {
@@ -49,6 +49,7 @@ export class CacheService {
 
     try {
       await client.del(key)
+      logInfo({ key }, 'Cache invalidation')
     } catch (error) {
       logWarn({ err: error, key }, 'Cache del failed')
     }
@@ -70,6 +71,7 @@ export class CacheService {
 
       if (keys.length > 0) {
         await client.del(keys)
+        logInfo({ pattern, keysRemoved: keys.length }, 'Cache invalidation')
       }
     } catch (error) {
       logWarn({ err: error, pattern }, 'Cache delByPattern failed')
@@ -84,8 +86,11 @@ export class CacheService {
     const cached = await this.get<T>(key)
 
     if (cached !== null) {
+      logDebug({ key }, 'Cache hit')
       return cached
     }
+
+    logDebug({ key }, 'Cache miss')
 
     const value = await fetcher()
     await this.set(key, value, ttlSeconds)

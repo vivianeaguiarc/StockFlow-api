@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { auditLogService } from '../../src/modules/audit/audit-log.service.js'
 import { UsersService } from '../../src/modules/users/services/UsersService.js'
+import {
+  invalidateUserRelatedCache,
+  invalidateUsersListCache,
+} from '../../src/shared/cache/cache-invalidation.js'
 import { AppError } from '../../src/shared/errors/AppError.js'
 import { prisma } from '../../src/shared/database/prisma.js'
 import { buildUser } from '../helpers/factories/user.factory.js'
@@ -11,6 +15,19 @@ vi.mock('../../src/modules/audit/audit-log.service.js', () => ({
   auditLogService: {
     record: vi.fn().mockResolvedValue(undefined),
   },
+}))
+
+vi.mock('../../src/shared/cache/CacheService.js', () => ({
+  cacheService: {
+    getOrSet: vi.fn((_key: string, fetcher: () => Promise<unknown>) => fetcher()),
+    del: vi.fn().mockResolvedValue(undefined),
+    delByPattern: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+
+vi.mock('../../src/shared/cache/cache-invalidation.js', () => ({
+  invalidateUsersListCache: vi.fn().mockResolvedValue(undefined),
+  invalidateUserRelatedCache: vi.fn().mockResolvedValue(undefined),
 }))
 
 describe('UsersService', () => {
@@ -41,6 +58,7 @@ describe('UsersService', () => {
         entityId: 'user-2',
       }),
     )
+    expect(invalidateUsersListCache).toHaveBeenCalledWith('company-1')
   })
 
   it('throws 409 when email already exists', async () => {
@@ -117,6 +135,7 @@ describe('UsersService', () => {
     expect(auditLogService.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: AuditAction.UPDATE_USER }),
     )
+    expect(invalidateUserRelatedCache).toHaveBeenCalledWith('company-1', 'user-1')
   })
 
   it('maps Prisma P2002 on update to 409', async () => {
@@ -135,6 +154,18 @@ describe('UsersService', () => {
     ).rejects.toMatchObject({
       statusCode: 409,
     } satisfies Partial<AppError>)
+  })
+
+  it('invalidates cache after soft delete', async () => {
+    const user = buildUser({ role: 'USER' })
+
+    vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(user as never)
+    vi.spyOn(prisma.user, 'update').mockResolvedValue({ ...user, deletedAt: new Date() } as never)
+
+    const service = new UsersService()
+    await service.delete('company-1', 'admin-1', 'user-1', 'admin-1')
+
+    expect(invalidateUserRelatedCache).toHaveBeenCalledWith('company-1', 'user-1')
   })
 
   it('prevents deleting yourself', async () => {

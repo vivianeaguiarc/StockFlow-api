@@ -1,9 +1,27 @@
-import { dashboardCachePattern, productsListCachePattern } from './cache-keys.js'
+import {
+  authMeKey,
+  dashboardCachePattern,
+  productsListCachePattern,
+  usersByIdKey,
+  usersListCachePattern,
+} from './cache-keys.js'
 import { cacheService } from './CacheService.js'
 
 export async function invalidateProductRelatedCache(companyId: string): Promise<void> {
   await Promise.all([
     cacheService.delByPattern(productsListCachePattern(companyId)),
     cacheService.delByPattern(dashboardCachePattern(companyId)),
+  ])
+}
+
+export async function invalidateUsersListCache(companyId: string): Promise<void> {
+  await cacheService.delByPattern(usersListCachePattern(companyId))
+}
+
+export async function invalidateUserRelatedCache(companyId: string, userId: string): Promise<void> {
+  await Promise.all([
+    cacheService.delByPattern(usersListCachePattern(companyId)),
+    cacheService.del(usersByIdKey(companyId, userId)),
+    cacheService.del(authMeKey(userId)),
   ])
 }

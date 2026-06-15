@@ -190,18 +190,28 @@ GET /api/v1/products
 
 Consultas pesadas de leitura usam cache Redis com fallback seguro para PostgreSQL:
 
-| Escopo    | Endpoints cacheados                                     |
-| --------- | ------------------------------------------------------- |
-| Dashboard | `summary`, `low-stock-products`, `recent-movements`     |
-| Products  | `GET /api/v1/products` (por combinação de query params) |
+| Escopo    | Endpoints cacheados                                     | TTL        |
+| --------- | ------------------------------------------------------- | ---------- |
+| Dashboard | `summary`, `low-stock-products`, `recent-movements`     | 300s       |
+| Products  | `GET /api/v1/products` (por combinação de query params) | 300s       |
+| Users     | `GET /api/v1/users`, `GET /api/v1/users/:id`            | 60s / 300s |
+| Auth      | `GET /api/v1/auth/me`                                   | 300s       |
 
-- **TTL padrão:** 300 segundos (`CACHE_TTL_SECONDS`).
-- **Chaves:** `stockflow:{companyId}:...` — isolamento total por tenant.
-- **Invalidação:** automática após create/update/delete de produto ou movimentação de estoque.
+- **TTL listagens:** 60 segundos (`users:list`).
+- **TTL detalhes:** 300 segundos (`users:id`, `auth:me`, dashboard, products).
+- **TTL padrão global:** 300 segundos (`CACHE_TTL_SECONDS`).
+- **Chaves:** `stockflow:{companyId}:users:list:{hash}`, `stockflow:{companyId}:users:id:{id}`, `stockflow:auth:me:{userId}` — isolamento por tenant nas listagens.
+- **Invalidação:** automática após create/update/soft delete de usuário; produtos e movimentações de estoque invalidam cache relacionado.
 - **Resiliência:** se Redis estiver indisponível, a API continua respondendo via banco.
 - **Testes:** cache desabilitado automaticamente quando `NODE_ENV=test`.
 
-Subir Redis localmente: `docker compose up -d redis`
+Subir Redis localmente:
+
+```bash
+pnpm db:up
+# ou: docker compose up -d redis
+# stack completa (API + Postgres + Redis): docker compose up -d
+```
 
 ### Auditoria
 

@@ -4,6 +4,8 @@ import jwt, { type SignOptions } from 'jsonwebtoken'
 
 import { env } from '../../../config/env.js'
 import type { AuditContext } from '../../../shared/audit/audit-context.js'
+import { authMeKey, CACHE_DETAIL_TTL_SECONDS } from '../../../shared/cache/cache-keys.js'
+import { cacheService } from '../../../shared/cache/CacheService.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import { auditLogService } from '../../audit/audit-log.service.js'
@@ -178,6 +180,12 @@ export class AuthService {
   }
 
   async getMe(userId: string): Promise<AuthMeResponseDto> {
+    const cacheKey = authMeKey(userId)
+
+    return cacheService.getOrSet(cacheKey, () => this.fetchMe(userId), CACHE_DETAIL_TTL_SECONDS)
+  }
+
+  private async fetchMe(userId: string): Promise<AuthMeResponseDto> {
     const user = await prisma.user.findFirst({
       where: {
         id: userId,

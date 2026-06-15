@@ -2,6 +2,18 @@ import { AuditAction, Prisma, UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 import type { AuditContext } from '../../../shared/audit/audit-context.js'
+import {
+  invalidateUserRelatedCache,
+  invalidateUsersListCache,
+} from '../../../shared/cache/cache-invalidation.js'
+import {
+  CACHE_DETAIL_TTL_SECONDS,
+  CACHE_LIST_TTL_SECONDS,
+  hashUsersListQuery,
+  usersByIdKey,
+  usersListKey,
+} from '../../../shared/cache/cache-keys.js'
+import { cacheService } from '../../../shared/cache/CacheService.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
@@ -63,6 +75,8 @@ export class UsersService {
         ...auditContext,
       })
 
+      await invalidateUsersListCache(companyId)
+
       return response
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -74,6 +88,19 @@ export class UsersService {
   }
 
   async list(companyId: string, query: ListUsersQuery): Promise<PaginatedUsersResponseDto> {
+    const cacheKey = usersListKey(companyId, hashUsersListQuery(query))
+
+    return cacheService.getOrSet(
+      cacheKey,
+      () => this.fetchUserList(companyId, query),
+      CACHE_LIST_TTL_SECONDS,
+    )
+  }
+
+  private async fetchUserList(
+    companyId: string,
+    query: ListUsersQuery,
+  ): Promise<PaginatedUsersResponseDto> {
     const { page, limit, sortBy, sortOrder } = query
     const orderBy = buildOrderBy(
       sortBy,
@@ -104,6 +131,16 @@ export class UsersService {
   }
 
   async getById(companyId: string, userId: string): Promise<UserResponseDto> {
+    const cacheKey = usersByIdKey(companyId, userId)
+
+    return cacheService.getOrSet(
+      cacheKey,
+      () => this.fetchUserById(companyId, userId),
+      CACHE_DETAIL_TTL_SECONDS,
+    )
+  }
+
+  private async fetchUserById(companyId: string, userId: string): Promise<UserResponseDto> {
     const user = await this.findActiveUserInCompany(companyId, userId)
     return this.toResponse(user)
   }
@@ -155,6 +192,8 @@ export class UsersService {
         },
         ...auditContext,
       })
+
+      await invalidateUserRelatedCache(companyId, userId)
 
       return response
     } catch (error) {
@@ -210,6 +249,8 @@ export class UsersService {
       },
       ...auditContext,
     })
+
+    await invalidateUserRelatedCache(companyId, userId)
   }
 
   private async findActiveUserInCompany(companyId: string, userId: string) {
