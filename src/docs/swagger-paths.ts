@@ -274,6 +274,27 @@ export const swaggerPaths = {
       },
     },
   },
+  '/api/v1/auth/me': {
+    get: {
+      tags: ['Auth'],
+      summary: 'Get authenticated user profile',
+      description: 'Returns the current user profile. Requires Bearer token.',
+      security: secured,
+      responses: {
+        '200': {
+          description: 'Authenticated user profile',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/AuthMeResponse' },
+            },
+          },
+        },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '404': { $ref: '#/components/responses/NotFound' },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+  },
   '/api/v1/me': {
     get: {
       tags: ['Current User'],

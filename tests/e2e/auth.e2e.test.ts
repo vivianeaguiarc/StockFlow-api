@@ -129,6 +129,33 @@ describe('POST /api/auth/refresh', () => {
   })
 })
 
+describe('GET /api/v1/auth/me', () => {
+  it('returns 401 without token', async () => {
+    await request(app).get('/api/v1/auth/me').expect(401)
+  })
+
+  it('returns authenticated user profile', async () => {
+    const uniqueId = createUniqueId()
+    const session = await registerAndLogin(uniqueId)
+
+    const response = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${session.accessToken}`)
+      .expect(200)
+
+    expect(response.body).toMatchObject({
+      email: session.email,
+      role: 'ADMIN',
+      name: 'Login User',
+    })
+    expect(response.body.id).toEqual(expect.any(String))
+    expect(response.body.createdAt).toEqual(expect.any(String))
+    expect(response.body.updatedAt).toEqual(expect.any(String))
+    expect(response.body.password).toBeUndefined()
+    expect(response.body.passwordHash).toBeUndefined()
+  })
+})
+
 describe('POST /api/auth/logout', () => {
   it('revokes refresh token and blocks subsequent refresh', async () => {
     const uniqueId = createUniqueId()

@@ -7,6 +7,7 @@ import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import { auditLogger } from '../../audit/services/AuditLoggerService.js'
+import type { AuthMeResponseDto } from '../dtos/auth-me-response.dto.js'
 import type { JwtPayload, LoginDto, LoginResponseDto } from '../dtos/login.dto.js'
 import type {
   LogoutDto,
@@ -170,6 +171,37 @@ export class AuthService {
       },
       ...auditContext,
     })
+  }
+
+  async getMe(userId: string): Promise<AuthMeResponseDto> {
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    })
+
+    if (!user) {
+      throw new AppError('User not found', 404)
+    }
+
+    return {
+      id: user.id,
+      name: `${user.firstName} ${user.lastName}`.trim(),
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    }
   }
 
   private signAccessToken(user: Pick<User, 'id' | 'companyId' | 'role'>): string {

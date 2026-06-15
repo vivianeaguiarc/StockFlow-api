@@ -494,19 +494,20 @@ Referência completa: [`.env.example`](.env.example)
 
 ### Autenticadas
 
-| Método | Rota                          | RBAC                                       | Descrição                  |
-| ------ | ----------------------------- | ------------------------------------------ | -------------------------- |
-| GET    | `/api/v1/me`                  | Todos                                      | Usuário autenticado        |
-| GET    | `/api/v1/companies/me`        | Todos                                      | Perfil da empresa          |
-| PATCH  | `/api/v1/companies/me`        | ADMIN                                      | Atualizar empresa          |
-| CRUD   | `/api/v1/users`               | ADMIN (list/delete); ADMIN/MANAGER (patch) | Gestão de usuários         |
-| CRUD   | `/api/v1/categories`          | ADMIN / MANAGER / USER\*                   | Categorias                 |
-| CRUD   | `/api/v1/suppliers`           | ADMIN / MANAGER / USER\*                   | Fornecedores               |
-| CRUD   | `/api/v1/products`            | ADMIN / MANAGER / USER\*                   | Produtos                   |
-| POST   | `/api/v1/inventory/movements` | ADMIN / MANAGER / USER                     | Movimentar estoque         |
-| GET    | `/api/v1/inventory/movements` | ADMIN / MANAGER                            | Histórico de movimentações |
-| GET    | `/api/v1/dashboard/summary`   | ADMIN / MANAGER                            | Métricas do dashboard      |
-| GET    | `/api/v1/audit/logs`          | ADMIN                                      | Logs de auditoria          |
+| Método | Rota                          | RBAC                                       | Descrição                     |
+| ------ | ----------------------------- | ------------------------------------------ | ----------------------------- |
+| GET    | `/api/v1/me`                  | Todos                                      | Usuário autenticado (legado)  |
+| GET    | `/api/v1/auth/me`             | Todos                                      | Perfil do usuário autenticado |
+| GET    | `/api/v1/companies/me`        | Todos                                      | Perfil da empresa             |
+| PATCH  | `/api/v1/companies/me`        | ADMIN                                      | Atualizar empresa             |
+| CRUD   | `/api/v1/users`               | ADMIN (list/delete); ADMIN/MANAGER (patch) | Gestão de usuários            |
+| CRUD   | `/api/v1/categories`          | ADMIN / MANAGER / USER\*                   | Categorias                    |
+| CRUD   | `/api/v1/suppliers`           | ADMIN / MANAGER / USER\*                   | Fornecedores                  |
+| CRUD   | `/api/v1/products`            | ADMIN / MANAGER / USER\*                   | Produtos                      |
+| POST   | `/api/v1/inventory/movements` | ADMIN / MANAGER / USER                     | Movimentar estoque            |
+| GET    | `/api/v1/inventory/movements` | ADMIN / MANAGER                            | Histórico de movimentações    |
+| GET    | `/api/v1/dashboard/summary`   | ADMIN / MANAGER                            | Métricas do dashboard         |
+| GET    | `/api/v1/audit/logs`          | ADMIN                                      | Logs de auditoria             |
 
 \* USER: somente leitura (GET).
 

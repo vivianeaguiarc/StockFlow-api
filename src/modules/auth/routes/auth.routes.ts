@@ -38,6 +38,8 @@ export function createAuthRoutes(): Router {
     authController.logout(req, res, next),
   )
 
+  router.get('/me', authenticate, (req, res, next) => authController.getMe(req, res, next))
+
   return router
 }
 

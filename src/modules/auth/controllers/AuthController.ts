@@ -50,6 +50,19 @@ export class AuthController {
     }
   }
 
+  async getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        throw new AppError('Unauthorized', 401)
+      }
+
+      const profile = await this.authService.getMe(req.user.id)
+      res.status(200).json(profile)
+    } catch (error) {
+      next(error)
+    }
+  }
+
   me(req: Request, res: Response, next: NextFunction): void {
     try {
       if (!req.user) {

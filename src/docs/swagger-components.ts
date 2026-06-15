@@ -209,6 +209,18 @@ export const swaggerComponents = {
         role: { type: 'string', enum: ['ADMIN', 'MANAGER', 'USER'] },
       },
     },
+    AuthMeResponse: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        name: { type: 'string', example: 'John Doe' },
+        email: { type: 'string', format: 'email' },
+        role: { type: 'string', enum: ['ADMIN', 'MANAGER', 'USER'] },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+      required: ['id', 'name', 'email', 'role', 'createdAt', 'updatedAt'],
+    },
     CompanyProfile: {
       type: 'object',
       properties: {
