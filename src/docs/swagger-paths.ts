@@ -1,4 +1,6 @@
-const secured = [{ bearerAuth: [] as string[] }]
+const secured = [{ BearerAuth: [] as string[] }]
+
+const protectedHeaders = [{ $ref: '#/components/parameters/RequestIdHeader' }]
 
 const defaultErrors = {
   '400': { $ref: '#/components/responses/BadRequest' },
@@ -92,9 +94,16 @@ export const swaggerPaths = {
       summary: 'Basic health check',
       description:
         'Returns API availability with process uptime and environment. Suitable for load balancer liveness probes.',
+      parameters: protectedHeaders,
       responses: {
         '200': {
           description: 'Service is available',
+          headers: {
+            'X-Request-ID': {
+              description: 'Unique request identifier for tracing',
+              schema: { type: 'string', format: 'uuid' },
+            },
+          },
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/HealthResponse' },
@@ -110,13 +119,20 @@ export const swaggerPaths = {
       tags: ['Health'],
       summary: 'Readiness probe',
       description:
-        'Validates PostgreSQL connectivity before accepting traffic. Returns 503 when the database is unavailable.',
+        'Validates PostgreSQL connectivity before accepting traffic. Redis status is reported but does not block readiness. Returns 503 when the database is unavailable.',
+      parameters: protectedHeaders,
       responses: {
         '200': {
           description: 'Application is ready to receive traffic',
+          headers: {
+            'X-Request-ID': {
+              description: 'Unique request identifier for tracing',
+              schema: { type: 'string', format: 'uuid' },
+            },
+          },
           content: {
             'application/json': {
-              schema: { $ref: '#/components/schemas/HealthReadyResponse' },
+              schema: { $ref: '#/components/schemas/ReadyResponse' },
             },
           },
         },
@@ -124,7 +140,7 @@ export const swaggerPaths = {
           description: 'Application is not ready (PostgreSQL unavailable)',
           content: {
             'application/json': {
-              schema: { $ref: '#/components/schemas/HealthReadyResponse' },
+              schema: { $ref: '#/components/schemas/ReadyResponse' },
             },
           },
         },
@@ -232,7 +248,8 @@ export const swaggerPaths = {
       tags: ['Auth'],
       summary: 'Authenticate user',
       description:
-        'Returns JWT access and refresh tokens. Rate limited to 5 attempts per 15 minutes per IP (configurable via RATE_LIMIT_LOGIN_* env vars).',
+        'Returns JWT access and refresh tokens. Rate limited to 5 attempts per 15 minutes per IP (configurable via RATE_LIMIT_LOGIN_* env vars). Passwords are never echoed in responses.',
+      parameters: protectedHeaders,
       requestBody: {
         required: true,
         content: {
@@ -250,6 +267,7 @@ export const swaggerPaths = {
             },
           },
         },
+        '400': { $ref: '#/components/responses/BadRequest' },
         '401': { $ref: '#/components/responses/Unauthorized' },
         '429': { $ref: '#/components/responses/TooManyRequests' },
         '500': { $ref: '#/components/responses/InternalServerError' },
@@ -261,7 +279,8 @@ export const swaggerPaths = {
       tags: ['Auth'],
       summary: 'Refresh access token',
       description:
-        'Rotates the refresh token and returns a new access token pair. The previous refresh token is revoked.',
+        'Rotates the refresh token and returns a new access token pair. The previous refresh token is revoked immediately.',
+      parameters: protectedHeaders,
       requestBody: {
         required: true,
         content: {
@@ -279,6 +298,7 @@ export const swaggerPaths = {
             },
           },
         },
+        '400': { $ref: '#/components/responses/BadRequest' },
         '401': { $ref: '#/components/responses/Unauthorized' },
         '500': { $ref: '#/components/responses/InternalServerError' },
       },
@@ -290,6 +310,7 @@ export const swaggerPaths = {
       summary: 'Logout user',
       description:
         'Revokes the provided refresh token. Always returns 204, even when the token is invalid or already revoked.',
+      parameters: protectedHeaders,
       requestBody: {
         required: true,
         content: {
@@ -299,7 +320,8 @@ export const swaggerPaths = {
         },
       },
       responses: {
-        '204': { description: 'Logout successful' },
+        '204': { $ref: '#/components/responses/NoContent' },
+        '400': { $ref: '#/components/responses/BadRequest' },
         '500': { $ref: '#/components/responses/InternalServerError' },
       },
     },
@@ -308,11 +330,13 @@ export const swaggerPaths = {
     get: {
       tags: ['Auth'],
       summary: 'Get authenticated user profile',
-      description: 'Returns the current user profile. Requires Bearer token.',
+      description:
+        'Returns the current user profile from the database. Requires Bearer token. Response is Redis-cached (TTL 300s).',
       security: secured,
+      parameters: protectedHeaders,
       responses: {
         '200': {
-          description: 'Authenticated user profile',
+          description: 'Authenticated user profile (no password or tokens)',
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/AuthMeResponse' },
@@ -390,8 +414,10 @@ export const swaggerPaths = {
     post: {
       tags: ['Users'],
       summary: 'Create user',
-      description: 'Requires ADMIN role. Bearer token required.',
+      description:
+        'Requires ADMIN role. Creates a user in the authenticated company. Password is hashed server-side and never returned.',
       security: secured,
+      parameters: protectedHeaders,
       requestBody: {
         required: true,
         content: {
@@ -416,10 +442,15 @@ export const swaggerPaths = {
     get: {
       tags: ['Users'],
       summary: 'List users',
-      description:
-        'Requires ADMIN role and Bearer token. Supports pagination (page, limit) and optional filters (name, email, role). Example: /api/v1/users?page=1&limit=10&role=MANAGER',
+      description: [
+        'Requires ADMIN role. Paginated list scoped to the authenticated company.',
+        'Supports filters: `name` (partial match on first/last name), `email` (partial match), `role` (exact).',
+        'Results are Redis-cached (TTL 60s).',
+        '',
+        '**Example:** `/api/v1/users?page=1&limit=10&name=maria&email=stockflow&role=USER`',
+      ].join('\n'),
       security: secured,
-      parameters: usersListParams,
+      parameters: [...protectedHeaders, ...usersListParams],
       responses: {
         '200': {
           description: 'Paginated users list',
@@ -437,12 +468,12 @@ export const swaggerPaths = {
     get: {
       tags: ['Users'],
       summary: 'Get user by ID',
-      description: 'Requires ADMIN or MANAGER role. Bearer token required.',
+      description: 'Requires ADMIN or MANAGER role. Redis-cached (TTL 300s).',
       security: secured,
-      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      parameters: [...protectedHeaders, { $ref: '#/components/parameters/IdPath' }],
       responses: {
         '200': {
-          description: 'User details',
+          description: 'User details (no password fields)',
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/User' },
@@ -455,9 +486,10 @@ export const swaggerPaths = {
     patch: {
       tags: ['Users'],
       summary: 'Update user',
-      description: 'Requires ADMIN or MANAGER role. Bearer token required.',
+      description:
+        'Requires ADMIN or MANAGER role. Optional password change is hashed server-side and never returned.',
       security: secured,
-      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      parameters: [...protectedHeaders, { $ref: '#/components/parameters/IdPath' }],
       requestBody: {
         required: true,
         content: {
@@ -483,11 +515,11 @@ export const swaggerPaths = {
       tags: ['Users'],
       summary: 'Soft delete user',
       description:
-        'Performs a soft delete by setting deletedAt. The record remains in the database but is excluded from listings and lookups. Requires ADMIN role and Bearer token.',
+        'Performs a soft delete by setting deletedAt. The record remains in the database but is excluded from listings and lookups. Requires ADMIN role.',
       security: secured,
-      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      parameters: [...protectedHeaders, { $ref: '#/components/parameters/IdPath' }],
       responses: {
-        '204': { description: 'User soft-deleted successfully' },
+        '204': { $ref: '#/components/responses/NoContent' },
         '401': { $ref: '#/components/responses/Unauthorized' },
         '403': { $ref: '#/components/responses/Forbidden' },
         '404': { $ref: '#/components/responses/NotFound' },

@@ -446,14 +446,15 @@ tests/
 
 ## Swagger
 
-Documentação interativa disponível em:
+Documentação interativa **OpenAPI 3.0**:
 
-| Ambiente              | URL                                                                                                  |
-| --------------------- | ---------------------------------------------------------------------------------------------------- |
-| **Produção (Render)** | [https://stockflow-api-l4x4.onrender.com/api/docs](https://stockflow-api-l4x4.onrender.com/api/docs) |
-| **Local**             | `http://localhost:3333/api/docs`                                                                     |
+| Ambiente              | Swagger UI                                                                                           | OpenAPI JSON                                                                                                                   |
+| --------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Produção (Render)** | [https://stockflow-api-l4x4.onrender.com/api/docs](https://stockflow-api-l4x4.onrender.com/api/docs) | [https://stockflow-api-l4x4.onrender.com/api/docs/openapi.json](https://stockflow-api-l4x4.onrender.com/api/docs/openapi.json) |
+| **Local**             | `http://localhost:3333/api/docs`                                                                     | `http://localhost:3333/api/docs/openapi.json`                                                                                  |
+| **Docker**            | `http://localhost:3333/api/docs` (mesma porta do container `api`)                                    | `http://localhost:3333/api/docs/openapi.json`                                                                                  |
 
-Rotas versionadas em `/api/v1`.
+Rotas versionadas em `/api/v1`. Tags principais: **Auth**, **Users**, **Health**, **Audit**.
 
 **Como autenticar no Swagger:**
 
@@ -461,7 +462,7 @@ Rotas versionadas em `/api/v1`.
 2. Copie o `accessToken` da resposta.
 3. Clique em **Authorize** e cole o token (sem o prefixo `Bearer`).
 
----
+Headers opcionais: `X-Request-ID` (UUID) para rastreamento — a API devolve o mesmo valor no header de resposta.
 
 ## Variáveis de ambiente
 
@@ -528,6 +529,7 @@ Referência completa: [`.env.example`](.env.example)
 | GET    | `/api/v1/health/ready`   | Readiness probe              |
 | GET    | `/api/v1/health/details` | Status detalhado             |
 | GET    | `/api/docs`              | Swagger UI                   |
+| GET    | `/api/docs/openapi.json` | OpenAPI 3.0 JSON spec        |
 | POST   | `/api/v1/auth/register`  | Registrar empresa + admin    |
 | POST   | `/api/v1/auth/login`     | Login (retorna JWT)          |
 | POST   | `/api/v1/auth/refresh`   | Renovar tokens               |

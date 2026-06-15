@@ -1,10 +1,26 @@
+import {
+  createUserRequestExample,
+  forbiddenErrorExample,
+  healthResponseExample,
+  loginRequestExample,
+  loginResponseExample,
+  paginatedUsersResponseExample,
+  readyResponseExample,
+  refreshTokenRequestExample,
+  refreshTokenResponseExample,
+  unauthorizedErrorExample,
+  userResponseExample,
+  validationErrorExample,
+} from './swagger-examples.js'
+
 export const swaggerComponents = {
   securitySchemes: {
-    bearerAuth: {
+    BearerAuth: {
       type: 'http',
       scheme: 'bearer',
       bearerFormat: 'JWT',
-      description: 'JWT token obtained from POST /api/v1/auth/login',
+      description:
+        'JWT access token obtained from `POST /api/v1/auth/login` or `POST /api/v1/auth/refresh`. Send as `Authorization: Bearer <token>`.',
     },
   },
   schemas: {
@@ -15,6 +31,8 @@ export const swaggerComponents = {
         message: { type: 'string', example: 'Invalid email or password' },
       },
       required: ['status', 'message'],
+      description:
+        'Standard error envelope. Never includes passwords, token hashes, or internal secrets.',
     },
     RootResponse: {
       type: 'object',
@@ -55,6 +73,7 @@ export const swaggerComponents = {
         service: { type: 'string', example: 'StockFlow API' },
       },
       required: ['status', 'timestamp', 'uptime', 'environment'],
+      example: healthResponseExample,
     },
     HealthLiveResponse: {
       type: 'object',
@@ -78,6 +97,12 @@ export const swaggerComponents = {
         },
       },
       required: ['status', 'services'],
+      example: readyResponseExample,
+    },
+    ReadyResponse: {
+      description: 'Readiness probe payload (alias for HealthReadyResponse)',
+      allOf: [{ $ref: '#/components/schemas/HealthReadyResponse' }],
+      example: readyResponseExample,
     },
     HealthDetailsResponse: {
       type: 'object',
@@ -114,33 +139,51 @@ export const swaggerComponents = {
       type: 'object',
       properties: {
         email: { type: 'string', format: 'email', example: 'admin@stockflow.com' },
-        password: { type: 'string', format: 'password', example: 'Admin@123456' },
+        password: {
+          type: 'string',
+          format: 'password',
+          example: 'Admin@123456',
+          description: 'Sent only in the request body; never returned in responses.',
+        },
       },
       required: ['email', 'password'],
+      example: loginRequestExample,
     },
     LoginResponse: {
       type: 'object',
       properties: {
-        accessToken: { type: 'string' },
-        refreshToken: { type: 'string' },
+        accessToken: {
+          type: 'string',
+          description: 'Short-lived JWT access token',
+        },
+        refreshToken: {
+          type: 'string',
+          description: 'Opaque refresh token for rotation (not the database hash)',
+        },
         user: { $ref: '#/components/schemas/AuthUser' },
       },
       required: ['accessToken', 'refreshToken', 'user'],
+      example: loginResponseExample,
     },
     RefreshTokenRequest: {
       type: 'object',
       properties: {
-        refreshToken: { type: 'string' },
+        refreshToken: { type: 'string', description: 'Refresh token from login or prior refresh' },
       },
       required: ['refreshToken'],
+      example: refreshTokenRequestExample,
     },
     RefreshTokenResponse: {
       type: 'object',
       properties: {
         accessToken: { type: 'string' },
-        refreshToken: { type: 'string' },
+        refreshToken: {
+          type: 'string',
+          description: 'New refresh token (previous one is revoked)',
+        },
       },
       required: ['accessToken', 'refreshToken'],
+      example: refreshTokenResponseExample,
     },
     RegisterCompanyRequest: {
       type: 'object',
@@ -246,6 +289,7 @@ export const swaggerComponents = {
     },
     User: {
       type: 'object',
+      description: 'User profile without password or sensitive fields.',
       properties: {
         id: { type: 'string' },
         companyId: { type: 'string' },
@@ -257,17 +301,24 @@ export const swaggerComponents = {
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' },
       },
+      example: userResponseExample,
     },
     CreateUserRequest: {
       type: 'object',
       properties: {
-        firstName: { type: 'string' },
-        lastName: { type: 'string' },
-        email: { type: 'string', format: 'email' },
-        password: { type: 'string', minLength: 8 },
-        role: { type: 'string', enum: ['MANAGER', 'USER'] },
+        firstName: { type: 'string', example: 'Maria' },
+        lastName: { type: 'string', example: 'Silva' },
+        email: { type: 'string', format: 'email', example: 'maria.silva@stockflow.com' },
+        password: {
+          type: 'string',
+          minLength: 8,
+          format: 'password',
+          description: 'Minimum 8 characters. Never returned in API responses.',
+        },
+        role: { type: 'string', enum: ['MANAGER', 'USER'], example: 'USER' },
       },
       required: ['firstName', 'lastName', 'email', 'password', 'role'],
+      example: createUserRequestExample,
     },
     UpdateUserRequest: {
       type: 'object',
@@ -286,29 +337,7 @@ export const swaggerComponents = {
         data: { type: 'array', items: { $ref: '#/components/schemas/User' } },
         pagination: { $ref: '#/components/schemas/UsersPaginationMeta' },
       },
-      example: {
-        data: [
-          {
-            id: 'clx123',
-            companyId: 'clx456',
-            firstName: 'John',
-            lastName: 'Doe',
-            email: 'john@example.com',
-            role: 'USER',
-            status: 'ACTIVE',
-            createdAt: '2026-06-13T12:00:00.000Z',
-            updatedAt: '2026-06-13T12:00:00.000Z',
-          },
-        ],
-        pagination: {
-          page: 1,
-          limit: 10,
-          totalItems: 50,
-          totalPages: 5,
-          hasNextPage: true,
-          hasPreviousPage: false,
-        },
-      },
+      example: paginatedUsersResponseExample,
     },
     UsersPaginationMeta: {
       type: 'object',
@@ -617,11 +646,21 @@ export const swaggerComponents = {
     },
   },
   responses: {
+    Ok: {
+      description: 'Successful operation',
+    },
+    Created: {
+      description: 'Resource created successfully',
+    },
+    NoContent: {
+      description: 'Operation completed successfully with no response body',
+    },
     BadRequest: {
-      description: 'Validation error or invalid request',
+      description: 'Validation error or invalid request (query params)',
       content: {
         'application/json': {
           schema: { $ref: '#/components/schemas/ErrorResponse' },
+          example: validationErrorExample,
         },
       },
     },
@@ -630,14 +669,16 @@ export const swaggerComponents = {
       content: {
         'application/json': {
           schema: { $ref: '#/components/schemas/ErrorResponse' },
+          example: unauthorizedErrorExample,
         },
       },
     },
     Forbidden: {
-      description: 'Insufficient role permissions',
+      description: 'Insufficient role permissions (RBAC)',
       content: {
         'application/json': {
           schema: { $ref: '#/components/schemas/ErrorResponse' },
+          example: forbiddenErrorExample,
         },
       },
     },
@@ -682,10 +723,30 @@ export const swaggerComponents = {
     },
   },
   parameters: {
+    AuthorizationHeader: {
+      name: 'Authorization',
+      in: 'header',
+      required: true,
+      description: 'JWT Bearer token. Format: `Bearer <accessToken>`',
+      schema: { type: 'string', example: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+    },
+    RequestIdHeader: {
+      name: 'X-Request-ID',
+      in: 'header',
+      required: false,
+      description:
+        'Optional client-provided request identifier (UUID). If omitted, the API generates one and returns it in the response header.',
+      schema: {
+        type: 'string',
+        format: 'uuid',
+        example: '550e8400-e29b-41d4-a716-446655440000',
+      },
+    },
     PageQuery: {
       name: 'page',
       in: 'query',
-      schema: { type: 'integer', minimum: 1, default: 1 },
+      description: 'Page number (1-based)',
+      schema: { type: 'integer', minimum: 1, default: 1, example: 1 },
     },
     PageSizeQuery: {
       name: 'pageSize',
