@@ -1,5 +1,7 @@
 # StockFlow API
 
+![CI](https://github.com/vivianeaguiarc/StockFlow-api/actions/workflows/ci.yml/badge.svg)
+
 API REST SaaS multiempresa para gestão de estoque, construída com Node.js, TypeScript e PostgreSQL.
 
 **API em produção:** [https://stockflow-api-l4x4.onrender.com/api/docs](https://stockflow-api-l4x4.onrender.com/api/docs) (Swagger)
@@ -625,10 +627,10 @@ stockflow-api/
 
 ## CI/CD
 
-A cada push e pull request, o GitHub Actions executa:
+A cada push ou pull request nas branches `main` e `develop`, o GitHub Actions executa:
 
 ```
-pnpm install → prisma generate → migrate deploy → lint → format:check → typecheck → test
+pnpm install → lint → prisma generate → migrate deploy → test → build → test:coverage
 ```
 
 Workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
