@@ -113,6 +113,126 @@ describe('Products E2E', () => {
     })
   })
 
+  it('returns 409 when SKU is duplicated in the same company', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+    const sku = `dup-sku-${suffix}`
+
+    await request(app)
+      .post('/api/v1/products')
+      .set(authHeader(admin.accessToken))
+      .send({
+        name: `Product A ${suffix}`,
+        sku,
+        price: 10,
+      })
+      .expect(201)
+
+    const duplicate = await request(app)
+      .post('/api/v1/products')
+      .set(authHeader(admin.accessToken))
+      .send({
+        name: `Product B ${suffix}`,
+        sku,
+        price: 15,
+      })
+      .expect(409)
+
+    expect(duplicate.body.success).toBe(false)
+  })
+
+  it('allows MANAGER to soft delete product', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const manager = await createUserWithRole(admin.accessToken, 'MANAGER')
+    const suffix = uniqueSuffix()
+
+    const created = await request(app)
+      .post('/api/v1/products')
+      .set(authHeader(admin.accessToken))
+      .send({
+        name: `Manager Delete ${suffix}`,
+        sku: `mgr-del-${suffix}`,
+        price: 10,
+      })
+      .expect(201)
+
+    const productId = created.body.data.id as string
+
+    await request(app)
+      .delete(`/api/v1/products/${productId}`)
+      .set(authHeader(manager.accessToken))
+      .expect(204)
+
+    await request(app)
+      .get(`/api/v1/products/${productId}`)
+      .set(authHeader(admin.accessToken))
+      .expect(404)
+  })
+
+  it('returns 403 when USER tries to update or delete product', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const employee = await createUserWithRole(admin.accessToken, 'USER')
+    const suffix = uniqueSuffix()
+
+    const created = await request(app)
+      .post('/api/v1/products')
+      .set(authHeader(admin.accessToken))
+      .send({
+        name: `Protected Product ${suffix}`,
+        sku: `protected-${suffix}`,
+        price: 10,
+      })
+      .expect(201)
+
+    const productId = created.body.data.id as string
+
+    await request(app)
+      .patch(`/api/v1/products/${productId}`)
+      .set(authHeader(employee.accessToken))
+      .send({ name: 'Blocked update' })
+      .expect(403)
+
+    await request(app)
+      .delete(`/api/v1/products/${productId}`)
+      .set(authHeader(employee.accessToken))
+      .expect(403)
+  })
+
+  it('records CREATE_PRODUCT audit log when product is created', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+
+    await request(app)
+      .post('/api/v1/products')
+      .set(authHeader(admin.accessToken))
+      .send({
+        name: `Audit Product ${suffix}`,
+        sku: `audit-${suffix}`,
+        price: 10,
+      })
+      .expect(201)
+
+    const logs = await request(app)
+      .get('/api/v1/audit/logs?action=CREATE_PRODUCT&entity=Product&pageSize=5')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(
+      logs.body.data.some(
+        (log: { action: string; entity: string }) =>
+          log.action === 'CREATE_PRODUCT' && log.entity === 'Product',
+      ),
+    ).toBe(true)
+  })
+
   it('rejects product with non-positive price', async () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
@@ -325,11 +445,15 @@ describe('Products E2E', () => {
     ).toBe(true)
 
     const filtered = await request(app)
-      .get(`/api/products?categoryId=${categoryId}&supplierId=${supplierId}&pageSize=1`)
+      .get(`/api/products?categoryId=${categoryId}&supplierId=${supplierId}&limit=1&page=1`)
       .set(authHeader(admin.accessToken))
       .expect(200)
 
     expect(filtered.body.data).toHaveLength(1)
-    expect(filtered.body.pagination.totalItems).toBeGreaterThanOrEqual(2)
+    expect(filtered.body.pagination).toMatchObject({
+      page: 1,
+      limit: 1,
+      totalItems: 2,
+    })
   })
 })

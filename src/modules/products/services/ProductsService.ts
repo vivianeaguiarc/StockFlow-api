@@ -60,7 +60,7 @@ export class ProductsService {
       await auditLogger.log({
         companyId,
         userId: actorUserId,
-        action: AuditAction.CREATE,
+        action: AuditAction.CREATE_PRODUCT,
         entity: 'Product',
         entityId: product.id,
         newValue: response,
@@ -93,7 +93,7 @@ export class ProductsService {
     companyId: string,
     query: ListProductsQuery,
   ): Promise<PaginatedProductsResponseDto> {
-    const { page, pageSize, sortBy, sortOrder } = query
+    const { page, limit, sortBy, sortOrder } = query
     const orderBy = buildOrderBy(
       sortBy,
       sortOrder,
@@ -104,7 +104,7 @@ export class ProductsService {
 
     const result = await executePaginatedQuery({
       page,
-      pageSize,
+      pageSize: limit,
       findMany: (skip, take) => this.repository.findMany(where, skip, take, orderBy),
       count: () => this.repository.count(where),
     })
@@ -170,7 +170,7 @@ export class ProductsService {
       await auditLogger.log({
         companyId,
         userId: actorUserId,
-        action: AuditAction.UPDATE,
+        action: AuditAction.UPDATE_PRODUCT,
         entity: 'Product',
         entityId: productId,
         oldValue,
@@ -205,7 +205,7 @@ export class ProductsService {
     await auditLogger.log({
       companyId,
       userId: actorUserId,
-      action: AuditAction.DELETE,
+      action: AuditAction.DELETE_PRODUCT,
       entity: 'Product',
       entityId: productId,
       oldValue,

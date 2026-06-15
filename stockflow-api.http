@@ -211,7 +211,7 @@ Content-Type: application/json
 }
 
 ### List Products
-GET {{baseUrl}}/products?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
+GET {{baseUrl}}/products?page=1&limit=10&sortBy=createdAt&sortOrder=desc
 Authorization: Bearer {{accessToken}}
 
 ### Search Products

@@ -41,7 +41,9 @@ const suppliersListParams = [
 ]
 
 const productsListParams = [
-  ...basePaginationParams,
+  { $ref: '#/components/parameters/PageQuery' },
+  { $ref: '#/components/parameters/LimitQuery' },
+  { $ref: '#/components/parameters/SortOrderQuery' },
   { $ref: '#/components/parameters/ProductsSortByQuery' },
   { $ref: '#/components/parameters/ProductNameFilterQuery' },
   { $ref: '#/components/parameters/ProductSkuFilterQuery' },
@@ -827,7 +829,7 @@ export const swaggerPaths = {
     delete: {
       tags: ['Products'],
       summary: 'Soft delete product',
-      description: 'Requires ADMIN role.',
+      description: 'Requires ADMIN or MANAGER role. Soft deletes the product (sets deletedAt).',
       security: secured,
       parameters: [{ $ref: '#/components/parameters/IdPath' }],
       responses: {

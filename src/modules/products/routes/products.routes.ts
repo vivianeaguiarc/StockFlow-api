@@ -41,7 +41,7 @@ export function createProductsRoutes(): Router {
     (req, res, next) => productsController.update(req, res, next),
   )
 
-  router.delete('/:id', authenticate, authorizeRoles('ADMIN'), (req, res, next) =>
+  router.delete('/:id', authenticate, authorizeRoles('ADMIN', 'MANAGER'), (req, res, next) =>
     productsController.delete(req, res, next),
   )
 

@@ -12,11 +12,12 @@ export type InventoryMovementType = 'ENTRY' | 'EXIT' | 'ADJUSTMENT'
 
 export type AuditAction =
   | 'LOGIN'
-  | 'USER_CREATED'
-  | 'USER_UPDATED'
-  | 'PRODUCT_CREATED'
-  | 'PRODUCT_UPDATED'
-  | 'PRODUCT_DELETED'
+  | 'CREATE_USER'
+  | 'UPDATE_USER'
+  | 'DELETE_USER'
+  | 'CREATE_PRODUCT'
+  | 'UPDATE_PRODUCT'
+  | 'DELETE_PRODUCT'
   | 'PERMISSION_CHANGED'
 
 export type TenantContext = {
