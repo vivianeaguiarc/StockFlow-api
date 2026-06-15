@@ -35,8 +35,7 @@ async function createLowStockProduct(token: string, suffix: string): Promise<str
       supplierId: supplier.body.data.id as string,
       name: `Low Stock Product ${suffix}`,
       sku: `dash-low-${suffix}`,
-      costPrice: 10,
-      salePrice: 20,
+      price: 20,
       quantity: 2,
       minimumStock: 5,
     })

@@ -46,17 +46,42 @@ describe('Products E2E', () => {
     await request(app)
       .post('/api/v1/products')
       .send({
-        categoryId: 'fake',
-        supplierId: 'fake',
         name: 'Product',
         sku: `sku-${uniqueSuffix()}`,
-        costPrice: 10,
-        salePrice: 20,
+        price: 20,
       })
       .expect(401)
   })
 
-  it('creates product with valid category and supplier', async () => {
+  it('creates product with required fields', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+
+    const response = await request(app)
+      .post('/api/v1/products')
+      .set(authHeader(admin.accessToken))
+      .send({
+        name: `Product ${suffix}`,
+        sku: `sku-${suffix}`,
+        price: 29.9,
+        quantity: 5,
+        minimumStock: 2,
+      })
+      .expect(201)
+
+    expect(response.body.data).toMatchObject({
+      name: `Product ${suffix}`,
+      sku: `sku-${suffix}`,
+      price: 29.9,
+      quantity: 5,
+      minimumStock: 2,
+      active: true,
+    })
+  })
+
+  it('creates product with optional category and supplier', async () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
 
@@ -72,8 +97,7 @@ describe('Products E2E', () => {
         supplierId,
         name: `Product ${suffix}`,
         sku: `sku-${suffix}`,
-        costPrice: 15.5,
-        salePrice: 29.9,
+        price: 15.5,
         quantity: 5,
         minimumStock: 2,
       })
@@ -84,8 +108,26 @@ describe('Products E2E', () => {
       supplierId,
       name: `Product ${suffix}`,
       sku: `sku-${suffix}`,
+      price: 15.5,
       quantity: 5,
     })
+  })
+
+  it('rejects product with non-positive price', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+
+    await request(app)
+      .post('/api/v1/products')
+      .set(authHeader(admin.accessToken))
+      .send({
+        name: `Invalid Product ${suffix}`,
+        sku: `invalid-${suffix}`,
+        price: 0,
+      })
+      .expect(422)
   })
 
   it('supports list, get, update and soft delete', async () => {
@@ -93,19 +135,14 @@ describe('Products E2E', () => {
     companyIds.push(admin.companyId)
 
     const suffix = uniqueSuffix()
-    const categoryId = await createCategory(admin.accessToken, suffix)
-    const supplierId = await createSupplier(admin.accessToken, suffix)
 
     const created = await request(app)
       .post('/api/v1/products')
       .set(authHeader(admin.accessToken))
       .send({
-        categoryId,
-        supplierId,
         name: `CRUD Product ${suffix}`,
         sku: `crud-sku-${suffix}`,
-        costPrice: 10,
-        salePrice: 20,
+        price: 20,
       })
       .expect(201)
 
@@ -150,21 +187,43 @@ describe('Products E2E', () => {
 
     const employee = await createUserWithRole(admin.accessToken, 'USER')
     const suffix = uniqueSuffix()
-    const categoryId = await createCategory(admin.accessToken, suffix)
-    const supplierId = await createSupplier(admin.accessToken, suffix)
 
     await request(app)
       .post('/api/v1/products')
       .set(authHeader(employee.accessToken))
       .send({
-        categoryId,
-        supplierId,
         name: `Blocked Product ${suffix}`,
         sku: `blocked-${suffix}`,
-        costPrice: 10,
-        salePrice: 20,
+        price: 20,
       })
       .expect(403)
+  })
+
+  it('allows USER role to list and get products', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const employee = await createUserWithRole(admin.accessToken, 'USER')
+    const suffix = uniqueSuffix()
+
+    const created = await request(app)
+      .post('/api/v1/products')
+      .set(authHeader(admin.accessToken))
+      .send({
+        name: `Readable Product ${suffix}`,
+        sku: `read-${suffix}`,
+        price: 10,
+      })
+      .expect(201)
+
+    const productId = created.body.data.id as string
+
+    await request(app).get('/api/v1/products').set(authHeader(employee.accessToken)).expect(200)
+
+    await request(app)
+      .get(`/api/v1/products/${productId}`)
+      .set(authHeader(employee.accessToken))
+      .expect(200)
   })
 
   it('does not expose products from another company', async () => {
@@ -173,19 +232,14 @@ describe('Products E2E', () => {
     companyIds.push(companyA.companyId, companyB.companyId)
 
     const suffix = uniqueSuffix()
-    const categoryId = await createCategory(companyA.accessToken, suffix)
-    const supplierId = await createSupplier(companyA.accessToken, suffix)
 
     const created = await request(app)
       .post('/api/v1/products')
       .set(authHeader(companyA.accessToken))
       .send({
-        categoryId,
-        supplierId,
         name: `Private Product ${suffix}`,
         sku: `private-${suffix}`,
-        costPrice: 10,
-        salePrice: 20,
+        price: 20,
       })
       .expect(201)
 
@@ -213,10 +267,10 @@ describe('Products E2E', () => {
         supplierId,
         name: `Notebook ${suffix}`,
         sku: `notebook-${suffix}`,
-        costPrice: 10,
-        salePrice: 20,
+        price: 20,
         quantity: 1,
         minimumStock: 5,
+        active: true,
       })
       .expect(201)
 
@@ -228,20 +282,35 @@ describe('Products E2E', () => {
         supplierId,
         name: `Mouse ${suffix}`,
         sku: `mouse-${suffix}`,
-        costPrice: 5,
-        salePrice: 10,
+        price: 10,
         quantity: 20,
         minimumStock: 2,
+        active: false,
       })
       .expect(201)
 
-    const search = await request(app)
-      .get('/api/v1/products?search=notebook')
+    const byName = await request(app)
+      .get('/api/v1/products?name=notebook')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
-    expect(search.body.data.length).toBe(1)
-    expect(search.body.data[0].name.toLowerCase()).toContain('notebook')
+    expect(byName.body.data.length).toBe(1)
+    expect(byName.body.data[0].name.toLowerCase()).toContain('notebook')
+
+    const bySku = await request(app)
+      .get(`/api/v1/products?sku=mouse-${suffix}`)
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(bySku.body.data.length).toBe(1)
+    expect(bySku.body.data[0].sku).toBe(`mouse-${suffix}`)
+
+    const activeOnly = await request(app)
+      .get('/api/v1/products?active=true')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(activeOnly.body.data.every((item: { active: boolean }) => item.active)).toBe(true)
 
     const lowStock = await request(app)
       .get('/api/v1/products?lowStock=true')

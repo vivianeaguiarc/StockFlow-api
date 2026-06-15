@@ -21,6 +21,14 @@ export function productsListKey(companyId: string, queryHash: string): string {
   return `${CACHE_PREFIX}:${companyId}:products:list:${queryHash}`
 }
 
+export function productsByIdKey(companyId: string, productId: string): string {
+  return `${CACHE_PREFIX}:${companyId}:products:id:${productId}`
+}
+
+export function productsDetailCachePattern(companyId: string): string {
+  return `${CACHE_PREFIX}:${companyId}:products:id:*`
+}
+
 export function dashboardCachePattern(companyId: string): string {
   return `${CACHE_PREFIX}:${companyId}:dashboard:*`
 }

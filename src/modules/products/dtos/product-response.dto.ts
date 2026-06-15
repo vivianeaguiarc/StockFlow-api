@@ -1,23 +1,20 @@
-import type { ProductStatus } from '@prisma/client'
-
 import type { PaginatedResponse } from '../../../shared/types/paginated-response.js'
 
 export type ProductResponseDto = {
   id: string
   companyId: string
-  categoryId: string
-  supplierId: string
   name: string
   description: string | null
   sku: string
-  barcode: string | null
-  costPrice: number
-  salePrice: number
+  price: number
   quantity: number
   minimumStock: number
-  status: ProductStatus
+  active: boolean
   createdAt: Date
   updatedAt: Date
+  categoryId: string | null
+  supplierId: string | null
+  barcode: string | null
 }
 
 export type PaginatedProductsResponseDto = PaginatedResponse<ProductResponseDto>

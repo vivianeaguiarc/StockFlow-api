@@ -12,6 +12,7 @@ import {
   hashUsersListQuery,
   productsListCachePattern,
   productsListKey,
+  productsByIdKey,
   usersByIdKey,
   usersListCachePattern,
   usersListKey,
@@ -36,11 +37,14 @@ describe('cache keys', () => {
     )
   })
 
-  it('builds tenant-scoped products list keys', () => {
+  it('builds tenant-scoped products list and detail keys', () => {
     const queryHash = hashProductsListQuery({ page: 1, pageSize: 10 })
 
     expect(productsListKey(companyId, queryHash)).toBe(
       `stockflow:company-abc:products:list:${queryHash}`,
+    )
+    expect(productsByIdKey(companyId, 'product-1')).toBe(
+      'stockflow:company-abc:products:id:product-1',
     )
   })
 

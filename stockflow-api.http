@@ -205,8 +205,7 @@ Content-Type: application/json
   "description": "Notebook para uso corporativo",
   "sku": "NOTE-DELL-001",
   "barcode": "7891234567890",
-  "costPrice": 2800,
-  "salePrice": 3500,
+  "price": 3500,
   "quantity": 10,
   "minimumStock": 2
 }
@@ -216,7 +215,7 @@ GET {{baseUrl}}/products?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
 Authorization: Bearer {{accessToken}}
 
 ### Search Products
-GET {{baseUrl}}/products?search=notebook&status=ACTIVE&lowStock=false
+GET {{baseUrl}}/products?name=notebook&active=true&lowStock=false
 Authorization: Bearer {{accessToken}}
 
 ### Filter Products By Category And Supplier
@@ -233,7 +232,7 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-  "salePrice": 3700,
+  "price": 3700,
   "minimumStock": 3
 }
 

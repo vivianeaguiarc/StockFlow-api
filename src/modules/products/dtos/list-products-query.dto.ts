@@ -1,19 +1,18 @@
-import { ProductStatus } from '@prisma/client'
 import { z } from 'zod'
 
 import {
   optionalBooleanQuerySchema,
-  optionalSearchQuerySchema,
   paginationQuerySchema,
 } from '../../../shared/dtos/pagination-query.dto.js'
 
 export const listProductsQuerySchema = paginationQuerySchema.extend({
-  status: z.nativeEnum(ProductStatus).optional(),
+  name: z.string().trim().optional(),
+  sku: z.string().trim().optional(),
+  active: optionalBooleanQuerySchema,
   categoryId: z.string().cuid().optional(),
   supplierId: z.string().cuid().optional(),
   lowStock: optionalBooleanQuerySchema,
-  search: optionalSearchQuerySchema,
-  sortBy: z.enum(['name', 'sku', 'quantity', 'createdAt', 'salePrice']).default('name'),
+  sortBy: z.enum(['name', 'sku', 'quantity', 'createdAt', 'price']).default('name'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 })
 

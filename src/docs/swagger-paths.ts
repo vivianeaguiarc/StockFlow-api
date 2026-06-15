@@ -43,11 +43,12 @@ const suppliersListParams = [
 const productsListParams = [
   ...basePaginationParams,
   { $ref: '#/components/parameters/ProductsSortByQuery' },
-  { $ref: '#/components/parameters/StatusFilterQuery' },
+  { $ref: '#/components/parameters/ProductNameFilterQuery' },
+  { $ref: '#/components/parameters/ProductSkuFilterQuery' },
+  { $ref: '#/components/parameters/ProductActiveFilterQuery' },
   { $ref: '#/components/parameters/CategoryIdFilterQuery' },
   { $ref: '#/components/parameters/SupplierIdFilterQuery' },
   { $ref: '#/components/parameters/LowStockFilterQuery' },
-  { $ref: '#/components/parameters/SearchQuery' },
 ]
 
 const auditLogsListParams = [

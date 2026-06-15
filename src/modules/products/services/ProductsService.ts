@@ -1,16 +1,17 @@
-import { AuditAction, Prisma, type Product, ProductStatus } from '@prisma/client'
+import { AuditAction, Prisma, type Product } from '@prisma/client'
 
 import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { invalidateProductRelatedCache } from '../../../shared/cache/cache-invalidation.js'
-import { hashProductsListQuery, productsListKey } from '../../../shared/cache/cache-keys.js'
-import { cacheService } from '../../../shared/cache/CacheService.js'
-import { prisma } from '../../../shared/database/prisma.js'
-import { AppError } from '../../../shared/errors/AppError.js'
 import {
-  buildContainsSearchFilter,
-  buildOrderBy,
-  executePaginatedQuery,
-} from '../../../shared/utils/pagination.js'
+  CACHE_DETAIL_TTL_SECONDS,
+  CACHE_LIST_TTL_SECONDS,
+  hashProductsListQuery,
+  productsByIdKey,
+  productsListKey,
+} from '../../../shared/cache/cache-keys.js'
+import { cacheService } from '../../../shared/cache/CacheService.js'
+import { AppError } from '../../../shared/errors/AppError.js'
+import { buildOrderBy, executePaginatedQuery } from '../../../shared/utils/pagination.js'
 import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type { CreateProductDto } from '../dtos/create-product.dto.js'
 import type { ListProductsQuery } from '../dtos/list-products-query.dto.js'
@@ -19,32 +20,39 @@ import type {
   ProductResponseDto,
 } from '../dtos/product-response.dto.js'
 import type { UpdateProductDto } from '../dtos/update-product.dto.js'
+import { type ProductsRepository, productsRepository } from '../repositories/index.js'
+import { buildProductsListWhere } from '../utils/build-products-list-where.js'
 
 export class ProductsService {
+  constructor(private readonly repository: ProductsRepository = productsRepository) {}
+
   async create(
     companyId: string,
     actorUserId: string,
     data: CreateProductDto,
     auditContext?: AuditContext,
   ): Promise<ProductResponseDto> {
-    await this.validateCategory(companyId, data.categoryId)
-    await this.validateSupplier(companyId, data.supplierId)
+    if (data.categoryId) {
+      await this.validateCategory(companyId, data.categoryId)
+    }
+
+    if (data.supplierId) {
+      await this.validateSupplier(companyId, data.supplierId)
+    }
 
     try {
-      const product = await prisma.product.create({
-        data: {
-          companyId,
-          categoryId: data.categoryId,
-          supplierId: data.supplierId,
-          name: data.name,
-          description: data.description ?? null,
-          sku: data.sku,
-          barcode: data.barcode ?? null,
-          costPrice: data.costPrice,
-          salePrice: data.salePrice,
-          quantity: data.quantity,
-          minimumStock: data.minimumStock,
-        },
+      const product = await this.repository.create({
+        companyId,
+        categoryId: data.categoryId ?? null,
+        supplierId: data.supplierId ?? null,
+        name: data.name,
+        description: data.description ?? null,
+        sku: data.sku,
+        barcode: data.barcode ?? null,
+        price: data.price,
+        quantity: data.quantity,
+        minimumStock: data.minimumStock,
+        active: data.active,
       })
 
       const response = this.toResponse(product)
@@ -74,48 +82,31 @@ export class ProductsService {
   async list(companyId: string, query: ListProductsQuery): Promise<PaginatedProductsResponseDto> {
     const cacheKey = productsListKey(companyId, hashProductsListQuery(query))
 
-    return cacheService.getOrSet(cacheKey, () => this.fetchProductList(companyId, query))
+    return cacheService.getOrSet(
+      cacheKey,
+      () => this.fetchProductList(companyId, query),
+      CACHE_LIST_TTL_SECONDS,
+    )
   }
 
   private async fetchProductList(
     companyId: string,
     query: ListProductsQuery,
   ): Promise<PaginatedProductsResponseDto> {
-    const { page, pageSize, sortBy, sortOrder, status, categoryId, supplierId, lowStock, search } =
-      query
-    const searchFilter = buildContainsSearchFilter(search, ['name', 'sku', 'barcode'])
+    const { page, pageSize, sortBy, sortOrder } = query
     const orderBy = buildOrderBy(
       sortBy,
       sortOrder,
-      ['name', 'sku', 'quantity', 'createdAt', 'salePrice'] as const,
+      ['name', 'sku', 'quantity', 'createdAt', 'price'] as const,
       'name',
     )
-
-    const where: Prisma.ProductWhereInput = {
-      companyId,
-      deletedAt: null,
-      ...(status && { status }),
-      ...(categoryId && { categoryId }),
-      ...(supplierId && { supplierId }),
-      ...(lowStock === true && {
-        quantity: {
-          lte: prisma.product.fields.minimumStock,
-        },
-      }),
-      ...(searchFilter && { OR: searchFilter }),
-    }
+    const where = buildProductsListWhere(companyId, query)
 
     const result = await executePaginatedQuery({
       page,
       pageSize,
-      findMany: (skip, take) =>
-        prisma.product.findMany({
-          where,
-          skip,
-          take,
-          orderBy,
-        }),
-      count: () => prisma.product.count({ where }),
+      findMany: (skip, take) => this.repository.findMany(where, skip, take, orderBy),
+      count: () => this.repository.count(where),
     })
 
     return {
@@ -125,6 +116,19 @@ export class ProductsService {
   }
 
   async getById(companyId: string, productId: string): Promise<ProductResponseDto> {
+    const cacheKey = productsByIdKey(companyId, productId)
+
+    return cacheService.getOrSet(
+      cacheKey,
+      () => this.fetchProductById(companyId, productId),
+      CACHE_DETAIL_TTL_SECONDS,
+    )
+  }
+
+  private async fetchProductById(
+    companyId: string,
+    productId: string,
+  ): Promise<ProductResponseDto> {
     const product = await this.findActiveProductInCompany(companyId, productId)
     return this.toResponse(product)
   }
@@ -139,30 +143,26 @@ export class ProductsService {
     const product = await this.findActiveProductInCompany(companyId, productId)
     const oldValue = this.toResponse(product)
 
-    if (data.categoryId !== undefined) {
+    if (data.categoryId) {
       await this.validateCategory(companyId, data.categoryId)
     }
 
-    if (data.supplierId !== undefined) {
+    if (data.supplierId) {
       await this.validateSupplier(companyId, data.supplierId)
     }
 
     try {
-      const updated = await prisma.product.update({
-        where: { id: productId },
-        data: {
-          ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
-          ...(data.supplierId !== undefined && { supplierId: data.supplierId }),
-          ...(data.name !== undefined && { name: data.name }),
-          ...(data.description !== undefined && { description: data.description }),
-          ...(data.sku !== undefined && { sku: data.sku }),
-          ...(data.barcode !== undefined && { barcode: data.barcode }),
-          ...(data.costPrice !== undefined && { costPrice: data.costPrice }),
-          ...(data.salePrice !== undefined && { salePrice: data.salePrice }),
-          ...(data.quantity !== undefined && { quantity: data.quantity }),
-          ...(data.minimumStock !== undefined && { minimumStock: data.minimumStock }),
-          ...(data.status !== undefined && { status: data.status }),
-        },
+      const updated = await this.repository.update(productId, {
+        ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
+        ...(data.supplierId !== undefined && { supplierId: data.supplierId }),
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.description !== undefined && { description: data.description }),
+        ...(data.sku !== undefined && { sku: data.sku }),
+        ...(data.barcode !== undefined && { barcode: data.barcode }),
+        ...(data.price !== undefined && { price: data.price }),
+        ...(data.quantity !== undefined && { quantity: data.quantity }),
+        ...(data.minimumStock !== undefined && { minimumStock: data.minimumStock }),
+        ...(data.active !== undefined && { active: data.active }),
       })
 
       const response = this.toResponse(updated)
@@ -178,7 +178,7 @@ export class ProductsService {
         ...auditContext,
       })
 
-      await invalidateProductRelatedCache(companyId)
+      await invalidateProductRelatedCache(companyId, productId)
 
       return response
     } catch (error) {
@@ -200,13 +200,7 @@ export class ProductsService {
     const oldValue = this.toResponse(product)
     const deletedAt = new Date()
 
-    await prisma.product.update({
-      where: { id: productId },
-      data: {
-        deletedAt,
-        status: ProductStatus.INACTIVE,
-      },
-    })
+    await this.repository.softDelete(productId, deletedAt)
 
     await auditLogger.log({
       companyId,
@@ -215,21 +209,15 @@ export class ProductsService {
       entity: 'Product',
       entityId: productId,
       oldValue,
-      newValue: { deletedAt: deletedAt.toISOString(), status: ProductStatus.INACTIVE },
+      newValue: { deletedAt: deletedAt.toISOString(), active: false },
       ...auditContext,
     })
 
-    await invalidateProductRelatedCache(companyId)
+    await invalidateProductRelatedCache(companyId, productId)
   }
 
   private async validateCategory(companyId: string, categoryId: string): Promise<void> {
-    const category = await prisma.category.findFirst({
-      where: {
-        id: categoryId,
-        companyId,
-        deletedAt: null,
-      },
-    })
+    const category = await this.repository.findCategoryInCompany(companyId, categoryId)
 
     if (!category) {
       throw new AppError('Category not found', 404)
@@ -237,13 +225,7 @@ export class ProductsService {
   }
 
   private async validateSupplier(companyId: string, supplierId: string): Promise<void> {
-    const supplier = await prisma.supplier.findFirst({
-      where: {
-        id: supplierId,
-        companyId,
-        deletedAt: null,
-      },
-    })
+    const supplier = await this.repository.findSupplierInCompany(companyId, supplierId)
 
     if (!supplier) {
       throw new AppError('Supplier not found', 404)
@@ -251,13 +233,7 @@ export class ProductsService {
   }
 
   private async findActiveProductInCompany(companyId: string, productId: string) {
-    const product = await prisma.product.findFirst({
-      where: {
-        id: productId,
-        companyId,
-        deletedAt: null,
-      },
-    })
+    const product = await this.repository.findActiveInCompany(companyId, productId)
 
     if (!product) {
       throw new AppError('Product not found', 404)
@@ -284,19 +260,18 @@ export class ProductsService {
     return {
       id: product.id,
       companyId: product.companyId,
-      categoryId: product.categoryId,
-      supplierId: product.supplierId,
       name: product.name,
       description: product.description,
       sku: product.sku,
-      barcode: product.barcode,
-      costPrice: Number(product.costPrice),
-      salePrice: Number(product.salePrice),
+      price: Number(product.price),
       quantity: product.quantity,
       minimumStock: product.minimumStock,
-      status: product.status,
+      active: product.active,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
+      categoryId: product.categoryId,
+      supplierId: product.supplierId,
+      barcode: product.barcode,
     }
   }
 }

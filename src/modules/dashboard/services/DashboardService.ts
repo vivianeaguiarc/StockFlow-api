@@ -1,4 +1,4 @@
-import { InventoryMovementType, ProductStatus } from '@prisma/client'
+import { InventoryMovementType } from '@prisma/client'
 
 import {
   dashboardLowStockProductsKey,
@@ -50,12 +50,12 @@ export class DashboardService {
     const activeProductWhere = {
       companyId,
       deletedAt: null,
-      status: ProductStatus.ACTIVE,
+      active: true,
     }
     const inactiveProductWhere = {
       companyId,
       deletedAt: null,
-      status: ProductStatus.INACTIVE,
+      active: false,
     }
     const lowStockWhere = {
       companyId,
@@ -166,10 +166,12 @@ export class DashboardService {
       quantity: product.quantity,
       minimumStock: product.minimumStock,
       category: product.category,
-      supplier: {
-        id: product.supplier.id,
-        name: product.supplier.tradeName || product.supplier.corporateName,
-      },
+      supplier: product.supplier
+        ? {
+            id: product.supplier.id,
+            name: product.supplier.tradeName || product.supplier.corporateName,
+          }
+        : null,
     }))
   }
 

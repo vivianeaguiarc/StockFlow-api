@@ -39,8 +39,7 @@ async function createProductWithStock(
       supplierId: supplier.body.data.id as string,
       name: `Inventory Product ${suffix}`,
       sku: `inv-sku-${suffix}`,
-      costPrice: 10,
-      salePrice: 20,
+      price: 20,
       quantity,
     })
     .expect(201)

@@ -21,11 +21,11 @@ export type DashboardLowStockProductDto = {
   category: {
     id: string
     name: string
-  }
+  } | null
   supplier: {
     id: string
     name: string
-  }
+  } | null
 }
 
 export type DashboardRecentMovementDto = {

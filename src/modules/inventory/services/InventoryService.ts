@@ -1,9 +1,4 @@
-import {
-  AuditAction,
-  type InventoryMovement,
-  InventoryMovementType,
-  ProductStatus,
-} from '@prisma/client'
+import { AuditAction, type InventoryMovement, InventoryMovementType } from '@prisma/client'
 
 import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { invalidateProductRelatedCache } from '../../../shared/cache/cache-invalidation.js'
@@ -31,7 +26,7 @@ export class InventoryService {
           id: data.productId,
           companyId,
           deletedAt: null,
-          status: ProductStatus.ACTIVE,
+          active: true,
         },
       })
 
