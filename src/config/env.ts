@@ -6,8 +6,8 @@ const envSchema = z.object({
   API_PREFIX: z.string().default('/api/v1'),
   DATABASE_URL: z.string().optional(),
   JWT_SECRET: z.string().optional(),
-  JWT_EXPIRES_IN: z.string().default('7d'),
-  REFRESH_TOKEN_EXPIRES_IN_DAYS: z.coerce.number().int().positive().default(30),
+  JWT_EXPIRES_IN: z.string().default('15m'),
+  REFRESH_TOKEN_EXPIRES_IN_DAYS: z.coerce.number().int().positive().default(7),
   RATE_LIMIT_ENABLED: z.preprocess((value) => {
     if (value === undefined || value === '') {
       return undefined

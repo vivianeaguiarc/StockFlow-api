@@ -7,7 +7,6 @@ import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import { auditLogService } from '../../audit/audit-log.service.js'
-import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type { AuthMeResponseDto } from '../dtos/auth-me-response.dto.js'
 import type { JwtPayload, LoginDto, LoginResponseDto } from '../dtos/login.dto.js'
 import type {
@@ -23,7 +22,6 @@ import { refreshTokenService } from './RefreshTokenService.js'
 
 const BCRYPT_SALT_ROUNDS = 12
 const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password'
-const INVALID_REFRESH_TOKEN_MESSAGE = 'Unauthorized'
 
 export class AuthService {
   async register(data: RegisterCompanyDto): Promise<RegisterCompanyResponseDto> {
@@ -137,17 +135,18 @@ export class AuthService {
     const { token: refreshToken, user } = await refreshTokenService.rotate(data.refreshToken)
     const accessToken = this.signAccessToken(user)
 
-    await auditLogger.log({
+    await auditLogService.record({
       companyId: user.companyId,
       userId: user.id,
-      action: AuditAction.REFRESH,
+      action: AuditAction.REFRESH_TOKEN,
       entity: 'User',
       entityId: user.id,
-      newValue: {
+      metadata: {
         email: user.email,
         role: user.role,
       },
-      ...auditContext,
+      ipAddress: auditContext?.ipAddress ?? null,
+      userAgent: auditContext?.userAgent ?? null,
     })
 
     return {
@@ -160,20 +159,21 @@ export class AuthService {
     const user = await refreshTokenService.revoke(data.refreshToken)
 
     if (!user) {
-      throw new AppError(INVALID_REFRESH_TOKEN_MESSAGE, 401)
+      return
     }
 
-    await auditLogger.log({
+    await auditLogService.record({
       companyId: user.companyId,
       userId: user.id,
       action: AuditAction.LOGOUT,
       entity: 'User',
       entityId: user.id,
-      newValue: {
+      metadata: {
         email: user.email,
         role: user.role,
       },
-      ...auditContext,
+      ipAddress: auditContext?.ipAddress ?? null,
+      userAgent: auditContext?.userAgent ?? null,
     })
   }
 

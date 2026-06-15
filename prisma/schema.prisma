@@ -54,6 +54,7 @@ enum AuditAction {
   LOGIN
   LOGOUT
   REFRESH
+  REFRESH_TOKEN
   STOCK_ENTRY
   STOCK_EXIT
   STOCK_ADJUSTMENT
@@ -103,7 +104,7 @@ model User {
 }
 
 model RefreshToken {
-  id        String    @id @default(cuid())
+  id        String    @id @default(uuid())
   userId    String    @map("user_id")
   tokenHash String    @map("token_hash")
   expiresAt DateTime  @map("expires_at")
@@ -217,7 +218,7 @@ model AuditLog {
   createdAt DateTime    @default(now()) @map("created_at")
 
   company Company @relation(fields: [companyId], references: [id])
-  user    User?   @relation(fields: [userId], references: [id])
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("audit_logs")
 }

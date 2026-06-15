@@ -260,7 +260,8 @@ export const swaggerPaths = {
     post: {
       tags: ['Auth'],
       summary: 'Logout user',
-      description: 'Revokes the provided refresh token.',
+      description:
+        'Revokes the provided refresh token. Always returns 204, even when the token is invalid or already revoked.',
       requestBody: {
         required: true,
         content: {
@@ -271,7 +272,6 @@ export const swaggerPaths = {
       },
       responses: {
         '204': { description: 'Logout successful' },
-        '401': { $ref: '#/components/responses/Unauthorized' },
         '500': { $ref: '#/components/responses/InternalServerError' },
       },
     },

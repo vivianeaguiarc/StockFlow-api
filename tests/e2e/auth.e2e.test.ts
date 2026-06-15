@@ -172,10 +172,10 @@ describe('POST /api/auth/logout', () => {
       .expect(401)
   })
 
-  it('returns 401 for invalid refresh token', async () => {
+  it('returns 204 even for invalid refresh token', async () => {
     await request(app)
       .post('/api/v1/auth/logout')
       .send({ refreshToken: 'invalid-token' })
-      .expect(401)
+      .expect(204)
   })
 })
