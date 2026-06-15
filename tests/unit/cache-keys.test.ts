@@ -7,6 +7,7 @@ import {
   dashboardCachePattern,
   dashboardLowStockProductsKey,
   dashboardRecentMovementsKey,
+  dashboardStockKey,
   dashboardSummaryKey,
   hashProductsListQuery,
   hashProductsLowStockQuery,
@@ -38,6 +39,7 @@ describe('cache keys', () => {
     expect(dashboardRecentMovementsKey(companyId, 10)).toBe(
       'stockflow:company-abc:dashboard:recent-movements:10',
     )
+    expect(dashboardStockKey(companyId)).toBe('stockflow:company-abc:dashboard:stock')
   })
 
   it('builds tenant-scoped products list and detail keys', () => {

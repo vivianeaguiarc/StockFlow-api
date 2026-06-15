@@ -326,6 +326,10 @@ Authorization: Bearer {{accessToken}}
 GET {{baseUrl}}/dashboard/recent-movements?limit=10
 Authorization: Bearer {{accessToken}}
 
+### Dashboard Stock Metrics
+GET {{baseUrl}}/dashboard/stock
+Authorization: Bearer {{accessToken}}
+
 ### List Audit Logs
 GET {{baseUrl}}/audit/logs?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
 Authorization: Bearer {{accessToken}}

@@ -48,3 +48,26 @@ export type DashboardRecentMovementDto = {
     email: string
   }
 }
+
+export type RecentStockMovementDto = {
+  id: string
+  productId: string
+  productName: string
+  type: string
+  quantity: number
+  previousQuantity: number
+  newQuantity: number
+  userId: string
+  userEmail: string
+  createdAt: Date
+}
+
+export type StockDashboardDto = {
+  totalProducts: number
+  activeProducts: number
+  inactiveProducts: number
+  lowStockProducts: number
+  totalStockQuantity: number
+  totalInventoryValue: number
+  recentMovements: RecentStockMovementDto[]
+}

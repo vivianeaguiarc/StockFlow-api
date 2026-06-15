@@ -30,5 +30,9 @@ export function createDashboardRoutes(): Router {
     (req, res, next) => dashboardController.getRecentMovements(req, res, next),
   )
 
+  router.get('/stock', authenticate, authorizeRoles('ADMIN', 'MANAGER'), (req, res, next) =>
+    dashboardController.getStock(req, res, next),
+  )
+
   return router
 }

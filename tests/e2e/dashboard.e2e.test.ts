@@ -240,3 +240,204 @@ describe('Dashboard E2E', () => {
     expect(summaryB.body.data.totalProducts).toBe(0)
   })
 })
+
+describe('Stock dashboard E2E', () => {
+  const companyIds: string[] = []
+
+  afterEach(async () => {
+    await cleanupCompanies(companyIds)
+    companyIds.length = 0
+  })
+
+  async function createProduct(
+    token: string,
+    suffix: string,
+    data: {
+      name: string
+      sku: string
+      price: number
+      quantity: number
+      minimumStock: number
+      active?: boolean
+    },
+  ): Promise<string> {
+    const response = await request(app)
+      .post('/api/v1/products')
+      .set(authHeader(token))
+      .send({
+        name: data.name,
+        sku: data.sku,
+        price: data.price,
+        quantity: data.quantity,
+        minimumStock: data.minimumStock,
+        active: data.active ?? true,
+      })
+      .expect(201)
+
+    return response.body.data.id as string
+  }
+
+  it('returns 401 without token', async () => {
+    await request(app).get('/api/v1/dashboard/stock').expect(401)
+  })
+
+  it('returns stock metrics with recent movements', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+
+    const healthyId = await createProduct(admin.accessToken, suffix, {
+      name: `Healthy ${suffix}`,
+      sku: `healthy-${suffix}`,
+      price: 100,
+      quantity: 20,
+      minimumStock: 5,
+    })
+
+    await createProduct(admin.accessToken, suffix, {
+      name: `Low ${suffix}`,
+      sku: `low-${suffix}`,
+      price: 50,
+      quantity: 2,
+      minimumStock: 5,
+    })
+
+    await createProduct(admin.accessToken, suffix, {
+      name: `Inactive ${suffix}`,
+      sku: `inactive-${suffix}`,
+      price: 30,
+      quantity: 1,
+      minimumStock: 10,
+      active: false,
+    })
+
+    await request(app)
+      .post(`/api/v1/products/${healthyId}/stock-movements`)
+      .set(authHeader(admin.accessToken))
+      .send({ type: 'IN', quantity: 3, reason: 'Restock' })
+      .expect(201)
+
+    await request(app)
+      .post(`/api/v1/products/${healthyId}/stock-movements`)
+      .set(authHeader(admin.accessToken))
+      .send({ type: 'OUT', quantity: 1, reason: 'Sale' })
+      .expect(201)
+
+    const response = await request(app)
+      .get('/api/v1/dashboard/stock')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(response.body.success).toBe(true)
+    expect(response.body.data).toMatchObject({
+      totalProducts: 3,
+      activeProducts: 2,
+      inactiveProducts: 1,
+      lowStockProducts: 1,
+      totalStockQuantity: 25,
+      totalInventoryValue: 2330,
+    })
+    expect(response.body.data.recentMovements).toHaveLength(2)
+    expect(response.body.data.recentMovements[0]).toMatchObject({
+      id: expect.any(String),
+      productId: healthyId,
+      productName: expect.stringContaining('Healthy'),
+      type: expect.stringMatching(/IN|OUT|ADJUSTMENT/),
+      quantity: expect.any(Number),
+      previousQuantity: expect.any(Number),
+      newQuantity: expect.any(Number),
+      userId: admin.userId,
+      userEmail: admin.email,
+      createdAt: expect.any(String),
+    })
+    expect(response.body.data.recentMovements.length).toBeLessThanOrEqual(5)
+  })
+
+  it('ignores soft-deleted products in metrics', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+    const productId = await createProduct(admin.accessToken, suffix, {
+      name: `Deleted ${suffix}`,
+      sku: `deleted-${suffix}`,
+      price: 10,
+      quantity: 5,
+      minimumStock: 2,
+    })
+
+    await request(app)
+      .delete(`/api/v1/products/${productId}`)
+      .set(authHeader(admin.accessToken))
+      .expect(204)
+
+    const response = await request(app)
+      .get('/api/v1/dashboard/stock')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(response.body.data.totalProducts).toBe(0)
+    expect(response.body.data.totalStockQuantity).toBe(0)
+    expect(response.body.data.totalInventoryValue).toBe(0)
+  })
+
+  it('returns 403 for USER role', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const employee = await createUserWithRole(admin.accessToken, 'USER')
+
+    await request(app)
+      .get('/api/v1/dashboard/stock')
+      .set(authHeader(employee.accessToken))
+      .expect(403)
+  })
+
+  it('allows MANAGER role to access stock dashboard', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const manager = await createUserWithRole(admin.accessToken, 'MANAGER')
+
+    await request(app)
+      .get('/api/v1/dashboard/stock')
+      .set(authHeader(manager.accessToken))
+      .expect(200)
+  })
+
+  it('returns at most 5 recent movements ordered by newest first', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+    const productId = await createProduct(admin.accessToken, suffix, {
+      name: `Movement ${suffix}`,
+      sku: `movement-${suffix}`,
+      price: 10,
+      quantity: 20,
+      minimumStock: 2,
+    })
+
+    for (let index = 0; index < 6; index += 1) {
+      await request(app)
+        .post(`/api/v1/products/${productId}/stock-movements`)
+        .set(authHeader(admin.accessToken))
+        .send({ type: 'IN', quantity: 1, reason: `Batch ${index}` })
+        .expect(201)
+    }
+
+    const response = await request(app)
+      .get('/api/v1/dashboard/stock')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(response.body.data.recentMovements).toHaveLength(5)
+
+    const timestamps = response.body.data.recentMovements.map((item: { createdAt: string }) =>
+      new Date(item.createdAt).getTime(),
+    )
+
+    expect(timestamps).toEqual([...timestamps].sort((a, b) => b - a))
+  })
+})

@@ -1,8 +1,10 @@
 import { StockMovementType } from '@prisma/client'
 
 import {
+  CACHE_LIST_TTL_SECONDS,
   dashboardLowStockProductsKey,
   dashboardRecentMovementsKey,
+  dashboardStockKey,
   dashboardSummaryKey,
 } from '../../../shared/cache/cache-keys.js'
 import { cacheService } from '../../../shared/cache/CacheService.js'
@@ -11,7 +13,11 @@ import type {
   DashboardLowStockProductDto,
   DashboardRecentMovementDto,
   DashboardSummaryDto,
+  RecentStockMovementDto,
+  StockDashboardDto,
 } from '../dtos/dashboard-response.dto.js'
+
+const STOCK_DASHBOARD_RECENT_MOVEMENTS_LIMIT = 5
 
 function getUtcTodayRange(): { start: Date; end: Date } {
   const now = new Date()
@@ -43,6 +49,115 @@ export class DashboardService {
     return cacheService.getOrSet(dashboardRecentMovementsKey(companyId, limit), () =>
       this.fetchRecentMovements(companyId, limit),
     )
+  }
+
+  async getStock(companyId: string): Promise<StockDashboardDto> {
+    return cacheService.getOrSet(
+      dashboardStockKey(companyId),
+      () => this.fetchStock(companyId),
+      CACHE_LIST_TTL_SECONDS,
+    )
+  }
+
+  private async fetchStock(companyId: string): Promise<StockDashboardDto> {
+    const baseProductWhere = {
+      companyId,
+      deletedAt: null,
+    }
+    const activeProductWhere = {
+      ...baseProductWhere,
+      active: true,
+    }
+    const inactiveProductWhere = {
+      ...baseProductWhere,
+      active: false,
+    }
+    const lowStockWhere = {
+      ...activeProductWhere,
+      quantity: {
+        lte: prisma.product.fields.minimumStock,
+      },
+    }
+
+    const [
+      totalProducts,
+      activeProducts,
+      inactiveProducts,
+      lowStockProducts,
+      quantityAggregate,
+      inventoryProducts,
+      recentMovements,
+    ] = await Promise.all([
+      prisma.product.count({ where: baseProductWhere }),
+      prisma.product.count({ where: activeProductWhere }),
+      prisma.product.count({ where: inactiveProductWhere }),
+      prisma.product.count({ where: lowStockWhere }),
+      prisma.product.aggregate({
+        where: baseProductWhere,
+        _sum: { quantity: true },
+      }),
+      prisma.product.findMany({
+        where: baseProductWhere,
+        select: { price: true, quantity: true },
+      }),
+      this.fetchStockRecentMovements(companyId),
+    ])
+
+    const totalInventoryValue = inventoryProducts.reduce(
+      (total, product) => total + Number(product.price) * product.quantity,
+      0,
+    )
+
+    return {
+      totalProducts,
+      activeProducts,
+      inactiveProducts,
+      lowStockProducts,
+      totalStockQuantity: quantityAggregate._sum.quantity ?? 0,
+      totalInventoryValue: Number(totalInventoryValue.toFixed(2)),
+      recentMovements,
+    }
+  }
+
+  private async fetchStockRecentMovements(companyId: string): Promise<RecentStockMovementDto[]> {
+    const movements = await prisma.stockMovement.findMany({
+      where: { companyId },
+      take: STOCK_DASHBOARD_RECENT_MOVEMENTS_LIMIT,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        type: true,
+        quantity: true,
+        previousQuantity: true,
+        newQuantity: true,
+        createdAt: true,
+        product: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+    })
+
+    return movements.map((movement) => ({
+      id: movement.id,
+      productId: movement.product.id,
+      productName: movement.product.name,
+      type: movement.type,
+      quantity: movement.quantity,
+      previousQuantity: movement.previousQuantity,
+      newQuantity: movement.newQuantity,
+      userId: movement.user.id,
+      userEmail: movement.user.email,
+      createdAt: movement.createdAt,
+    }))
   }
 
   private async fetchSummary(companyId: string): Promise<DashboardSummaryDto> {

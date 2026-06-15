@@ -50,4 +50,17 @@ export class DashboardController {
       next(error)
     }
   }
+
+  async getStock(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        throw new AppError('Unauthorized', 401)
+      }
+
+      const stock = await this.dashboardService.getStock(req.user.companyId)
+      successResponse(res, stock, 'Stock dashboard retrieved successfully')
+    } catch (error) {
+      next(error)
+    }
+  }
 }

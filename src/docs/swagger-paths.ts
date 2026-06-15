@@ -1141,4 +1141,26 @@ export const swaggerPaths = {
       },
     },
   },
+  '/api/v1/dashboard/stock': {
+    get: {
+      tags: ['Dashboard'],
+      summary: 'Get stock dashboard metrics',
+      description:
+        'Requires ADMIN or MANAGER role. Returns consolidated stock metrics and the 5 most recent movements for the authenticated company.',
+      security: secured,
+      responses: {
+        '200': {
+          description: 'Stock dashboard metrics',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/StockDashboardResponse' },
+            },
+          },
+        },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '403': { $ref: '#/components/responses/Forbidden' },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+  },
 } as const

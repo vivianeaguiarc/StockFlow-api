@@ -17,6 +17,10 @@ export function dashboardRecentMovementsKey(companyId: string, limit: number): s
   return `${CACHE_PREFIX}:${companyId}:dashboard:recent-movements:${limit}`
 }
 
+export function dashboardStockKey(companyId: string): string {
+  return `${CACHE_PREFIX}:${companyId}:dashboard:stock`
+}
+
 export function productsListKey(companyId: string, queryHash: string): string {
   return `${CACHE_PREFIX}:${companyId}:products:list:${queryHash}`
 }
