@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { env } from '../../../config/env.js'
 import { usersRepository } from '../../../modules/users/repositories/index.js'
 import { AppError } from '../../errors/AppError.js'
+import { JWT_ALGORITHM } from '../../security/rate-limit.js'
 
 const UNAUTHORIZED_MESSAGE = 'Unauthorized'
 
@@ -46,7 +47,7 @@ export async function authenticate(
     let payload: z.infer<typeof jwtPayloadSchema>
 
     try {
-      const decoded = jwt.verify(token, getJwtSecret())
+      const decoded = jwt.verify(token, getJwtSecret(), { algorithms: [JWT_ALGORITHM] })
       payload = jwtPayloadSchema.parse(decoded)
     } catch {
       throw new AppError(UNAUTHORIZED_MESSAGE, 401)

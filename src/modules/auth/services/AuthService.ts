@@ -7,6 +7,7 @@ import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { authMeKey, CACHE_DETAIL_TTL_SECONDS } from '../../../shared/cache/cache-keys.js'
 import { cacheService } from '../../../shared/cache/CacheService.js'
 import { AppError } from '../../../shared/errors/AppError.js'
+import { JWT_ALGORITHM } from '../../../shared/security/rate-limit.js'
 import { auditLogService } from '../../audit/audit-log.service.js'
 import {
   type UsersRepository,
@@ -204,7 +205,7 @@ export class AuthService {
         role: user.role,
       } satisfies JwtPayload,
       this.getJwtSecret(),
-      { expiresIn: env.JWT_EXPIRES_IN } as SignOptions,
+      { expiresIn: env.JWT_EXPIRES_IN, algorithm: JWT_ALGORITHM } as SignOptions,
     )
   }
 

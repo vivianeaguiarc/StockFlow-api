@@ -300,6 +300,7 @@ export const swaggerPaths = {
         },
         '400': { $ref: '#/components/responses/BadRequest' },
         '401': { $ref: '#/components/responses/Unauthorized' },
+        '429': { $ref: '#/components/responses/TooManyRequests' },
         '500': { $ref: '#/components/responses/InternalServerError' },
       },
     },

@@ -60,6 +60,13 @@ const envSchema = z.object({
   }, z.boolean().optional()),
   PUBLIC_URL: z.string().url().optional(),
   HOST: z.string().default('0.0.0.0'),
+  CORS_ORIGINS: z.string().optional(),
+  RATE_LIMIT_REFRESH_MAX: z.coerce.number().int().positive().default(10),
+  RATE_LIMIT_REFRESH_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(15 * 60 * 1000),
 })
 
 const parsed = envSchema.safeParse(process.env)

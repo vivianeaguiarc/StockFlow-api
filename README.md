@@ -160,20 +160,38 @@ HTTP Request
 - **ADJUSTMENT** — define quantidade final (campo `quantity` = valor final).
 - Movimentação e atualização do produto ocorrem na **mesma transação Prisma**.
 
-### Rate limiting
+### Segurança
 
-Proteção contra abuso de API com `express-rate-limit`:
+Hardening alinhado a boas práticas OWASP e LGPD:
 
-| Escopo   | Padrão           | Janela     |
-| -------- | ---------------- | ---------- |
-| Global   | 100 req/IP       | 15 minutos |
-| Login    | 5 tentativas/IP  | 15 minutos |
-| Register | 10 tentativas/IP | 1 hora     |
+| Camada                 | Implementação                                                                                               |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Helmet**             | Headers HTTP seguros (`X-Content-Type-Options`, `X-Frame-Options`, CSP compatível com Swagger)              |
+| **CORS**               | Origins permitidas via `CORS_ORIGINS` (lista separada por vírgula); produção bloqueia origins desconhecidas |
+| **Payload**            | Limite de `1mb` em JSON e `urlencoded`                                                                      |
+| **Sanitização**        | Middleware remove tags `<script>` e `javascript:` de strings em body/query                                  |
+| **Rate limit**         | Global + limiters dedicados para login, refresh e register (Redis store quando disponível)                  |
+| **Brute force**        | Login limitado por **IP + email**; mensagem genérica para credenciais inválidas                             |
+| **JWT**                | `HS256` obrigatório, `JWT_SECRET` mínimo de 32 chars em produção, access token curto (`JWT_EXPIRES_IN`)     |
+| **Refresh token**      | Armazenado apenas como hash; rotação no refresh; revogação no logout                                        |
+| **Erros**              | Resposta padronizada `{ status, message, requestId }` — sem stack trace em produção                         |
+| **LGPD / Soft delete** | Dados sensíveis nunca em logs/respostas; exclusão lógica via `deletedAt`                                    |
 
-- Resposta ao exceder limite: `429` com `{ "status": "error", "message": "Too many requests" }`.
-- Swagger (`/api/docs`) **não** entra no rate limit global.
-- Desabilitado automaticamente quando `NODE_ENV=test` (testes E2E).
-- Limites configuráveis via variáveis `RATE_LIMIT_*` (ver `.env.example`).
+#### Rate limiting
+
+| Escopo   | Padrão           | Janela     | Chave      |
+| -------- | ---------------- | ---------- | ---------- |
+| Global   | 100 req/IP       | 15 minutos | IP         |
+| Login    | 5 tentativas     | 15 minutos | IP + email |
+| Refresh  | 10 tentativas/IP | 15 minutos | IP         |
+| Register | 10 tentativas/IP | 1 hora     | IP         |
+
+- Resposta `429`: `{ "status": "error", "message": "Too many requests", "requestId": "..." }`.
+- Store Redis (`rate-limit-redis`) quando `CACHE_ENABLED` e Redis estão disponíveis; fallback em memória.
+- Swagger e health checks isentos do limite global.
+- Desabilitado em `NODE_ENV=test`.
+
+Variáveis: `RATE_LIMIT_*`, `CORS_ORIGINS`, `JWT_SECRET`, `JWT_EXPIRES_IN` — ver `.env.example`.
 
 ### Versionamento de API
 
@@ -649,7 +667,7 @@ stockflow-api/
 ## Próximos passos
 
 - [ ] Refresh token e logout com invalidação
-- [ ] Rate limiting e proteções adicionais
+- [x] Rate limiting e proteções adicionais
 - [ ] Notificações de estoque mínimo
 - [ ] Relatórios e dashboards de inventário
 - [ ] Deploy em cloud (Railway, Render, AWS)

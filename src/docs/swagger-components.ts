@@ -29,10 +29,16 @@ export const swaggerComponents = {
       properties: {
         status: { type: 'string', example: 'error' },
         message: { type: 'string', example: 'Invalid email or password' },
+        requestId: {
+          type: 'string',
+          format: 'uuid',
+          example: '550e8400-e29b-41d4-a716-446655440000',
+          description: 'Request tracing identifier (also returned in X-Request-ID header)',
+        },
       },
       required: ['status', 'message'],
       description:
-        'Standard error envelope. Never includes passwords, token hashes, or internal secrets.',
+        'Standard error envelope. Never includes passwords, token hashes, stack traces, or internal secrets.',
     },
     RootResponse: {
       type: 'object',
@@ -699,16 +705,14 @@ export const swaggerComponents = {
       },
     },
     TooManyRequests: {
-      description: 'Rate limit exceeded',
+      description: 'Rate limit exceeded (global, login, refresh, or register limiter)',
       content: {
         'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              status: { type: 'string', example: 'error' },
-              message: { type: 'string', example: 'Too many requests' },
-            },
-            required: ['status', 'message'],
+          schema: { $ref: '#/components/schemas/ErrorResponse' },
+          example: {
+            status: 'error',
+            message: 'Too many requests',
+            requestId: '550e8400-e29b-41d4-a716-446655440000',
           },
         },
       },

@@ -2,6 +2,9 @@ import 'dotenv/config'
 
 import { createApp } from './app.js'
 import { env } from './config/env.js'
+import { validateProductionEnv } from './config/validate-production-env.js'
+
+validateProductionEnv()
 
 const app = createApp()
 

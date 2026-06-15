@@ -6,6 +6,7 @@ export type ApiSuccessResponse<T> = {
 export type ApiErrorResponse = {
   status: 'error'
   message: string
+  requestId?: string
 }
 
 export type { PaginatedResponse, PaginationMeta } from './paginated-response.js'

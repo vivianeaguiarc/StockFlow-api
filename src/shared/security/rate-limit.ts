@@ -1,10 +1,13 @@
 import type { Request, RequestHandler } from 'express'
-import rateLimit, { type Options } from 'express-rate-limit'
+import rateLimit, { type Options, type Store } from 'express-rate-limit'
+import { RedisStore } from 'rate-limit-redis'
 
 import { env } from '../../config/env.js'
+import { getRedisClient, isCacheEnabled } from '../cache/redis-client.js'
 import { logWarn } from '../logger/logger.js'
 
 export const RATE_LIMIT_MESSAGE = 'Too many requests'
+export const JWT_ALGORITHM = 'HS256' as const
 
 export function isRateLimitEnabled(): boolean {
   if (env.RATE_LIMIT_ENABLED !== undefined) {
@@ -29,6 +32,17 @@ export function shouldSkipGlobalRateLimit(req: Request): boolean {
   })
 }
 
+export function buildLoginRateLimitKey(req: Request): string {
+  const email =
+    typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : 'unknown-email'
+
+  return `login:${req.ip}:${email}`
+}
+
+export function buildRefreshRateLimitKey(req: Request): string {
+  return `refresh:${req.ip}`
+}
+
 function createLimitedHandler(limiterName: string): NonNullable<Options['handler']> {
   return (req, res, _next, options) => {
     logWarn(
@@ -46,6 +60,7 @@ function createLimitedHandler(limiterName: string): NonNullable<Options['handler
     res.status(options.statusCode).json({
       status: 'error',
       message: RATE_LIMIT_MESSAGE,
+      requestId: req.requestId,
     })
   }
 }
@@ -54,40 +69,82 @@ const noopRateLimiter: RequestHandler = (_req, _res, next) => {
   next()
 }
 
-function createRateLimiter(
+async function resolveRedisStore(prefix: string): Promise<Store | undefined> {
+  if (!isRateLimitEnabled() || !isCacheEnabled()) {
+    return undefined
+  }
+
+  const client = await getRedisClient()
+
+  if (!client) {
+    return undefined
+  }
+
+  return new RedisStore({
+    sendCommand: (...args: string[]) => client.sendCommand(args),
+    prefix: `stockflow:rl:${prefix}:`,
+  })
+}
+
+type RateLimiterOptions = {
+  skip?: Options['skip']
+  keyGenerator?: Options['keyGenerator']
+}
+
+function createRateLimiterHandler(
   limiterName: string,
   max: number,
   windowMs: number,
-  skip?: Options['skip'],
+  options: RateLimiterOptions = {},
 ): RequestHandler {
   if (!isRateLimitEnabled()) {
     return noopRateLimiter
   }
 
-  return rateLimit({
-    windowMs,
-    max,
-    standardHeaders: true,
-    legacyHeaders: false,
-    ...(skip ? { skip } : {}),
-    handler: createLimitedHandler(limiterName),
-  })
+  let limiter: RequestHandler | undefined
+
+  return async (req, res, next) => {
+    if (!limiter) {
+      const store = await resolveRedisStore(limiterName)
+
+      limiter = rateLimit({
+        windowMs,
+        max,
+        standardHeaders: true,
+        legacyHeaders: false,
+        ...(store ? { store } : {}),
+        ...(options.skip ? { skip: options.skip } : {}),
+        ...(options.keyGenerator ? { keyGenerator: options.keyGenerator } : {}),
+        handler: createLimitedHandler(limiterName),
+      })
+    }
+
+    return limiter(req, res, next)
+  }
 }
 
-export const globalRateLimiter: RequestHandler = createRateLimiter(
+export const globalRateLimiter: RequestHandler = createRateLimiterHandler(
   'global',
   env.RATE_LIMIT_GLOBAL_MAX,
   env.RATE_LIMIT_GLOBAL_WINDOW_MS,
-  shouldSkipGlobalRateLimit,
+  { skip: shouldSkipGlobalRateLimit },
 )
 
-export const loginRateLimiter: RequestHandler = createRateLimiter(
+export const loginRateLimiter: RequestHandler = createRateLimiterHandler(
   'login',
   env.RATE_LIMIT_LOGIN_MAX,
   env.RATE_LIMIT_LOGIN_WINDOW_MS,
+  { keyGenerator: buildLoginRateLimitKey },
 )
 
-export const registerRateLimiter: RequestHandler = createRateLimiter(
+export const refreshRateLimiter: RequestHandler = createRateLimiterHandler(
+  'refresh',
+  env.RATE_LIMIT_REFRESH_MAX,
+  env.RATE_LIMIT_REFRESH_WINDOW_MS,
+  { keyGenerator: buildRefreshRateLimitKey },
+)
+
+export const registerRateLimiter: RequestHandler = createRateLimiterHandler(
   'register',
   env.RATE_LIMIT_REGISTER_MAX,
   env.RATE_LIMIT_REGISTER_WINDOW_MS,
