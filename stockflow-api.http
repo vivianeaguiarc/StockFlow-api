@@ -30,7 +30,16 @@ Content-Type: application/json
   }
 }
 
-### Login
+### Login (demo seed)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@stockflow.dev",
+  "password": "Demo@123456"
+}
+
+### Login (custom)
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 

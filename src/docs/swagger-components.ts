@@ -191,11 +191,11 @@ export const swaggerComponents = {
     LoginRequest: {
       type: 'object',
       properties: {
-        email: { type: 'string', format: 'email', example: 'admin@stockflow.com' },
+        email: { type: 'string', format: 'email', example: 'admin@stockflow.dev' },
         password: {
           type: 'string',
           format: 'password',
-          example: 'Admin@123456',
+          example: 'Demo@123456',
           description: 'Sent only in the request body; never returned in responses.',
         },
       },

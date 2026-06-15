@@ -9,8 +9,8 @@ export const EXAMPLE_ACCESS_TOKEN =
 export const EXAMPLE_REFRESH_TOKEN = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890.example-refresh-token'
 
 export const loginRequestExample = {
-  email: 'admin@stockflow.com',
-  password: 'Admin@123456',
+  email: 'admin@stockflow.dev',
+  password: 'Demo@123456',
 }
 
 export const loginResponseDataExample = {
@@ -21,7 +21,7 @@ export const loginResponseDataExample = {
     companyId: EXAMPLE_COMPANY_ID,
     firstName: 'Admin',
     lastName: 'StockFlow',
-    email: 'admin@stockflow.com',
+    email: 'admin@stockflow.dev',
     role: 'ADMIN',
   },
 }

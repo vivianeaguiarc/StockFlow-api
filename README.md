@@ -581,20 +581,61 @@ Arquivos em `backups/*.sql` e `backups/*.dump` estão no `.gitignore` — dumps 
 
 ---
 
-## Seed
+## Dados de demonstração
 
-Popula empresa demo e usuário admin:
+O seed popula o banco com empresas, usuários, produtos e movimentações prontos para avaliação técnica da API. **Use apenas em desenvolvimento local** — nunca execute em produção sem intenção explícita.
+
+### Como rodar o seed localmente
 
 ```bash
+pnpm db:migrate:deploy   # se o banco ainda não tiver as migrations
 pnpm db:seed
 ```
 
-| Campo | Valor                 |
-| ----- | --------------------- |
-| Email | `admin@stockflow.com` |
-| Senha | `Admin@123456`        |
+O script é **idempotente**: pode ser executado várias vezes sem duplicar empresas, usuários ou produtos.
 
-> Use apenas em ambiente de desenvolvimento.
+### Usuários demo
+
+Senha compartilhada (somente ambiente demo — **não** use como secret real):
+
+| Email                   | Role    | Empresa             |
+| ----------------------- | ------- | ------------------- |
+| `admin@stockflow.dev`   | ADMIN   | StockFlow Demo LTDA |
+| `manager@stockflow.dev` | MANAGER | StockFlow Demo LTDA |
+| `user@stockflow.dev`    | USER    | StockFlow Demo LTDA |
+
+**Senha:** `Demo@123456`
+
+### Empresas demo
+
+| Empresa             | Documento        | Uso                                                     |
+| ------------------- | ---------------- | ------------------------------------------------------- |
+| StockFlow Demo LTDA | `12345678000190` | Tenant principal com usuários, produtos e movimentações |
+| Tech Supplies Demo  | `98765432000110` | Segundo tenant para validar isolamento multiempresa     |
+
+### Produtos demo (StockFlow Demo LTDA)
+
+| Produto                | SKU              | Estoque | Situação      |
+| ---------------------- | ---------------- | ------- | ------------- |
+| Notebook Dell Inspiron | `DEMO-NOTE-DELL` | 25      | Normal        |
+| Mouse Logitech         | `DEMO-MOUSE-LOG` | 2       | Baixo estoque |
+| Teclado Mecânico       | `DEMO-KBD-MECH`  | 18      | Normal        |
+| Monitor LG             | `DEMO-MON-LG`    | 1       | Baixo estoque |
+| Cabo HDMI              | `DEMO-CAB-HDMI`  | 100     | Inativo       |
+
+Também há produtos na **Tech Supplies Demo** (`DEMO-TECH-SSD`, `DEMO-TECH-RAM`).
+
+Movimentações de exemplo (entradas, saídas e ajustes) são criadas na primeira execução do seed.
+
+### Como testar no Swagger
+
+1. Suba a API: `pnpm dev` (ou `pnpm docker:up`).
+2. Abra [http://localhost:3333/api/docs](http://localhost:3333/api/docs).
+3. Faça login em `POST /api/v1/auth/login` com `admin@stockflow.dev` / `Demo@123456`.
+4. Copie o `accessToken` e clique em **Authorize**.
+5. Explore endpoints como `GET /api/v1/products`, `GET /api/v1/products/low-stock`, `GET /api/v1/dashboard/stock` e `GET /api/v1/stock-movements`.
+
+> **Produção:** não execute `pnpm db:seed` no Render ou em ambientes compartilhados. Use registro via API ou dados controlados. Ver [docs/render-deploy.md](docs/render-deploy.md).
 
 ---
 
@@ -745,8 +786,8 @@ POST /api/v1/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin@stockflow.com",
-  "password": "Admin@123456"
+  "email": "admin@stockflow.dev",
+  "password": "Demo@123456"
 }
 ```
 
