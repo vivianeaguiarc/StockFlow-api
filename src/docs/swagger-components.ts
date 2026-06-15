@@ -567,6 +567,36 @@ export const swaggerComponents = {
         pagination: { $ref: '#/components/schemas/PaginationMeta' },
       },
     },
+    LowStockProduct: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        name: { type: 'string' },
+        sku: { type: 'string' },
+        quantity: { type: 'integer', minimum: 0 },
+        minimumStock: { type: 'integer', minimum: 0 },
+        active: { type: 'boolean' },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+      required: [
+        'id',
+        'name',
+        'sku',
+        'quantity',
+        'minimumStock',
+        'active',
+        'createdAt',
+        'updatedAt',
+      ],
+    },
+    PaginatedLowStockProductsResponse: {
+      type: 'object',
+      properties: {
+        data: { type: 'array', items: { $ref: '#/components/schemas/LowStockProduct' } },
+        pagination: { $ref: '#/components/schemas/PaginationMeta' },
+      },
+    },
     StockMovement: {
       type: 'object',
       properties: {

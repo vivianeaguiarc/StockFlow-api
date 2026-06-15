@@ -6,21 +6,32 @@ import {
   CACHE_DETAIL_TTL_SECONDS,
   CACHE_LIST_TTL_SECONDS,
   hashProductsListQuery,
+  hashProductsLowStockQuery,
   productsByIdKey,
   productsListKey,
+  productsLowStockKey,
 } from '../../../shared/cache/cache-keys.js'
 import { cacheService } from '../../../shared/cache/CacheService.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import { buildOrderBy, executePaginatedQuery } from '../../../shared/utils/pagination.js'
 import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type { CreateProductDto } from '../dtos/create-product.dto.js'
+import type { ListLowStockProductsQuery } from '../dtos/list-low-stock-products-query.dto.js'
 import type { ListProductsQuery } from '../dtos/list-products-query.dto.js'
+import type {
+  LowStockProductResponseDto,
+  PaginatedLowStockProductsResponseDto,
+} from '../dtos/low-stock-product-response.dto.js'
 import type {
   PaginatedProductsResponseDto,
   ProductResponseDto,
 } from '../dtos/product-response.dto.js'
 import type { UpdateProductDto } from '../dtos/update-product.dto.js'
 import { type ProductsRepository, productsRepository } from '../repositories/index.js'
+import {
+  buildLowStockProductsWhere,
+  lowStockProductsOrderBy,
+} from '../utils/build-low-stock-products-where.js'
 import { buildProductsListWhere } from '../utils/build-products-list-where.js'
 
 export class ProductsService {
@@ -111,6 +122,39 @@ export class ProductsService {
 
     return {
       data: result.data.map((product) => this.toResponse(product)),
+      pagination: result.pagination,
+    }
+  }
+
+  async listLowStock(
+    companyId: string,
+    query: ListLowStockProductsQuery,
+  ): Promise<PaginatedLowStockProductsResponseDto> {
+    const cacheKey = productsLowStockKey(companyId, hashProductsLowStockQuery(query))
+
+    return cacheService.getOrSet(
+      cacheKey,
+      () => this.fetchLowStockProducts(companyId, query),
+      CACHE_LIST_TTL_SECONDS,
+    )
+  }
+
+  private async fetchLowStockProducts(
+    companyId: string,
+    query: ListLowStockProductsQuery,
+  ): Promise<PaginatedLowStockProductsResponseDto> {
+    const where = buildLowStockProductsWhere(companyId, query)
+
+    const result = await executePaginatedQuery({
+      page: query.page,
+      pageSize: query.limit,
+      findMany: (skip, take) =>
+        this.repository.findMany(where, skip, take, lowStockProductsOrderBy),
+      count: () => this.repository.count(where),
+    })
+
+    return {
+      data: result.data.map((product) => this.toLowStockResponse(product)),
       pagination: result.pagination,
     }
   }
@@ -254,6 +298,19 @@ export class ProductsService {
     }
 
     return 'Product already exists for this company'
+  }
+
+  private toLowStockResponse(product: Product): LowStockProductResponseDto {
+    return {
+      id: product.id,
+      name: product.name,
+      sku: product.sku,
+      quantity: product.quantity,
+      minimumStock: product.minimumStock,
+      active: product.active,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+    }
   }
 
   private toResponse(product: Product): ProductResponseDto {

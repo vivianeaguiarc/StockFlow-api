@@ -5,6 +5,7 @@ import { authorizeRoles } from '../../../shared/http/middlewares/authorize-roles
 import { validateRequest } from '../../../shared/http/middlewares/validate-request.js'
 import { ProductsController } from '../controllers/ProductsController.js'
 import { createProductSchema } from '../dtos/create-product.dto.js'
+import { listLowStockProductsQuerySchema } from '../dtos/list-low-stock-products-query.dto.js'
 import { listProductsQuerySchema } from '../dtos/list-products-query.dto.js'
 import { updateProductSchema } from '../dtos/update-product.dto.js'
 import { ProductsService } from '../services/ProductsService.js'
@@ -32,6 +33,14 @@ export function createProductsRoutes(): Router {
     authorizeRoles('ADMIN', 'MANAGER', 'USER'),
     validateRequest(listProductsQuerySchema, 'query'),
     (req, res, next) => productsController.list(req, res, next),
+  )
+
+  router.get(
+    '/low-stock',
+    authenticate,
+    authorizeRoles('ADMIN', 'MANAGER', 'USER'),
+    validateRequest(listLowStockProductsQuerySchema, 'query'),
+    (req, res, next) => productsController.listLowStock(req, res, next),
   )
 
   router.post(

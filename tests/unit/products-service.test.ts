@@ -3,7 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { auditLogger } from '../../src/modules/audit/services/AuditLoggerService.js'
 import { ProductsService } from '../../src/modules/products/services/ProductsService.js'
+import { lowStockProductsOrderBy } from '../../src/modules/products/utils/build-low-stock-products-where.js'
 import { invalidateProductRelatedCache } from '../../src/shared/cache/cache-invalidation.js'
+import {
+  CACHE_LIST_TTL_SECONDS,
+  hashProductsLowStockQuery,
+  productsLowStockKey,
+} from '../../src/shared/cache/cache-keys.js'
+import { cacheService } from '../../src/shared/cache/CacheService.js'
 import { AppError } from '../../src/shared/errors/AppError.js'
 import { buildProduct } from '../helpers/factories/product.factory.js'
 import { createProductsRepositoryMock } from '../helpers/mocks/products-repository.mock.js'
@@ -104,6 +111,46 @@ describe('ProductsService', () => {
       limit: 10,
       totalItems: 2,
     })
+  })
+
+  it('lists low stock products with pagination and cache key', async () => {
+    const product = buildProduct({ quantity: 1, minimumStock: 5 })
+
+    vi.mocked(repository.findMany).mockResolvedValue([product])
+    vi.mocked(repository.count).mockResolvedValue(1)
+
+    const service = new ProductsService(repository)
+    const query = { page: 1, limit: 10 }
+    const result = await service.listLowStock('company-1', query)
+
+    expect(repository.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        companyId: 'company-1',
+        deletedAt: null,
+        active: true,
+      }),
+      0,
+      10,
+      lowStockProductsOrderBy,
+    )
+    expect(result.data).toEqual([
+      {
+        id: product.id,
+        name: product.name,
+        sku: product.sku,
+        quantity: product.quantity,
+        minimumStock: product.minimumStock,
+        active: product.active,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt,
+      },
+    ])
+    expect(result.pagination).toMatchObject({ page: 1, limit: 10, totalItems: 1 })
+    expect(cacheService.getOrSet).toHaveBeenCalledWith(
+      productsLowStockKey('company-1', hashProductsLowStockQuery(query)),
+      expect.any(Function),
+      CACHE_LIST_TTL_SECONDS,
+    )
   })
 
   it('returns product by id', async () => {

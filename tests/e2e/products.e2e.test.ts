@@ -457,3 +457,308 @@ describe('Products E2E', () => {
     })
   })
 })
+
+describe('Low stock products E2E', () => {
+  const companyIds: string[] = []
+
+  afterEach(async () => {
+    await cleanupCompanies(companyIds)
+    companyIds.length = 0
+  })
+
+  async function createProduct(
+    token: string,
+    suffix: string,
+    data: {
+      name: string
+      sku: string
+      quantity: number
+      minimumStock: number
+      active?: boolean
+    },
+  ): Promise<string> {
+    const response = await request(app)
+      .post('/api/v1/products')
+      .set(authHeader(token))
+      .send({
+        name: data.name,
+        sku: data.sku,
+        price: 10,
+        quantity: data.quantity,
+        minimumStock: data.minimumStock,
+        active: data.active ?? true,
+      })
+      .expect(201)
+
+    return response.body.data.id as string
+  }
+
+  it('returns 401 without token', async () => {
+    await request(app).get('/api/v1/products/low-stock').expect(401)
+  })
+
+  it('lists only active products at or below minimum stock', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+
+    await createProduct(admin.accessToken, suffix, {
+      name: `Critical ${suffix}`,
+      sku: `critical-${suffix}`,
+      quantity: 0,
+      minimumStock: 5,
+    })
+
+    await createProduct(admin.accessToken, suffix, {
+      name: `AtMinimum ${suffix}`,
+      sku: `at-min-${suffix}`,
+      quantity: 3,
+      minimumStock: 3,
+    })
+
+    await createProduct(admin.accessToken, suffix, {
+      name: `Healthy ${suffix}`,
+      sku: `healthy-${suffix}`,
+      quantity: 20,
+      minimumStock: 5,
+    })
+
+    await createProduct(admin.accessToken, suffix, {
+      name: `Inactive ${suffix}`,
+      sku: `inactive-${suffix}`,
+      quantity: 1,
+      minimumStock: 10,
+      active: false,
+    })
+
+    const response = await request(app)
+      .get('/api/v1/products/low-stock')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(response.body.success).toBe(true)
+    expect(response.body.data).toHaveLength(2)
+    expect(
+      response.body.data.every(
+        (item: { quantity: number; minimumStock: number; active: boolean }) =>
+          item.quantity <= item.minimumStock && item.active,
+      ),
+    ).toBe(true)
+    expect(
+      response.body.data.some((item: { sku: string }) => item.sku === `healthy-${suffix}`),
+    ).toBe(false)
+    expect(
+      response.body.data.some((item: { sku: string }) => item.sku === `inactive-${suffix}`),
+    ).toBe(false)
+    expect(response.body.data[0]).toMatchObject({
+      id: expect.any(String),
+      name: expect.any(String),
+      sku: expect.any(String),
+      quantity: expect.any(Number),
+      minimumStock: expect.any(Number),
+      active: true,
+      createdAt: expect.any(String),
+      updatedAt: expect.any(String),
+    })
+    expect(response.body.data[0].companyId).toBeUndefined()
+  })
+
+  it('does not list soft-deleted products', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+    const productId = await createProduct(admin.accessToken, suffix, {
+      name: `Deleted ${suffix}`,
+      sku: `deleted-${suffix}`,
+      quantity: 1,
+      minimumStock: 5,
+    })
+
+    await request(app)
+      .delete(`/api/v1/products/${productId}`)
+      .set(authHeader(admin.accessToken))
+      .expect(204)
+
+    const response = await request(app)
+      .get('/api/v1/products/low-stock')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(response.body.data.some((item: { id: string }) => item.id === productId)).toBe(false)
+  })
+
+  it('supports pagination', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+
+    for (let index = 0; index < 3; index += 1) {
+      await createProduct(admin.accessToken, suffix, {
+        name: `Low ${index} ${suffix}`,
+        sku: `low-${index}-${suffix}`,
+        quantity: index,
+        minimumStock: 5,
+      })
+    }
+
+    const page1 = await request(app)
+      .get('/api/v1/products/low-stock?page=1&limit=2')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(page1.body.data).toHaveLength(2)
+    expect(page1.body.pagination).toMatchObject({
+      page: 1,
+      limit: 2,
+      totalItems: 3,
+      totalPages: 2,
+    })
+
+    const page2 = await request(app)
+      .get('/api/v1/products/low-stock?page=2&limit=2')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(page2.body.data).toHaveLength(1)
+    expect(page2.body.pagination.page).toBe(2)
+  })
+
+  it('filters by name and sku', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+
+    await createProduct(admin.accessToken, suffix, {
+      name: `Notebook ${suffix}`,
+      sku: `note-${suffix}`,
+      quantity: 1,
+      minimumStock: 5,
+    })
+
+    await createProduct(admin.accessToken, suffix, {
+      name: `Mouse ${suffix}`,
+      sku: `mouse-${suffix}`,
+      quantity: 2,
+      minimumStock: 5,
+    })
+
+    const byName = await request(app)
+      .get(`/api/v1/products/low-stock?name=notebook`)
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(byName.body.data).toHaveLength(1)
+    expect(byName.body.data[0].name.toLowerCase()).toContain('notebook')
+
+    const bySku = await request(app)
+      .get(`/api/v1/products/low-stock?sku=mouse-${suffix}`)
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(bySku.body.data).toHaveLength(1)
+    expect(bySku.body.data[0].sku).toBe(`mouse-${suffix}`)
+  })
+
+  it('orders by quantity asc then name asc', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+
+    await createProduct(admin.accessToken, suffix, {
+      name: `Zebra ${suffix}`,
+      sku: `zebra-${suffix}`,
+      quantity: 2,
+      minimumStock: 5,
+    })
+
+    await createProduct(admin.accessToken, suffix, {
+      name: `Alpha ${suffix}`,
+      sku: `alpha-${suffix}`,
+      quantity: 2,
+      minimumStock: 5,
+    })
+
+    await createProduct(admin.accessToken, suffix, {
+      name: `Critical ${suffix}`,
+      sku: `critical-${suffix}`,
+      quantity: 0,
+      minimumStock: 5,
+    })
+
+    const response = await request(app)
+      .get('/api/v1/products/low-stock')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    const names = response.body.data.map((item: { name: string }) => item.name)
+    const quantities = response.body.data.map((item: { quantity: number }) => item.quantity)
+
+    expect(quantities).toEqual([...quantities].sort((a, b) => a - b))
+    expect(names[0]).toContain('Critical')
+    expect(names[1]).toContain('Alpha')
+    expect(names[2]).toContain('Zebra')
+  })
+
+  it('allows USER role to list low stock products', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const employee = await createUserWithRole(admin.accessToken, 'USER')
+    const suffix = uniqueSuffix()
+
+    await createProduct(admin.accessToken, suffix, {
+      name: `UserVisible ${suffix}`,
+      sku: `user-visible-${suffix}`,
+      quantity: 1,
+      minimumStock: 5,
+    })
+
+    const response = await request(app)
+      .get('/api/v1/products/low-stock')
+      .set(authHeader(employee.accessToken))
+      .expect(200)
+
+    expect(
+      response.body.data.some((item: { sku: string }) => item.sku.includes('user-visible')),
+    ).toBe(true)
+  })
+
+  it('reflects stock movement changes in low stock list', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const suffix = uniqueSuffix()
+    const productId = await createProduct(admin.accessToken, suffix, {
+      name: `Movement ${suffix}`,
+      sku: `movement-${suffix}`,
+      quantity: 10,
+      minimumStock: 5,
+    })
+
+    const before = await request(app)
+      .get('/api/v1/products/low-stock')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(before.body.data.some((item: { id: string }) => item.id === productId)).toBe(false)
+
+    await request(app)
+      .post(`/api/v1/products/${productId}/stock-movements`)
+      .set(authHeader(admin.accessToken))
+      .send({ type: 'OUT', quantity: 6, reason: 'Sale' })
+      .expect(201)
+
+    const after = await request(app)
+      .get('/api/v1/products/low-stock')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(after.body.data.some((item: { id: string }) => item.id === productId)).toBe(true)
+    expect(after.body.data.find((item: { id: string }) => item.id === productId)?.quantity).toBe(4)
+  })
+})

@@ -53,6 +53,13 @@ const productsListParams = [
   { $ref: '#/components/parameters/LowStockFilterQuery' },
 ]
 
+const lowStockProductsListParams = [
+  { $ref: '#/components/parameters/PageQuery' },
+  { $ref: '#/components/parameters/LimitQuery' },
+  { $ref: '#/components/parameters/ProductNameFilterQuery' },
+  { $ref: '#/components/parameters/ProductSkuFilterQuery' },
+]
+
 const stockMovementsListParams = [
   { $ref: '#/components/parameters/PageQuery' },
   { $ref: '#/components/parameters/LimitQuery' },
@@ -788,6 +795,29 @@ export const swaggerPaths = {
           },
         },
         ...defaultErrors,
+      },
+    },
+  },
+  '/api/v1/products/low-stock': {
+    get: {
+      tags: ['Products'],
+      summary: 'List low stock products',
+      description:
+        'Returns active, non-deleted products where quantity <= minimumStock. Ordered by quantity ascending, then name ascending. Requires ADMIN, MANAGER or USER role.',
+      security: secured,
+      parameters: lowStockProductsListParams,
+      responses: {
+        '200': {
+          description: 'Paginated low stock products list',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/PaginatedLowStockProductsResponse' },
+            },
+          },
+        },
+        '400': { $ref: '#/components/responses/BadRequest' },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '403': { $ref: '#/components/responses/Forbidden' },
       },
     },
   },

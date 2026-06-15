@@ -218,6 +218,14 @@ Authorization: Bearer {{accessToken}}
 GET {{baseUrl}}/products?name=notebook&active=true&lowStock=false
 Authorization: Bearer {{accessToken}}
 
+### List Low Stock Products
+GET {{baseUrl}}/products/low-stock?page=1&limit=10
+Authorization: Bearer {{accessToken}}
+
+### Filter Low Stock Products
+GET {{baseUrl}}/products/low-stock?name=notebook&sku=NOTE
+Authorization: Bearer {{accessToken}}
+
 ### Filter Products By Category And Supplier
 GET {{baseUrl}}/products?categoryId={{categoryId}}&supplierId={{supplierId}}
 Authorization: Bearer {{accessToken}}

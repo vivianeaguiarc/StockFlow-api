@@ -19,6 +19,9 @@ describe('product cache invalidation', () => {
     await invalidateProductRelatedCache('company-1')
 
     expect(cacheService.delByPattern).toHaveBeenCalledWith('stockflow:company-1:products:list:*')
+    expect(cacheService.delByPattern).toHaveBeenCalledWith(
+      'stockflow:company-1:products:low-stock:*',
+    )
     expect(cacheService.delByPattern).toHaveBeenCalledWith('stockflow:company-1:dashboard:*')
     expect(cacheService.del).not.toHaveBeenCalled()
   })

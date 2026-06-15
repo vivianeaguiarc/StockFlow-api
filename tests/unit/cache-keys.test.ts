@@ -9,10 +9,13 @@ import {
   dashboardRecentMovementsKey,
   dashboardSummaryKey,
   hashProductsListQuery,
+  hashProductsLowStockQuery,
   hashUsersListQuery,
   productsListCachePattern,
   productsListKey,
   productsByIdKey,
+  productsLowStockCachePattern,
+  productsLowStockKey,
   usersByIdKey,
   usersListCachePattern,
   usersListKey,
@@ -48,6 +51,17 @@ describe('cache keys', () => {
     )
   })
 
+  it('builds tenant-scoped low stock products cache keys', () => {
+    const queryHash = hashProductsLowStockQuery({ page: 1, limit: 10 })
+
+    expect(productsLowStockKey(companyId, queryHash)).toBe(
+      `stockflow:company-abc:products:low-stock:${queryHash}`,
+    )
+    expect(productsLowStockCachePattern(companyId)).toBe(
+      'stockflow:company-abc:products:low-stock:*',
+    )
+  })
+
   it('builds tenant-scoped users list and detail keys', () => {
     const queryHash = hashUsersListQuery({ page: 1, limit: 10 })
 
@@ -69,6 +83,9 @@ describe('cache keys', () => {
   it('builds invalidation patterns per company', () => {
     expect(dashboardCachePattern(companyId)).toBe('stockflow:company-abc:dashboard:*')
     expect(productsListCachePattern(companyId)).toBe('stockflow:company-abc:products:list:*')
+    expect(productsLowStockCachePattern(companyId)).toBe(
+      'stockflow:company-abc:products:low-stock:*',
+    )
     expect(usersListCachePattern(companyId)).toBe('stockflow:company-abc:users:list:*')
   })
 

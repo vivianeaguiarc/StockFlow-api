@@ -21,7 +21,7 @@ export interface ProductsRepository {
     where: Prisma.ProductWhereInput,
     skip: number,
     take: number,
-    orderBy: Prisma.ProductOrderByWithRelationInput,
+    orderBy: Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[],
   ): Promise<Product[]>
   count(where: Prisma.ProductWhereInput): Promise<number>
   update(productId: string, data: Prisma.ProductUpdateInput): Promise<Product>

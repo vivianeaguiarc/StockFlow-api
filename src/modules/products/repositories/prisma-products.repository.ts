@@ -22,7 +22,7 @@ export class PrismaProductsRepository implements ProductsRepository {
     where: Prisma.ProductWhereInput,
     skip: number,
     take: number,
-    orderBy: Prisma.ProductOrderByWithRelationInput,
+    orderBy: Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[],
   ) {
     return prisma.product.findMany({
       where,

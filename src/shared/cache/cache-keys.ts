@@ -37,6 +37,18 @@ export function productsListCachePattern(companyId: string): string {
   return `${CACHE_PREFIX}:${companyId}:products:list:*`
 }
 
+export function productsLowStockKey(companyId: string, queryHash: string): string {
+  return `${CACHE_PREFIX}:${companyId}:products:low-stock:${queryHash}`
+}
+
+export function productsLowStockCachePattern(companyId: string): string {
+  return `${CACHE_PREFIX}:${companyId}:products:low-stock:*`
+}
+
+export function hashProductsLowStockQuery(query: Record<string, unknown>): string {
+  return createHash('sha256').update(JSON.stringify(query)).digest('hex').slice(0, 16)
+}
+
 export function hashProductsListQuery(query: Record<string, unknown>): string {
   return createHash('sha256').update(JSON.stringify(query)).digest('hex').slice(0, 16)
 }

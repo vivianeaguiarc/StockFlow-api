@@ -3,6 +3,7 @@ import {
   dashboardCachePattern,
   productsByIdKey,
   productsListCachePattern,
+  productsLowStockCachePattern,
   usersByIdKey,
   usersListCachePattern,
 } from './cache-keys.js'
@@ -14,6 +15,7 @@ export async function invalidateProductRelatedCache(
 ): Promise<void> {
   await Promise.all([
     cacheService.delByPattern(productsListCachePattern(companyId)),
+    cacheService.delByPattern(productsLowStockCachePattern(companyId)),
     cacheService.delByPattern(dashboardCachePattern(companyId)),
     ...(productId ? [cacheService.del(productsByIdKey(companyId, productId))] : []),
   ])

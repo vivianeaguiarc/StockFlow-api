@@ -9,6 +9,7 @@ import {
   successResponse,
 } from '../../../shared/http/response.js'
 import type { CreateProductDto } from '../dtos/create-product.dto.js'
+import type { ListLowStockProductsQuery } from '../dtos/list-low-stock-products-query.dto.js'
 import type { ListProductsQuery } from '../dtos/list-products-query.dto.js'
 import type { UpdateProductDto } from '../dtos/update-product.dto.js'
 import type { ProductsService } from '../services/ProductsService.js'
@@ -44,6 +45,20 @@ export class ProductsController {
       const query = req.query as unknown as ListProductsQuery
       const result = await this.productsService.list(req.user.companyId, query)
       paginatedResponse(res, result, 'Products retrieved successfully')
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  async listLowStock(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        throw new AppError('Unauthorized', 401)
+      }
+
+      const query = req.query as unknown as ListLowStockProductsQuery
+      const result = await this.productsService.listLowStock(req.user.companyId, query)
+      paginatedResponse(res, result, 'Low stock products retrieved successfully')
     } catch (error) {
       next(error)
     }
