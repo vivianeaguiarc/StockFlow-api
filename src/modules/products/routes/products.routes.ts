@@ -10,6 +10,7 @@ import { updateProductSchema } from '../dtos/update-product.dto.js'
 import { ProductsService } from '../services/ProductsService.js'
 import { StockMovementsController } from '../stock-movements/controllers/StockMovementsController.js'
 import { createStockMovementSchema } from '../stock-movements/dtos/create-stock-movement.dto.js'
+import { listStockMovementsQuerySchema } from '../stock-movements/dtos/list-stock-movements-query.dto.js'
 import { StockMovementsService } from '../stock-movements/services/StockMovementsService.js'
 
 export function createProductsRoutes(): Router {
@@ -39,6 +40,14 @@ export function createProductsRoutes(): Router {
     authorizeRoles('ADMIN', 'MANAGER'),
     validateRequest(createStockMovementSchema),
     (req, res, next) => stockMovementsController.create(req, res, next),
+  )
+
+  router.get(
+    '/:productId/stock-movements',
+    authenticate,
+    authorizeRoles('ADMIN', 'MANAGER', 'USER'),
+    validateRequest(listStockMovementsQuerySchema, 'query'),
+    (req, res, next) => stockMovementsController.listByProduct(req, res, next),
   )
 
   router.get('/:id', authenticate, authorizeRoles('ADMIN', 'MANAGER', 'USER'), (req, res, next) =>

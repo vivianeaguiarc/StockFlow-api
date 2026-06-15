@@ -3,4 +3,5 @@ export { stockMovementsRepository } from './stock-movements.repository.instance.
 export type {
   CreateStockMovementRecord,
   StockMovementsRepository,
+  StockMovementWithRelations,
 } from './stock-movements.repository.js'

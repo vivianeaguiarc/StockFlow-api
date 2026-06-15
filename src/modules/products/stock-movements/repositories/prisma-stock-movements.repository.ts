@@ -4,7 +4,23 @@ import { prisma } from '../../../../shared/database/prisma.js'
 import type {
   CreateStockMovementRecord,
   StockMovementsRepository,
+  StockMovementWithRelations,
 } from './stock-movements.repository.js'
+
+const stockMovementListInclude = {
+  product: {
+    select: {
+      name: true,
+    },
+  },
+  user: {
+    select: {
+      firstName: true,
+      lastName: true,
+      email: true,
+    },
+  },
+} as const
 
 export class PrismaStockMovementsRepository implements StockMovementsRepository {
   findProductForMovement(companyId: string, productId: string, tx?: Prisma.TransactionClient) {
@@ -37,5 +53,32 @@ export class PrismaStockMovementsRepository implements StockMovementsRepository 
 
   runInTransaction<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>) {
     return prisma.$transaction(fn)
+  }
+
+  findMany(where: Prisma.StockMovementWhereInput, skip: number, take: number) {
+    return prisma.stockMovement.findMany({
+      where,
+      skip,
+      take,
+      orderBy: { createdAt: 'desc' },
+      include: stockMovementListInclude,
+    }) as Promise<StockMovementWithRelations[]>
+  }
+
+  count(where: Prisma.StockMovementWhereInput) {
+    return prisma.stockMovement.count({ where })
+  }
+
+  productExistsInCompany(companyId: string, productId: string) {
+    return prisma.product
+      .findFirst({
+        where: {
+          id: productId,
+          companyId,
+          deletedAt: null,
+        },
+        select: { id: true },
+      })
+      .then((product) => product !== null)
   }
 }

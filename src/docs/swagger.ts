@@ -98,7 +98,11 @@ const swaggerDefinition = {
     { name: 'Categories', description: 'Product categories.' },
     { name: 'Suppliers', description: 'Supplier management.' },
     { name: 'Products', description: 'Product catalog and stock (Redis-cached listings).' },
-    { name: 'Inventory', description: 'Stock movements (ENTRY, EXIT, ADJUSTMENT).' },
+    {
+      name: 'Stock Movements',
+      description: 'Stock movement history with pagination, filters and traceability.',
+    },
+    { name: 'Inventory', description: 'Legacy stock movement endpoints (IN, OUT, ADJUSTMENT).' },
     { name: 'Dashboard', description: 'Company metrics and operational insights (Redis-cached).' },
   ],
   paths: swaggerPaths,

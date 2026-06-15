@@ -240,6 +240,17 @@ Content-Type: application/json
 DELETE {{baseUrl}}/products/{{productId}}
 Authorization: Bearer {{accessToken}}
 
+GET {{baseUrl}}/stock-movements?page=1&limit=10
+Authorization: Bearer {{accessToken}}
+
+### List Stock Movements By Product
+GET {{baseUrl}}/products/{{productId}}/stock-movements?page=1&limit=10
+Authorization: Bearer {{accessToken}}
+
+### Filter Stock Movements
+GET {{baseUrl}}/stock-movements?type=IN&startDate=2026-01-01T00:00:00.000Z&endDate=2026-12-31T23:59:59.999Z
+Authorization: Bearer {{accessToken}}
+
 ### Create Stock Movement - IN (product scoped)
 POST {{baseUrl}}/products/{{productId}}/stock-movements
 Authorization: Bearer {{accessToken}}

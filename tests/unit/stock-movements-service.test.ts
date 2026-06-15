@@ -93,4 +93,49 @@ describe('StockMovementsService', () => {
       statusCode: 409,
     } satisfies Partial<AppError>)
   })
+
+  it('lists movements with pagination metadata', async () => {
+    vi.mocked(repository.productExistsInCompany).mockResolvedValue(true)
+    vi.mocked(repository.findMany).mockResolvedValue([
+      {
+        id: 'movement-1',
+        companyId: 'company-1',
+        productId: 'product-1',
+        userId: 'user-1',
+        type: StockMovementType.IN,
+        quantity: 5,
+        previousQuantity: 10,
+        newQuantity: 15,
+        reason: 'Restock',
+        createdAt: new Date('2026-06-01T12:00:00.000Z'),
+        product: { name: 'Notebook' },
+        user: { firstName: 'Ana', lastName: 'Silva', email: 'ana@test.com' },
+      },
+    ])
+    vi.mocked(repository.count).mockResolvedValue(1)
+
+    const service = new StockMovementsService(repository)
+    const result = await service.list('company-1', { page: 1, limit: 10 })
+
+    expect(result.data[0]).toMatchObject({
+      productName: 'Notebook',
+      userName: 'Ana Silva',
+      userEmail: 'ana@test.com',
+      type: 'IN',
+    })
+    expect(result.pagination).toMatchObject({ page: 1, limit: 10, totalItems: 1 })
+  })
+
+  it('throws 404 when filtered productId does not exist', async () => {
+    vi.mocked(repository.productExistsInCompany).mockResolvedValue(false)
+
+    const service = new StockMovementsService(repository)
+
+    await expect(
+      service.list('company-1', { page: 1, limit: 10, productId: 'missing' }),
+    ).rejects.toMatchObject({
+      message: 'Product not found',
+      statusCode: 404,
+    } satisfies Partial<AppError>)
+  })
 })

@@ -10,6 +10,9 @@ export function createStockMovementsRepositoryMock(
     createMovement: vi.fn(),
     updateProductQuantity: vi.fn(),
     runInTransaction: vi.fn(),
+    findMany: vi.fn(),
+    count: vi.fn(),
+    productExistsInCompany: vi.fn(),
     ...overrides,
   }
 }

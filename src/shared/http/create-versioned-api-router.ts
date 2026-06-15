@@ -18,6 +18,7 @@ import {
 } from '../../modules/health/routes/health.routes.js'
 import { createInventoryRoutes } from '../../modules/inventory/routes/inventory.routes.js'
 import { createProductsRoutes } from '../../modules/products/routes/products.routes.js'
+import { createStockMovementsRoutes } from '../../modules/stock-movements/routes/stock-movements.routes.js'
 import { createSuppliersRoutes } from '../../modules/suppliers/routes/suppliers.routes.js'
 import { createUsersRoutes } from '../../modules/users/routes/users.routes.js'
 import { successResponse } from './response.js'
@@ -51,6 +52,7 @@ export function createVersionedApiRouter(): Router {
   apiRouter.use('/categories', createCategoriesRoutes())
   apiRouter.use('/suppliers', createSuppliersRoutes())
   apiRouter.use('/products', createProductsRoutes())
+  apiRouter.use('/stock-movements', createStockMovementsRoutes())
   apiRouter.use('/inventory', createInventoryRoutes())
   apiRouter.use('/dashboard', createDashboardRoutes())
   apiRouter.use('/audit', createAuditRoutes())

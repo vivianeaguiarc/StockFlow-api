@@ -582,6 +582,30 @@ export const swaggerComponents = {
         createdAt: { type: 'string', format: 'date-time' },
       },
     },
+    StockMovementListItem: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        productId: { type: 'string' },
+        productName: { type: 'string' },
+        userId: { type: 'string' },
+        userName: { type: 'string' },
+        userEmail: { type: 'string', format: 'email' },
+        type: { type: 'string', enum: ['IN', 'OUT', 'ADJUSTMENT'] },
+        quantity: { type: 'integer' },
+        previousQuantity: { type: 'integer' },
+        newQuantity: { type: 'integer' },
+        reason: { type: 'string', nullable: true },
+        createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
+    PaginatedStockMovementsResponse: {
+      type: 'object',
+      properties: {
+        data: { type: 'array', items: { $ref: '#/components/schemas/StockMovementListItem' } },
+        pagination: { $ref: '#/components/schemas/PaginationMeta' },
+      },
+    },
     CreateStockMovementRequest: {
       type: 'object',
       properties: {
@@ -968,6 +992,35 @@ export const swaggerComponents = {
       in: 'query',
       schema: { type: 'boolean' },
       description: 'When true, returns products where quantity <= minimumStock',
+    },
+    StockMovementProductIdFilterQuery: {
+      name: 'productId',
+      in: 'query',
+      schema: { type: 'string' },
+      description: 'Filter by product ID (must exist in the company)',
+    },
+    StockMovementUserIdFilterQuery: {
+      name: 'userId',
+      in: 'query',
+      schema: { type: 'string' },
+      description: 'Filter by user who registered the movement',
+    },
+    StockMovementTypeFilterQuery: {
+      name: 'type',
+      in: 'query',
+      schema: { type: 'string', enum: ['IN', 'OUT', 'ADJUSTMENT'] },
+    },
+    StockMovementStartDateFilterQuery: {
+      name: 'startDate',
+      in: 'query',
+      schema: { type: 'string', format: 'date-time' },
+      description: 'Inclusive lower bound for createdAt',
+    },
+    StockMovementEndDateFilterQuery: {
+      name: 'endDate',
+      in: 'query',
+      schema: { type: 'string', format: 'date-time' },
+      description: 'Inclusive upper bound for createdAt',
     },
     AuditSortByQuery: {
       name: 'sortBy',

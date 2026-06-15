@@ -1,5 +1,16 @@
 import type { Prisma, StockMovement } from '@prisma/client'
 
+export type StockMovementWithRelations = StockMovement & {
+  product: {
+    name: string
+  }
+  user: {
+    firstName: string
+    lastName: string
+    email: string
+  }
+}
+
 export type CreateStockMovementRecord = {
   companyId: string
   productId: string
@@ -27,4 +38,11 @@ export interface StockMovementsRepository {
     tx?: Prisma.TransactionClient,
   ): Promise<void>
   runInTransaction<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T>
+  findMany(
+    where: Prisma.StockMovementWhereInput,
+    skip: number,
+    take: number,
+  ): Promise<StockMovementWithRelations[]>
+  count(where: Prisma.StockMovementWhereInput): Promise<number>
+  productExistsInCompany(companyId: string, productId: string): Promise<boolean>
 }

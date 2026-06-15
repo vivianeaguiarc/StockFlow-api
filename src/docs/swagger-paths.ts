@@ -53,6 +53,16 @@ const productsListParams = [
   { $ref: '#/components/parameters/LowStockFilterQuery' },
 ]
 
+const stockMovementsListParams = [
+  { $ref: '#/components/parameters/PageQuery' },
+  { $ref: '#/components/parameters/LimitQuery' },
+  { $ref: '#/components/parameters/StockMovementProductIdFilterQuery' },
+  { $ref: '#/components/parameters/StockMovementUserIdFilterQuery' },
+  { $ref: '#/components/parameters/StockMovementTypeFilterQuery' },
+  { $ref: '#/components/parameters/StockMovementStartDateFilterQuery' },
+  { $ref: '#/components/parameters/StockMovementEndDateFilterQuery' },
+]
+
 const auditLogsListParams = [
   ...basePaginationParams,
   { $ref: '#/components/parameters/AuditSortByQuery' },
@@ -839,6 +849,38 @@ export const swaggerPaths = {
     },
   },
   '/api/v1/products/{productId}/stock-movements': {
+    get: {
+      tags: ['Stock Movements'],
+      summary: 'List stock movements for a product',
+      description:
+        'Requires ADMIN, MANAGER or USER role. Returns paginated movement history ordered by createdAt desc.',
+      security: secured,
+      parameters: [
+        {
+          name: 'productId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+        },
+        { $ref: '#/components/parameters/PageQuery' },
+        { $ref: '#/components/parameters/LimitQuery' },
+        { $ref: '#/components/parameters/StockMovementUserIdFilterQuery' },
+        { $ref: '#/components/parameters/StockMovementTypeFilterQuery' },
+        { $ref: '#/components/parameters/StockMovementStartDateFilterQuery' },
+        { $ref: '#/components/parameters/StockMovementEndDateFilterQuery' },
+      ],
+      responses: {
+        '200': {
+          description: 'Paginated stock movements for the product',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/PaginatedStockMovementsResponse' },
+            },
+          },
+        },
+        ...defaultErrors,
+      },
+    },
     post: {
       tags: ['Products'],
       summary: 'Create stock movement for a product',
@@ -872,6 +914,27 @@ export const swaggerPaths = {
         },
         ...defaultErrors,
         '409': { $ref: '#/components/responses/Conflict' },
+      },
+    },
+  },
+  '/api/v1/stock-movements': {
+    get: {
+      tags: ['Stock Movements'],
+      summary: 'List stock movement history',
+      description:
+        'Requires ADMIN, MANAGER or USER role. Supports pagination and filters by product, user, type and date range.',
+      security: secured,
+      parameters: stockMovementsListParams,
+      responses: {
+        '200': {
+          description: 'Paginated stock movement history',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/PaginatedStockMovementsResponse' },
+            },
+          },
+        },
+        ...defaultErrors,
       },
     },
   },
