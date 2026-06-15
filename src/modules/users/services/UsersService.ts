@@ -9,7 +9,7 @@ import {
   buildOrderBy,
   executePaginatedQuery,
 } from '../../../shared/utils/pagination.js'
-import { auditLogger } from '../../audit/services/AuditLoggerService.js'
+import { auditLogService } from '../../audit/audit-log.service.js'
 import type { CreateUserDto } from '../dtos/create-user.dto.js'
 import type { ListUsersQuery } from '../dtos/list-users-query.dto.js'
 import type { UpdateUserDto } from '../dtos/update-user.dto.js'
@@ -53,13 +53,13 @@ export class UsersService {
 
       const response = this.toResponse(user)
 
-      await auditLogger.log({
+      await auditLogService.record({
         companyId,
         userId: actorUserId,
-        action: AuditAction.CREATE,
+        action: AuditAction.CREATE_USER,
         entity: 'User',
         entityId: user.id,
-        newValue: response,
+        metadata: response,
         ...auditContext,
       })
 
@@ -143,14 +143,16 @@ export class UsersService {
 
       const response = this.toResponse(updated)
 
-      await auditLogger.log({
+      await auditLogService.record({
         companyId,
         userId: actorUserId,
-        action: AuditAction.UPDATE,
+        action: AuditAction.UPDATE_USER,
         entity: 'User',
         entityId: userId,
-        oldValue,
-        newValue: response,
+        metadata: {
+          oldValue,
+          newValue: response,
+        },
         ...auditContext,
       })
 
@@ -196,14 +198,16 @@ export class UsersService {
       data: { deletedAt },
     })
 
-    await auditLogger.log({
+    await auditLogService.record({
       companyId,
       userId: actorUserId,
-      action: AuditAction.DELETE,
+      action: AuditAction.DELETE_USER,
       entity: 'User',
       entityId: userId,
-      oldValue,
-      newValue: { deletedAt: deletedAt.toISOString() },
+      metadata: {
+        oldValue,
+        deletedAt: deletedAt.toISOString(),
+      },
       ...auditContext,
     })
   }

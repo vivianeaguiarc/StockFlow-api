@@ -4,9 +4,9 @@ import { UsersService } from '../../src/modules/users/services/UsersService.js'
 import { AppError } from '../../src/shared/errors/AppError.js'
 import { prisma } from '../../src/shared/database/prisma.js'
 
-vi.mock('../../src/modules/audit/services/AuditLoggerService.js', () => ({
-  auditLogger: {
-    log: vi.fn().mockResolvedValue(undefined),
+vi.mock('../../src/modules/audit/audit-log.service.js', () => ({
+  auditLogService: {
+    record: vi.fn().mockResolvedValue(undefined),
   },
 }))
 

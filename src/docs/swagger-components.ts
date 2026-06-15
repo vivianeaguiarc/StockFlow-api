@@ -495,13 +495,16 @@ export const swaggerComponents = {
       properties: {
         id: { type: 'string' },
         companyId: { type: 'string' },
-        userId: { type: 'string' },
+        userId: { type: 'string', nullable: true },
         action: {
           type: 'string',
           enum: [
             'CREATE',
             'UPDATE',
             'DELETE',
+            'CREATE_USER',
+            'UPDATE_USER',
+            'DELETE_USER',
             'LOGIN',
             'LOGOUT',
             'REFRESH',
@@ -511,7 +514,8 @@ export const swaggerComponents = {
           ],
         },
         entity: { type: 'string' },
-        entityId: { type: 'string' },
+        entityId: { type: 'string', nullable: true },
+        metadata: { type: 'object', nullable: true },
         oldValue: { type: 'object', nullable: true },
         newValue: { type: 'object', nullable: true },
         ipAddress: { type: 'string', nullable: true },

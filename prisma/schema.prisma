@@ -48,6 +48,9 @@ enum AuditAction {
   CREATE
   UPDATE
   DELETE
+  CREATE_USER
+  UPDATE_USER
+  DELETE_USER
   LOGIN
   LOGOUT
   REFRESH
@@ -200,12 +203,13 @@ model InventoryMovement {
 }
 
 model AuditLog {
-  id        String      @id @default(cuid())
+  id        String      @id @default(uuid())
   companyId String      @map("company_id")
-  userId    String      @map("user_id")
+  userId    String?     @map("user_id")
   action    AuditAction
   entity    String
-  entityId  String      @map("entity_id")
+  entityId  String?     @map("entity_id")
+  metadata  Json?
   oldValue  Json?       @map("old_value")
   newValue  Json?       @map("new_value")
   ipAddress String?     @map("ip_address")
@@ -213,7 +217,7 @@ model AuditLog {
   createdAt DateTime    @default(now()) @map("created_at")
 
   company Company @relation(fields: [companyId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
+  user    User?   @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
 }

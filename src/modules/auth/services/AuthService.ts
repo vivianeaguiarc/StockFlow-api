@@ -6,6 +6,7 @@ import { env } from '../../../config/env.js'
 import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
+import { auditLogService } from '../../audit/audit-log.service.js'
 import { auditLogger } from '../../audit/services/AuditLoggerService.js'
 import type { AuthMeResponseDto } from '../dtos/auth-me-response.dto.js'
 import type { JwtPayload, LoginDto, LoginResponseDto } from '../dtos/login.dto.js'
@@ -102,13 +103,13 @@ export class AuthService {
     const accessToken = this.signAccessToken(user)
     const refreshToken = await refreshTokenService.issue(user.id)
 
-    await auditLogger.log({
+    await auditLogService.record({
       companyId: user.companyId,
       userId: user.id,
       action: AuditAction.LOGIN,
       entity: 'User',
       entityId: user.id,
-      newValue: {
+      metadata: {
         email: user.email,
         role: user.role,
       },

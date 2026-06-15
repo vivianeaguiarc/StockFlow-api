@@ -1,8 +1,7 @@
 import type { AuditAction, Prisma } from '@prisma/client'
 
 import type { AuditContext } from '../../../shared/audit/audit-context.js'
-import { sanitizeAuditData } from '../../../shared/audit/sanitize-audit-data.js'
-import { prisma } from '../../../shared/database/prisma.js'
+import { auditLogService } from '../audit-log.service.js'
 
 export type CreateAuditLogInput = {
   companyId: string
@@ -17,24 +16,17 @@ export type CreateAuditLogInput = {
 
 export class AuditLoggerService {
   async log(input: CreateAuditLogInput): Promise<void> {
-    const client = input.tx ?? prisma
-
-    await client.auditLog.create({
-      data: {
-        companyId: input.companyId,
-        userId: input.userId,
-        action: input.action,
-        entity: input.entity,
-        entityId: input.entityId,
-        ...(input.oldValue !== undefined && {
-          oldValue: sanitizeAuditData(input.oldValue),
-        }),
-        ...(input.newValue !== undefined && {
-          newValue: sanitizeAuditData(input.newValue),
-        }),
-        ipAddress: input.ipAddress ?? null,
-        userAgent: input.userAgent ?? null,
-      },
+    await auditLogService.record({
+      companyId: input.companyId,
+      userId: input.userId,
+      action: input.action,
+      entity: input.entity,
+      entityId: input.entityId,
+      oldValue: input.oldValue,
+      newValue: input.newValue,
+      ipAddress: input.ipAddress ?? null,
+      userAgent: input.userAgent ?? null,
+      ...(input.tx !== undefined && { tx: input.tx }),
     })
   }
 }

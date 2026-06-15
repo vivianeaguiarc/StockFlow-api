@@ -71,6 +71,7 @@ export class AuditService {
       action: log.action,
       entity: log.entity,
       entityId: log.entityId,
+      metadata: log.metadata,
       oldValue: log.oldValue,
       newValue: log.newValue,
       ipAddress: log.ipAddress,

@@ -5,10 +5,11 @@ import type { PaginatedResponse } from '../../../shared/types/paginated-response
 export type AuditLogResponseDto = {
   id: string
   companyId: string
-  userId: string
+  userId: string | null
   action: AuditAction
   entity: string
-  entityId: string
+  entityId: string | null
+  metadata: unknown
   oldValue: unknown
   newValue: unknown
   ipAddress: string | null
