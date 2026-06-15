@@ -89,6 +89,13 @@ Content-Type: application/json
 
 ### List Users
 GET {{baseUrl}}/users?page=1&limit=10&sortBy=createdAt&sortOrder=desc
+
+### List users with filters
+
+GET {{baseUrl}}/users?name=vivi
+GET {{baseUrl}}/users?email=gmail
+GET {{baseUrl}}/users?role=ADMIN
+GET {{baseUrl}}/users?page=1&limit=10&role=MANAGER
 Authorization: Bearer {{accessToken}}
 
 ### Search Users

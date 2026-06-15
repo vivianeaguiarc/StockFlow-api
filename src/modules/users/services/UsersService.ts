@@ -5,7 +5,6 @@ import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
-  buildContainsSearchFilter,
   buildLimitPaginationMeta,
   buildOrderBy,
   executePaginatedQuery,
@@ -15,6 +14,7 @@ import type { CreateUserDto } from '../dtos/create-user.dto.js'
 import type { ListUsersQuery } from '../dtos/list-users-query.dto.js'
 import type { UpdateUserDto } from '../dtos/update-user.dto.js'
 import type { PaginatedUsersResponseDto, UserResponseDto } from '../dtos/user-response.dto.js'
+import { buildUsersListWhere } from '../utils/build-users-list-where.js'
 
 const BCRYPT_SALT_ROUNDS = 12
 
@@ -74,8 +74,7 @@ export class UsersService {
   }
 
   async list(companyId: string, query: ListUsersQuery): Promise<PaginatedUsersResponseDto> {
-    const { page, limit, sortBy, sortOrder, role, status, search } = query
-    const searchFilter = buildContainsSearchFilter(search, ['firstName', 'lastName', 'email'])
+    const { page, limit, sortBy, sortOrder } = query
     const orderBy = buildOrderBy(
       sortBy,
       sortOrder,
@@ -83,13 +82,7 @@ export class UsersService {
       'createdAt',
     )
 
-    const where: Prisma.UserWhereInput = {
-      companyId,
-      deletedAt: null,
-      ...(role && { role }),
-      ...(status && { status }),
-      ...(searchFilter && { OR: searchFilter }),
-    }
+    const where = buildUsersListWhere(companyId, query)
 
     const result = await executePaginatedQuery({
       page,

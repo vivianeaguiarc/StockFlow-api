@@ -241,13 +241,13 @@ describe('Users E2E', () => {
     })
     expect(managers.body.data.every((user: { role: string }) => user.role === 'MANAGER')).toBe(true)
 
-    const search = await request(app)
-      .get('/api/v1/users?search=vivi')
+    const nameFilter = await request(app)
+      .get('/api/v1/users?name=vivi')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
     expect(
-      search.body.data.some((user: { firstName: string }) =>
+      nameFilter.body.data.some((user: { firstName: string }) =>
         user.firstName.toLowerCase().includes('vivi'),
       ),
     ).toBe(true)
@@ -354,6 +354,138 @@ describe('Users E2E', () => {
       totalPages: 1,
       hasNextPage: false,
       hasPreviousPage: true,
+    })
+  })
+
+  describe('filters', () => {
+    it('filters users by name', async () => {
+      const admin = await registerCompanyAndAdmin()
+      companyIds.push(admin.companyId)
+
+      const suffix = uniqueSuffix()
+
+      await request(app)
+        .post('/api/v1/users')
+        .set(authHeader(admin.accessToken))
+        .send({
+          firstName: 'Vivi',
+          lastName: 'Filter',
+          email: `vivi-filter-${suffix}@test.com`,
+          password: 'Test@123456',
+          role: 'USER',
+        })
+        .expect(201)
+
+      const response = await request(app)
+        .get('/api/v1/users?name=vivi')
+        .set(authHeader(admin.accessToken))
+        .expect(200)
+
+      expect(response.body.data.length).toBeGreaterThan(0)
+      expect(
+        response.body.data.every(
+          (user: { firstName: string; lastName: string }) =>
+            user.firstName.toLowerCase().includes('vivi') ||
+            user.lastName.toLowerCase().includes('vivi'),
+        ),
+      ).toBe(true)
+    })
+
+    it('filters users by email', async () => {
+      const admin = await registerCompanyAndAdmin()
+      companyIds.push(admin.companyId)
+
+      const suffix = uniqueSuffix()
+      const email = `gmail-user-${suffix}@gmail.com`
+
+      await request(app)
+        .post('/api/v1/users')
+        .set(authHeader(admin.accessToken))
+        .send({
+          firstName: 'Gmail',
+          lastName: 'User',
+          email,
+          password: 'Test@123456',
+          role: 'USER',
+        })
+        .expect(201)
+
+      const response = await request(app)
+        .get('/api/v1/users?email=gmail')
+        .set(authHeader(admin.accessToken))
+        .expect(200)
+
+      expect(response.body.data.some((user: { email: string }) => user.email === email)).toBe(true)
+      expect(
+        response.body.data.every((user: { email: string }) => user.email.includes('gmail')),
+      ).toBe(true)
+    })
+
+    it('filters users by role', async () => {
+      const admin = await registerCompanyAndAdmin()
+      companyIds.push(admin.companyId)
+
+      await createUserWithRole(admin.accessToken, 'MANAGER')
+
+      const response = await request(app)
+        .get('/api/v1/users?role=MANAGER')
+        .set(authHeader(admin.accessToken))
+        .expect(200)
+
+      expect(response.body.data.length).toBeGreaterThan(0)
+      expect(response.body.data.every((user: { role: string }) => user.role === 'MANAGER')).toBe(
+        true,
+      )
+      expect(response.body.pagination.totalItems).toBe(response.body.data.length)
+    })
+
+    it('combines filters with pagination metadata', async () => {
+      const admin = await registerCompanyAndAdmin()
+      companyIds.push(admin.companyId)
+
+      const suffix = uniqueSuffix()
+
+      await request(app)
+        .post('/api/v1/users')
+        .set(authHeader(admin.accessToken))
+        .send({
+          firstName: 'Combo',
+          lastName: 'Manager',
+          email: `combo-manager-${suffix}@company.com`,
+          password: 'Test@123456',
+          role: 'MANAGER',
+        })
+        .expect(201)
+
+      await createUserWithRole(admin.accessToken, 'MANAGER', `combo-2-${suffix}`)
+
+      const response = await request(app)
+        .get('/api/v1/users?page=1&limit=1&role=MANAGER')
+        .set(authHeader(admin.accessToken))
+        .expect(200)
+
+      expect(response.body.data).toHaveLength(1)
+      expect(response.body.data[0].role).toBe('MANAGER')
+      expect(response.body.pagination).toMatchObject({
+        page: 1,
+        limit: 1,
+        totalItems: 2,
+        totalPages: 2,
+        hasNextPage: true,
+        hasPreviousPage: false,
+      })
+    })
+
+    it('returns 400 for invalid role filter', async () => {
+      const admin = await registerCompanyAndAdmin()
+      companyIds.push(admin.companyId)
+
+      const response = await request(app)
+        .get('/api/v1/users?role=INVALID')
+        .set(authHeader(admin.accessToken))
+        .expect(400)
+
+      expect(response.body.message).toContain('Role must be ADMIN, MANAGER or USER')
     })
   })
 })

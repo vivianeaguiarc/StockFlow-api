@@ -19,9 +19,9 @@ const usersListParams = [
   { $ref: '#/components/parameters/LimitQuery' },
   { $ref: '#/components/parameters/SortOrderQuery' },
   { $ref: '#/components/parameters/UsersSortByQuery' },
+  { $ref: '#/components/parameters/UserNameFilterQuery' },
+  { $ref: '#/components/parameters/UserEmailFilterQuery' },
   { $ref: '#/components/parameters/UserRoleFilterQuery' },
-  { $ref: '#/components/parameters/StatusFilterQuery' },
-  { $ref: '#/components/parameters/SearchQuery' },
 ]
 
 const categoriesListParams = [
@@ -388,7 +388,8 @@ export const swaggerPaths = {
     get: {
       tags: ['Users'],
       summary: 'List users',
-      description: 'Requires ADMIN role. Bearer token required.',
+      description:
+        'Requires ADMIN role and Bearer token. Supports pagination (page, limit) and optional filters (name, email, role). Example: /api/v1/users?page=1&limit=10&role=MANAGER',
       security: secured,
       parameters: usersListParams,
       responses: {

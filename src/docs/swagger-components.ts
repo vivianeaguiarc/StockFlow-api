@@ -719,7 +719,20 @@ export const swaggerComponents = {
     UserRoleFilterQuery: {
       name: 'role',
       in: 'query',
+      description: 'Exact role match',
       schema: { type: 'string', enum: ['ADMIN', 'MANAGER', 'USER'] },
+    },
+    UserNameFilterQuery: {
+      name: 'name',
+      in: 'query',
+      description: 'Case-insensitive partial match on first or last name',
+      schema: { type: 'string', example: 'vivi' },
+    },
+    UserEmailFilterQuery: {
+      name: 'email',
+      in: 'query',
+      description: 'Case-insensitive partial match on email',
+      schema: { type: 'string', example: 'gmail' },
     },
     CategoriesSortByQuery: {
       name: 'sortBy',
