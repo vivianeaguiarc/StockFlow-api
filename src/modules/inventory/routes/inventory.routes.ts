@@ -15,7 +15,7 @@ export function createInventoryRoutes(): Router {
   router.post(
     '/movements',
     authenticate,
-    authorizeRoles('ADMIN', 'MANAGER', 'USER'),
+    authorizeRoles('ADMIN', 'MANAGER'),
     validateRequest(createMovementSchema),
     (req, res, next) => inventoryController.createMovement(req, res, next),
   )

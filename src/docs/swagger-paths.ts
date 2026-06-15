@@ -838,12 +838,49 @@ export const swaggerPaths = {
       },
     },
   },
+  '/api/v1/products/{productId}/stock-movements': {
+    post: {
+      tags: ['Products'],
+      summary: 'Create stock movement for a product',
+      description:
+        'Requires ADMIN or MANAGER role. IN adds stock, OUT removes stock (409 if insufficient), ADJUSTMENT sets final quantity.',
+      security: secured,
+      parameters: [
+        {
+          name: 'productId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateStockMovementRequest' },
+          },
+        },
+      },
+      responses: {
+        '201': {
+          description: 'Stock movement created',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/StockMovement' },
+            },
+          },
+        },
+        ...defaultErrors,
+        '409': { $ref: '#/components/responses/Conflict' },
+      },
+    },
+  },
   '/api/v1/inventory/movements': {
     post: {
       tags: ['Inventory'],
       summary: 'Create inventory movement',
       description:
-        'Registers ENTRY, EXIT or ADJUSTMENT. ADJUSTMENT uses quantity as the final stock value.',
+        'Registers IN, OUT or ADJUSTMENT. ADJUSTMENT uses quantity as the final stock value. Requires ADMIN or MANAGER role.',
       security: secured,
       requestBody: {
         required: true,

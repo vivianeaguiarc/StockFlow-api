@@ -1,4 +1,4 @@
 /**
- * Inventory module — stock movements (ENTRY, EXIT, ADJUSTMENT).
+ * Inventory module — stock movements (IN, OUT, ADJUSTMENT).
  */
 export const INVENTORY_MODULE = 'inventory'

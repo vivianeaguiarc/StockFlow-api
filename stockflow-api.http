@@ -240,26 +240,37 @@ Content-Type: application/json
 DELETE {{baseUrl}}/products/{{productId}}
 Authorization: Bearer {{accessToken}}
 
-### Create Inventory Movement - ENTRY
-POST {{baseUrl}}/inventory/movements
+### Create Stock Movement - IN (product scoped)
+POST {{baseUrl}}/products/{{productId}}/stock-movements
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-  "productId": "{{productId}}",
-  "type": "ENTRY",
+  "type": "IN",
   "quantity": 5,
   "reason": "Initial stock entry"
 }
 
-### Create Inventory Movement - EXIT
+### Create Inventory Movement - IN
 POST {{baseUrl}}/inventory/movements
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
   "productId": "{{productId}}",
-  "type": "EXIT",
+  "type": "IN",
+  "quantity": 5,
+  "reason": "Initial stock entry"
+}
+
+### Create Inventory Movement - OUT
+POST {{baseUrl}}/inventory/movements
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{productId}}",
+  "type": "OUT",
   "quantity": 2,
   "reason": "Customer sale"
 }

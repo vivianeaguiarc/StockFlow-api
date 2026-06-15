@@ -34,7 +34,7 @@ export type DashboardRecentMovementDto = {
   quantity: number
   previousQuantity: number
   newQuantity: number
-  reason: string
+  reason: string | null
   createdAt: Date
   product: {
     id: string

@@ -8,7 +8,7 @@ export type { PaginatedResponse, PaginationMeta } from './paginated-response.js'
 
 export type UserRole = 'ADMIN' | 'MANAGER' | 'USER'
 
-export type InventoryMovementType = 'ENTRY' | 'EXIT' | 'ADJUSTMENT'
+export type StockMovementType = 'IN' | 'OUT' | 'ADJUSTMENT'
 
 export type AuditAction =
   | 'LOGIN'

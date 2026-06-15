@@ -33,9 +33,9 @@ enum SupplierStatus {
   INACTIVE
 }
 
-enum InventoryMovementType {
-  ENTRY
-  EXIT
+enum StockMovementType {
+  IN
+  OUT
   ADJUSTMENT
 }
 
@@ -49,6 +49,7 @@ enum AuditAction {
   CREATE_PRODUCT
   UPDATE_PRODUCT
   DELETE_PRODUCT
+  CREATE_STOCK_MOVEMENT
   LOGIN
   LOGOUT
   REFRESH
@@ -72,8 +73,8 @@ model Company {
   users      User[]
   categories Category[]
   suppliers  Supplier[]
-  products           Product[]
-  inventoryMovements InventoryMovement[]
+  products      Product[]
+  stockMovements StockMovement[]
   auditLogs          AuditLog[]
 
   @@map("companies")
@@ -92,8 +93,8 @@ model User {
   updatedAt    DateTime   @updatedAt @map("updated_at")
   deletedAt    DateTime?  @map("deleted_at")
 
-  company            Company             @relation(fields: [companyId], references: [id])
-  inventoryMovements InventoryMovement[]
+  company       Company        @relation(fields: [companyId], references: [id])
+  stockMovements StockMovement[]
   auditLogs          AuditLog[]
   refreshTokens      RefreshToken[]
 
@@ -173,31 +174,31 @@ model Product {
 
   company            Company             @relation(fields: [companyId], references: [id])
   category           Category?           @relation(fields: [categoryId], references: [id])
-  supplier           Supplier?           @relation(fields: [supplierId], references: [id])
-  inventoryMovements InventoryMovement[]
+  supplier     Supplier?      @relation(fields: [supplierId], references: [id])
+  stockMovements StockMovement[]
 
   @@unique([companyId, sku])
   @@unique([companyId, barcode])
   @@map("products")
 }
 
-model InventoryMovement {
-  id               String                @id @default(cuid())
-  companyId        String                @map("company_id")
-  productId        String                @map("product_id")
-  userId           String                @map("user_id")
-  type             InventoryMovementType
+model StockMovement {
+  id               String            @id @default(cuid())
+  companyId        String            @map("company_id")
+  productId        String            @map("product_id")
+  userId           String            @map("user_id")
+  type             StockMovementType
   quantity         Int
-  previousQuantity Int                   @map("previous_quantity")
-  newQuantity      Int                   @map("new_quantity")
-  reason           String
-  createdAt        DateTime              @default(now()) @map("created_at")
+  previousQuantity Int               @map("previous_quantity")
+  newQuantity      Int               @map("new_quantity")
+  reason           String?
+  createdAt        DateTime          @default(now()) @map("created_at")
 
   company Company @relation(fields: [companyId], references: [id])
   product Product @relation(fields: [productId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
 
-  @@map("inventory_movements")
+  @@map("stock_movements")
 }
 
 model AuditLog {

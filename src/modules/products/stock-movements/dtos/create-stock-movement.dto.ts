@@ -1,10 +1,7 @@
 import { z } from 'zod'
 
-import type { PaginatedResponse } from '../../../shared/types/paginated-response.js'
-
-export const createMovementSchema = z
+export const createStockMovementSchema = z
   .object({
-    productId: z.string().trim().min(1, 'Product is required'),
     type: z.enum(['IN', 'OUT', 'ADJUSTMENT']),
     quantity: z.coerce.number().int(),
     reason: z.string().trim().optional(),
@@ -29,19 +26,4 @@ export const createMovementSchema = z
     }
   })
 
-export type CreateMovementDto = z.infer<typeof createMovementSchema>
-
-export type MovementResponseDto = {
-  id: string
-  companyId: string
-  productId: string
-  userId: string
-  type: string
-  quantity: number
-  previousQuantity: number
-  newQuantity: number
-  reason: string | null
-  createdAt: Date
-}
-
-export type PaginatedMovementsResponseDto = PaginatedResponse<MovementResponseDto>
+export type CreateStockMovementDto = z.infer<typeof createStockMovementSchema>

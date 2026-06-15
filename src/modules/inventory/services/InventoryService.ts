@@ -1,4 +1,4 @@
-import { AuditAction, type InventoryMovement, InventoryMovementType } from '@prisma/client'
+import { AuditAction, type StockMovement, StockMovementType } from '@prisma/client'
 
 import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { invalidateProductRelatedCache } from '../../../shared/cache/cache-invalidation.js'
@@ -7,6 +7,7 @@ import type { PaginationQuery } from '../../../shared/dtos/pagination-query.dto.
 import { AppError } from '../../../shared/errors/AppError.js'
 import { buildOrderBy, executePaginatedQuery } from '../../../shared/utils/pagination.js'
 import { auditLogger } from '../../audit/services/AuditLoggerService.js'
+import { calculateStockQuantities } from '../../products/stock-movements/utils/calculate-stock-quantities.js'
 import type {
   CreateMovementDto,
   MovementResponseDto,
@@ -26,17 +27,17 @@ export class InventoryService {
           id: data.productId,
           companyId,
           deletedAt: null,
-          active: true,
         },
       })
 
       if (!product) {
-        throw new AppError('Product not found or inactive', 404)
+        throw new AppError('Product not found', 404)
       }
 
       const previousQuantity = product.quantity
-      const { newQuantity, movementQuantity } = this.calculateQuantities(
-        data.type,
+      const movementType = data.type as StockMovementType
+      const { newQuantity, movementQuantity } = calculateStockQuantities(
+        movementType,
         data.quantity,
         previousQuantity,
       )
@@ -46,24 +47,24 @@ export class InventoryService {
         data: { quantity: newQuantity },
       })
 
-      const createdMovement = await tx.inventoryMovement.create({
+      const createdMovement = await tx.stockMovement.create({
         data: {
           companyId,
           productId: product.id,
           userId,
-          type: data.type,
+          type: movementType,
           quantity: movementQuantity,
           previousQuantity,
           newQuantity,
-          reason: data.reason,
+          reason: data.reason ?? null,
         },
       })
 
       await auditLogger.log({
         companyId,
         userId,
-        action: this.mapMovementTypeToAuditAction(data.type),
-        entity: 'InventoryMovement',
+        action: this.mapMovementTypeToAuditAction(movementType),
+        entity: 'StockMovement',
         entityId: createdMovement.id,
         oldValue: {
           productId: product.id,
@@ -72,8 +73,8 @@ export class InventoryService {
         newValue: {
           productId: product.id,
           quantity: newQuantity,
-          type: data.type,
-          reason: data.reason,
+          type: movementType,
+          reason: data.reason ?? null,
         },
         tx,
         ...auditContext,
@@ -82,7 +83,7 @@ export class InventoryService {
       return createdMovement
     })
 
-    await invalidateProductRelatedCache(companyId)
+    await invalidateProductRelatedCache(companyId, data.productId)
 
     return this.toResponse(movement)
   }
@@ -100,13 +101,13 @@ export class InventoryService {
       page,
       pageSize,
       findMany: (skip, take) =>
-        prisma.inventoryMovement.findMany({
+        prisma.stockMovement.findMany({
           where,
           skip,
           take,
           orderBy,
         }),
-      count: () => prisma.inventoryMovement.count({ where }),
+      count: () => prisma.stockMovement.count({ where }),
     })
 
     return {
@@ -116,7 +117,7 @@ export class InventoryService {
   }
 
   async getMovementById(companyId: string, movementId: string): Promise<MovementResponseDto> {
-    const movement = await prisma.inventoryMovement.findFirst({
+    const movement = await prisma.stockMovement.findFirst({
       where: {
         id: movementId,
         companyId,
@@ -130,13 +131,13 @@ export class InventoryService {
     return this.toResponse(movement)
   }
 
-  private mapMovementTypeToAuditAction(type: InventoryMovementType): AuditAction {
+  private mapMovementTypeToAuditAction(type: StockMovementType): AuditAction {
     switch (type) {
-      case InventoryMovementType.ENTRY:
+      case StockMovementType.IN:
         return AuditAction.STOCK_ENTRY
-      case InventoryMovementType.EXIT:
+      case StockMovementType.OUT:
         return AuditAction.STOCK_EXIT
-      case InventoryMovementType.ADJUSTMENT:
+      case StockMovementType.ADJUSTMENT:
         return AuditAction.STOCK_ADJUSTMENT
       default: {
         const exhaustiveCheck: never = type
@@ -145,42 +146,7 @@ export class InventoryService {
     }
   }
 
-  private calculateQuantities(
-    type: InventoryMovementType,
-    quantity: number,
-    previousQuantity: number,
-  ): { newQuantity: number; movementQuantity: number } {
-    switch (type) {
-      case InventoryMovementType.ENTRY:
-        return {
-          newQuantity: previousQuantity + quantity,
-          movementQuantity: quantity,
-        }
-
-      case InventoryMovementType.EXIT:
-        if (previousQuantity < quantity) {
-          throw new AppError('Insufficient stock', 400)
-        }
-
-        return {
-          newQuantity: previousQuantity - quantity,
-          movementQuantity: quantity,
-        }
-
-      case InventoryMovementType.ADJUSTMENT:
-        return {
-          newQuantity: quantity,
-          movementQuantity: quantity,
-        }
-
-      default: {
-        const exhaustiveCheck: never = type
-        throw new AppError(`Unsupported movement type: ${String(exhaustiveCheck)}`, 400)
-      }
-    }
-  }
-
-  private toResponse(movement: InventoryMovement): MovementResponseDto {
+  private toResponse(movement: StockMovement): MovementResponseDto {
     return {
       id: movement.id,
       companyId: movement.companyId,

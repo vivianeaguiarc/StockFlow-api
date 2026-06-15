@@ -60,14 +60,14 @@ describe('Inventory Movements E2E', () => {
       .post('/api/v1/inventory/movements')
       .send({
         productId: 'fake',
-        type: 'ENTRY',
+        type: 'IN',
         quantity: 1,
         reason: 'Test',
       })
       .expect(401)
   })
 
-  it('increases stock with ENTRY movement', async () => {
+  it('increases stock with IN movement', async () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
 
@@ -79,7 +79,7 @@ describe('Inventory Movements E2E', () => {
       .set(authHeader(admin.accessToken))
       .send({
         productId,
-        type: 'ENTRY',
+        type: 'IN',
         quantity: 5,
         reason: 'Restock',
       })
@@ -87,7 +87,7 @@ describe('Inventory Movements E2E', () => {
 
     expect(movement.body.data).toMatchObject({
       productId,
-      type: 'ENTRY',
+      type: 'IN',
       previousQuantity: 10,
       newQuantity: 15,
     })
@@ -100,7 +100,7 @@ describe('Inventory Movements E2E', () => {
     expect(product.body.data.quantity).toBe(15)
   })
 
-  it('decreases stock with EXIT movement', async () => {
+  it('decreases stock with OUT movement', async () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
 
@@ -112,14 +112,14 @@ describe('Inventory Movements E2E', () => {
       .set(authHeader(admin.accessToken))
       .send({
         productId,
-        type: 'EXIT',
+        type: 'OUT',
         quantity: 8,
         reason: 'Sale',
       })
       .expect(201)
 
     expect(movement.body.data).toMatchObject({
-      type: 'EXIT',
+      type: 'OUT',
       previousQuantity: 20,
       newQuantity: 12,
     })
@@ -132,7 +132,7 @@ describe('Inventory Movements E2E', () => {
     expect(product.body.data.quantity).toBe(12)
   })
 
-  it('returns 400 when EXIT exceeds available stock', async () => {
+  it('returns 409 when OUT exceeds available stock', async () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
 
@@ -144,11 +144,11 @@ describe('Inventory Movements E2E', () => {
       .set(authHeader(admin.accessToken))
       .send({
         productId,
-        type: 'EXIT',
+        type: 'OUT',
         quantity: 10,
         reason: 'Invalid exit',
       })
-      .expect(400)
+      .expect(409)
 
     expect(response.body.message).toBe('Insufficient stock')
   })
@@ -165,7 +165,7 @@ describe('Inventory Movements E2E', () => {
       .expect(403)
   })
 
-  it('allows employee to create movement but not list history', async () => {
+  it('returns 403 when employee tries to create movement', async () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
 
@@ -178,15 +178,10 @@ describe('Inventory Movements E2E', () => {
       .set(authHeader(employee.accessToken))
       .send({
         productId,
-        type: 'ENTRY',
+        type: 'IN',
         quantity: 2,
         reason: 'Employee entry',
       })
-      .expect(201)
-
-    await request(app)
-      .get('/api/v1/inventory/movements')
-      .set(authHeader(employee.accessToken))
       .expect(403)
   })
 
@@ -203,7 +198,7 @@ describe('Inventory Movements E2E', () => {
       .set(authHeader(companyB.accessToken))
       .send({
         productId,
-        type: 'ENTRY',
+        type: 'IN',
         quantity: 1,
         reason: 'Cross tenant',
       })

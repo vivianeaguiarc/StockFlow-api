@@ -1,4 +1,4 @@
-import { InventoryMovementType } from '@prisma/client'
+import { StockMovementType } from '@prisma/client'
 
 import {
   dashboardLowStockProductsKey,
@@ -100,15 +100,15 @@ export class DashboardService {
       prisma.product.count({ where: activeProductWhere }),
       prisma.product.count({ where: inactiveProductWhere }),
       prisma.product.count({ where: lowStockWhere }),
-      prisma.inventoryMovement.count({ where: { companyId } }),
-      prisma.inventoryMovement.count({
-        where: { ...todayMovementWhere, type: InventoryMovementType.ENTRY },
+      prisma.stockMovement.count({ where: { companyId } }),
+      prisma.stockMovement.count({
+        where: { ...todayMovementWhere, type: StockMovementType.IN },
       }),
-      prisma.inventoryMovement.count({
-        where: { ...todayMovementWhere, type: InventoryMovementType.EXIT },
+      prisma.stockMovement.count({
+        where: { ...todayMovementWhere, type: StockMovementType.OUT },
       }),
-      prisma.inventoryMovement.count({
-        where: { ...todayMovementWhere, type: InventoryMovementType.ADJUSTMENT },
+      prisma.stockMovement.count({
+        where: { ...todayMovementWhere, type: StockMovementType.ADJUSTMENT },
       }),
     ])
 
@@ -179,7 +179,7 @@ export class DashboardService {
     companyId: string,
     limit: number,
   ): Promise<DashboardRecentMovementDto[]> {
-    const movements = await prisma.inventoryMovement.findMany({
+    const movements = await prisma.stockMovement.findMany({
       where: { companyId },
       take: limit,
       orderBy: { createdAt: 'desc' },

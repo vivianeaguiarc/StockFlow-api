@@ -68,7 +68,7 @@ describe('Dashboard E2E', () => {
       .set(authHeader(admin.accessToken))
       .send({
         productId: await createLowStockProduct(admin.accessToken, `${suffix}-move`),
-        type: 'ENTRY',
+        type: 'IN',
         quantity: 1,
         reason: 'Dashboard entry',
       })
@@ -143,7 +143,7 @@ describe('Dashboard E2E', () => {
       .set(authHeader(admin.accessToken))
       .send({
         productId,
-        type: 'EXIT',
+        type: 'OUT',
         quantity: 1,
         reason: 'Dashboard exit',
       })
@@ -161,7 +161,7 @@ describe('Dashboard E2E', () => {
 
     expect(movement).toMatchObject({
       id: expect.any(String),
-      type: 'EXIT',
+      type: 'OUT',
       quantity: expect.any(Number),
       previousQuantity: expect.any(Number),
       newQuantity: expect.any(Number),
