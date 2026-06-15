@@ -7,6 +7,9 @@
 #
 # Configure secrets no painel (nunca commite valores reais):
 # JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, CORS_ORIGINS ou CORS_ORIGIN, PUBLIC_URL
+#
+# IMPORTANTE — use runtime: node (abaixo). Se usar Docker no painel, NÃO defina
+# Docker Command como pnpm dev; o Dockerfile padrão executa node dist/server.js.
 
 services:
   - type: web

@@ -21,4 +21,9 @@ done
 
 echo "Starting StockFlow API..."
 
+if [ "$NODE_ENV" = "production" ] && [ ! -f "dist/server.js" ]; then
+  echo "ERROR: dist/server.js not found. Production image must run 'pnpm build' before start."
+  exit 1
+fi
+
 exec "$@"

@@ -31,6 +31,39 @@ Ideal para portfólio técnico e estudo de backends SaaS.
 
 ---
 
+## Ambiente de Demonstração
+
+API publicada para testes rápidos por recrutadores, avaliadores e desenvolvedores:
+
+| Recurso     | URL                                                                                                    |
+| ----------- | ------------------------------------------------------------------------------------------------------ |
+| **Deploy**  | [https://stockflow-api-l4x4.onrender.com](https://stockflow-api-l4x4.onrender.com)                     |
+| **Swagger** | [https://stockflow-api-l4x4.onrender.com/api/docs/](https://stockflow-api-l4x4.onrender.com/api/docs/) |
+
+1. Abra o Swagger e execute `POST /api/v1/auth/login` com as credenciais demo (seção abaixo).
+2. Copie o `accessToken` e clique em **Authorize**.
+3. Explore produtos, movimentações, alertas de estoque baixo e dashboard.
+
+> Dados demo completos (seed local): ver seção [Dados de demonstração](#dados-de-demonstração).
+
+---
+
+## Usuários de Demonstração
+
+Credenciais para login na API de demonstração (local ou Render):
+
+| Email                   | Papel   |
+| ----------------------- | ------- |
+| `admin@stockflow.dev`   | ADMIN   |
+| `manager@stockflow.dev` | MANAGER |
+| `user@stockflow.dev`    | USER    |
+
+**Senha:** `Demo@123456`
+
+> Senha exclusiva para ambiente demo — **nunca** use como secret real em produção.
+
+---
+
 ## Funcionalidades principais
 
 | Módulo         | Descrição                                                                                                  |
@@ -45,6 +78,21 @@ Ideal para portfólio técnico e estudo de backends SaaS.
 | **Audit**      | Trilha de auditoria imutável (somente ADMIN)                                                               |
 | **Health**     | Health check da aplicação (live, ready, details)                                                           |
 | **Swagger**    | Documentação interativa — [produção](https://stockflow-api-l4x4.onrender.com/api/docs) · local `/api/docs` |
+
+---
+
+## Funcionalidades Implementadas
+
+Recursos já disponíveis na API, prontos para avaliação técnica:
+
+| Categoria                  | Recursos                                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Autenticação e acesso**  | JWT Authentication · RBAC · Refresh Token · Logout                                                      |
+| **Dados e consultas**      | Soft Delete · Paginação · Filtros · Redis Cache                                                         |
+| **Observabilidade e docs** | Audit Logs · Swagger/OpenAPI · Observabilidade (health checks, logs estruturados)                       |
+| **Infraestrutura**         | Docker · GitHub Actions · Segurança avançada (Helmet, CORS, rate limit, sanitização)                    |
+| **Estoque**                | Produtos · Movimentações de estoque · Histórico de movimentações · Alertas de estoque baixo · Dashboard |
+| **SaaS**                   | Multiempresa (SaaS) — isolamento por `companyId` em todos os módulos                                    |
 
 ---
 
@@ -67,7 +115,33 @@ Ideal para portfólio técnico e estudo de backends SaaS.
 
 ---
 
+## Diferenciais Técnicos
+
+| Diferencial            | Descrição                                                                                                      |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Clean Architecture** | Organização modular **Controller → Service → Repository → DTOs**, com regras de negócio isoladas e testáveis   |
+| **Prisma ORM**         | Tipagem forte, migrations versionadas e queries type-safe sobre PostgreSQL                                     |
+| **PostgreSQL**         | Banco relacional com integridade referencial, transações e suporte a multi-tenancy                             |
+| **Redis**              | Cache de leitura com TTL, invalidação por tenant e fallback seguro para o banco                                |
+| **Docker**             | Containerização multi-stage, Compose para dev/prod e health checks integrados                                  |
+| **CI/CD**              | Pipeline automatizado no GitHub Actions (lint, testes, build e coverage)                                       |
+| **Observabilidade**    | Logs estruturados (Pino), health/live/ready/details e `requestId` para rastreamento                            |
+| **Segurança OWASP**    | Hardening alinhado a boas práticas: JWT, bcrypt, rate limit, sanitização, headers seguros e erros padronizados |
+| **Multi-tenancy**      | Segregação de dados por empresa em usuários, produtos, movimentações, dashboard e cache                        |
+
+---
+
 ## Arquitetura
+
+Visão resumida da organização do código:
+
+```
+src/
+├── modules/     # Domínios (auth, users, products, dashboard, audit, …)
+├── shared/      # Infraestrutura compartilhada (http, cache, database, logger)
+├── config/      # Variáveis de ambiente validadas (Zod)
+prisma/          # Schema, migrations e seed
+```
 
 Padrão **Controller → Service → Repository → DTOs**, organizado por módulos de domínio (refatoração incremental — Task 50):
 
@@ -275,7 +349,7 @@ Todas as respostas JSON seguem um contrato consistente para facilitar o consumo 
 - **Readiness (`/ready`):** valida PostgreSQL (essencial). Redis é reportado, mas indisponibilidade do Redis não bloqueia tráfego (cache com fallback).
 - **Details (`/details`):** informações operacionais sem dados sensíveis; Redis aparece como `down` quando indisponível.
 
----
+### Cache Redis
 
 Consultas pesadas de leitura usam cache Redis com fallback seguro para PostgreSQL:
 
@@ -859,6 +933,18 @@ stockflow-api/
 - [ ] Relatórios e dashboards de inventário
 - [x] Deploy em cloud (Render + Docker)
 - [ ] Observabilidade (logs estruturados, métricas)
+
+---
+
+## Próximas Evoluções
+
+Roadmap sugerido para evolução do produto:
+
+- **Notificações** — alertas proativos de estoque baixo (e-mail, webhook ou push)
+- **Relatórios PDF** — exportação de inventário e movimentações para auditoria
+- **Exportação Excel** — planilhas de produtos, movimentações e métricas
+- **Integrações ERP** — conectores com sistemas externos de compras e vendas
+- **Métricas avançadas** — KPIs de giro de estoque, curva ABC e previsão de ruptura
 
 ---
 

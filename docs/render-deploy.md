@@ -258,16 +258,33 @@ Configure `PUBLIC_URL` com a URL pública (sem barra final) para o **Try it out*
 
 ## Troubleshooting
 
-| Problema                         | Solução                                                      |
-| -------------------------------- | ------------------------------------------------------------ |
-| Build falha no `prepare` / Husky | Defina `HUSKY=0`                                             |
-| `P1001: Can't reach database`    | Use Internal Database URL; mesmo region                      |
-| Pre-Deploy migration falha       | Verifique logs; rode `pnpm prisma migrate status` localmente |
-| Health check 503                 | PostgreSQL indisponível ou `DATABASE_URL` incorreto          |
-| API não responde                 | Confirme `HOST=0.0.0.0`                                      |
-| Swagger Try it out errado        | Configure `PUBLIC_URL`                                       |
-| Redis down em `/details`         | Verifique `REDIS_URL`; API continua sem cache                |
-| Plano free “dorme”               | Primeira requisição pode demorar ~30s (cold start)           |
+| Problema                                           | Solução                                                                                                                                                                                                                |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build falha no `prepare` / Husky                   | Defina `HUSKY=0`                                                                                                                                                                                                       |
+| `P1001: Can't reach database`                      | Use Internal Database URL; mesmo region                                                                                                                                                                                |
+| Pre-Deploy migration falha                         | Verifique logs; rode `pnpm prisma migrate status` localmente                                                                                                                                                           |
+| Health check 503                                   | PostgreSQL indisponível ou `DATABASE_URL` incorreto                                                                                                                                                                    |
+| API não responde                                   | Confirme `HOST=0.0.0.0`                                                                                                                                                                                                |
+| Swagger Try it out errado                          | Configure `PUBLIC_URL`                                                                                                                                                                                                 |
+| Redis down em `/details`                           | Verifique `REDIS_URL`; API continua sem cache                                                                                                                                                                          |
+| Plano free “dorme”                                 | Primeira requisição pode demorar ~30s (cold start)                                                                                                                                                                     |
+| `tsx watch src/server.ts` / `ERR_MODULE_NOT_FOUND` | **Runtime Docker:** o `Dockerfile` deve terminar no stage **production** (`node dist/server.js`). **Não** use `pnpm dev` como Start/Docker Command. **Runtime Node:** use Start Command `pnpm start` (não `pnpm dev`). |
+| No open ports detected                             | App não subiu — confira Start Command e logs acima                                                                                                                                                                     |
+
+### Runtime Node vs Docker no Render
+
+| Configuração           | Recomendado                                                        |
+| ---------------------- | ------------------------------------------------------------------ |
+| **Runtime**            | **Node** (nativo)                                                  |
+| **Build Command**      | `pnpm install --frozen-lockfile && pnpm db:generate && pnpm build` |
+| **Pre-Deploy Command** | `pnpm db:migrate:deploy`                                           |
+| **Start Command**      | `pnpm start`                                                       |
+
+Se usar **Docker** no Render:
+
+- **Dockerfile:** `./Dockerfile` (stage padrão = produção)
+- **Docker Command:** deixe vazio (usa `CMD ["node", "dist/server.js"]`) ou `node dist/server.js`
+- **Nunca** `pnpm dev` em produção — a imagem não inclui `src/`, apenas `dist/`
 
 ---
 

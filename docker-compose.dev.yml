@@ -5,8 +5,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: development
+      dockerfile: Dockerfile.dev
     container_name: stockflow-api-dev
     restart: unless-stopped
     environment:

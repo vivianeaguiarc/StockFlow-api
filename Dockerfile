@@ -59,22 +59,3 @@ HEALTHCHECK --interval=15s --timeout=5s --start-period=25s --retries=5 \
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["node", "dist/server.js"]
-
-FROM deps AS development
-
-ENV NODE_ENV=development
-ENV PORT=3333
-ENV HOST=0.0.0.0
-
-COPY prisma ./prisma
-COPY tsconfig.json ./
-COPY docker-entrypoint.sh ./docker-entrypoint.sh
-
-RUN pnpm db:generate \
-  && sed -i 's/\r$//' docker-entrypoint.sh \
-  && chmod +x docker-entrypoint.sh
-
-EXPOSE 3333
-
-ENTRYPOINT ["./docker-entrypoint.sh"]
-CMD ["pnpm", "dev"]
