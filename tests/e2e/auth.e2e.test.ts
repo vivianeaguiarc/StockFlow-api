@@ -94,6 +94,21 @@ describe('POST /api/auth/login', () => {
     expect(typeof session.refreshToken).toBe('string')
     expect(session.refreshToken.length).toBeGreaterThan(0)
   })
+
+  it('returns 401 for invalid credentials', async () => {
+    const uniqueId = createUniqueId()
+    const session = await registerAndLogin(uniqueId)
+
+    await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: session.email, password: 'Wrong@123456' })
+      .expect(401)
+
+    await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'unknown@example.com', password: 'Test@123456' })
+      .expect(401)
+  })
 })
 
 describe('POST /api/auth/refresh', () => {

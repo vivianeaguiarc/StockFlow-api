@@ -232,11 +232,14 @@ cp .env.example .env
 
 Edite o `.env` e defina um `JWT_SECRET` seguro para desenvolvimento.
 
-### 2. Subir apenas o PostgreSQL
+### 2. Subir apenas PostgreSQL (e Redis, opcional)
 
 ```bash
-docker compose up -d postgres
+pnpm db:up
+# ou: docker compose -f docker-compose.infra.yml up -d
 ```
+
+Para subir só o Postgres: `docker compose up -d postgres`
 
 ### 3. Banco de dados
 
@@ -256,29 +259,47 @@ A API estará disponível em `http://localhost:3333`.
 
 ---
 
-## Como rodar com Docker
+## Executando com Docker
 
-Sobe **PostgreSQL + API** em containers (migrations executadas automaticamente no startup):
+Sobe **PostgreSQL + API** com um único comando (migrations aplicadas automaticamente no startup):
 
 ```bash
-docker compose up --build -d
+docker compose up -d
 ```
 
-Verificar saúde:
+Ou via script:
+
+```bash
+pnpm docker:up
+```
+
+A API ficará em `http://localhost:3333` · Swagger em `http://localhost:3333/api/docs`
+
+### Comandos úteis
+
+| Comando            | Descrição                                                         |
+| ------------------ | ----------------------------------------------------------------- |
+| `pnpm docker:up`   | Build + sobe API e PostgreSQL                                     |
+| `pnpm docker:down` | Para e remove containers                                          |
+| `pnpm docker:logs` | Logs da API em tempo real                                         |
+| `pnpm docker:dev`  | Desenvolvimento com hot reload (overlay `docker-compose.dev.yml`) |
+
+### Desenvolvimento com hot reload (Docker)
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+O código local é montado em volume; alterações em `src/` recarregam a API automaticamente.
+
+### Verificar saúde
 
 ```bash
 curl http://localhost:3333/api/v1/health/live
 curl http://localhost:3333/api/v1/health/ready
-curl http://localhost:3333/api/v1/health/details
 ```
 
-Ver logs:
-
-```bash
-docker compose logs -f api
-```
-
-Parar:
+### Parar
 
 ```bash
 docker compose down
@@ -286,7 +307,11 @@ docker compose down
 
 > **Nota:** se a porta `3333` já estiver em uso (ex.: `pnpm dev`), pare o processo local antes de subir o container da API.
 
-### Deploy no Render
+> **Windows / macOS / Linux:** use Docker Desktop ou Docker Engine com Compose V2 (`docker compose`). O `docker-entrypoint.sh` é normalizado para LF no build da imagem.
+
+---
+
+## Deploy no Render
 
 Guia completo: **[docs/render-deploy.md](docs/render-deploy.md)**
 
@@ -446,29 +471,33 @@ Referência completa: [`.env.example`](.env.example)
 
 ## Scripts disponíveis
 
-| Script                   | Descrição                          |
-| ------------------------ | ---------------------------------- |
-| `pnpm dev`               | Desenvolvimento com hot reload     |
-| `pnpm build`             | Compila TypeScript → `dist/`       |
-| `pnpm start`             | Produção (`node dist/server.js`)   |
-| `pnpm lint`              | ESLint                             |
-| `pnpm lint:fix`          | ESLint com auto-fix                |
-| `pnpm format`            | Prettier (write)                   |
-| `pnpm format:check`      | Prettier (check)                   |
-| `pnpm typecheck`         | Verificação de tipos               |
-| `pnpm test`              | Testes (Vitest)                    |
-| `pnpm test:watch`        | Testes em watch mode               |
-| `pnpm test:coverage`     | Cobertura de testes                |
-| `pnpm db:up`             | `docker compose up -d`             |
-| `pnpm db:down`           | `docker compose down`              |
-| `pnpm db:logs`           | Logs do PostgreSQL                 |
-| `pnpm db:generate`       | `prisma generate`                  |
-| `pnpm db:migrate`        | `prisma migrate dev`               |
-| `pnpm db:migrate:deploy` | `prisma migrate deploy` (produção) |
-| `pnpm db:studio`         | Prisma Studio (GUI)                |
-| `pnpm db:seed`           | Seed do banco                      |
-| `pnpm db:backup`         | Backup PostgreSQL → `backups/`     |
-| `pnpm db:restore`        | Restore a partir de arquivo        |
+| Script                   | Descrição                                          |
+| ------------------------ | -------------------------------------------------- |
+| `pnpm dev`               | Desenvolvimento com hot reload                     |
+| `pnpm build`             | Compila TypeScript → `dist/`                       |
+| `pnpm start`             | Produção (`node dist/server.js`)                   |
+| `pnpm lint`              | ESLint                                             |
+| `pnpm lint:fix`          | ESLint com auto-fix                                |
+| `pnpm format`            | Prettier (write)                                   |
+| `pnpm format:check`      | Prettier (check)                                   |
+| `pnpm typecheck`         | Verificação de tipos                               |
+| `pnpm test`              | Testes (Vitest)                                    |
+| `pnpm test:watch`        | Testes em watch mode                               |
+| `pnpm test:coverage`     | Cobertura de testes                                |
+| `pnpm db:up`             | Sobe Postgres + Redis (`docker-compose.infra.yml`) |
+| `pnpm db:down`           | Para infra local                                   |
+| `pnpm docker:up`         | Build + sobe API + Postgres (produção)             |
+| `pnpm docker:down`       | Para stack Docker da API                           |
+| `pnpm docker:logs`       | Logs do container da API                           |
+| `pnpm docker:dev`        | API em Docker com hot reload                       |
+| `pnpm db:logs`           | Logs do PostgreSQL                                 |
+| `pnpm db:generate`       | `prisma generate`                                  |
+| `pnpm db:migrate`        | `prisma migrate dev`                               |
+| `pnpm db:migrate:deploy` | `prisma migrate deploy` (produção)                 |
+| `pnpm db:studio`         | Prisma Studio (GUI)                                |
+| `pnpm db:seed`           | Seed do banco                                      |
+| `pnpm db:backup`         | Backup PostgreSQL → `backups/`                     |
+| `pnpm db:restore`        | Restore a partir de arquivo                        |
 
 ---
 
@@ -554,9 +583,11 @@ stockflow-api/
 │   └── seed.ts            # Dados iniciais
 ├── src/                   # Código-fonte TypeScript
 ├── tests/                 # Testes E2E + helpers
-├── docker-compose.yml     # PostgreSQL + API
-├── Dockerfile             # Imagem da API
-├── docker-entrypoint.sh   # Migrations + startup
+├── docker-compose.yml         # API + PostgreSQL (produção)
+├── docker-compose.dev.yml     # Overlay: hot reload
+├── docker-compose.infra.yml   # Postgres + Redis (dev local sem API)
+├── Dockerfile                 # Multi-stage build
+├── docker-entrypoint.sh       # Migrations + startup
 ├── vitest.config.ts
 ├── .env.example
 └── package.json

@@ -1,0 +1,23 @@
+# Development overlay — hot reload and local source mount.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: stockflow-api-dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      CACHE_ENABLED: ${CACHE_ENABLED:-false}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production-min-32-chars}
+    volumes:
+      - .:/app
+      - stockflow_node_modules:/app/node_modules
+    command: ['pnpm', 'dev']
+
+volumes:
+  stockflow_node_modules:
+    name: stockflow_node_modules
