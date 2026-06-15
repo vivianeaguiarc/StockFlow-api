@@ -1,5 +1,6 @@
 import express, { type Express } from 'express'
 
+import { env } from './config/env.js'
 import { registerSwagger } from './docs/swagger.js'
 import { errorHandler } from './shared/http/middlewares/error-handler.js'
 import { sanitizeRequestMiddleware } from './shared/http/middlewares/sanitize-request.middleware.js'
@@ -13,6 +14,10 @@ import { globalRateLimiter } from './shared/security/rate-limit.js'
 
 export function createApp(): Express {
   const app = express()
+
+  if (env.NODE_ENV === 'production' || env.TRUST_PROXY === true) {
+    app.set('trust proxy', 1)
+  }
 
   app.disable('x-powered-by')
   app.use(createHelmetMiddleware())

@@ -2,7 +2,9 @@
 
 FROM node:22-alpine AS base
 
-RUN apk add --no-cache openssl wget libc6-compat
+RUN apk add --no-cache openssl wget libc6-compat \
+  && addgroup -g 1001 -S stockflow \
+  && adduser -S stockflow -u 1001 -G stockflow
 
 WORKDIR /app
 
@@ -22,8 +24,15 @@ COPY prisma ./prisma
 COPY tsconfig.json ./
 COPY src ./src
 
-RUN pnpm db:generate
-RUN pnpm build
+RUN pnpm db:generate && pnpm build
+
+FROM deps AS prod-deps
+
+COPY prisma ./prisma
+
+RUN pnpm db:generate \
+  && pnpm prune --prod \
+  && pnpm add prisma@6.9.0
 
 FROM base AS production
 
@@ -33,11 +42,15 @@ ENV HOST=0.0.0.0
 
 COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma
-COPY --from=build /app/node_modules ./node_modules
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 
-RUN sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh
+RUN sed -i 's/\r$//' docker-entrypoint.sh \
+  && chmod +x docker-entrypoint.sh \
+  && chown -R stockflow:stockflow /app
+
+USER stockflow
 
 EXPOSE 3333
 

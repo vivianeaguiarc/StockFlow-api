@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { z } from 'zod'
 
-import { env } from '../../../config/env.js'
+import { getJwtAccessSecret } from '../../../config/production-secrets.js'
 import { usersRepository } from '../../../modules/users/repositories/index.js'
 import { AppError } from '../../errors/AppError.js'
 import { JWT_ALGORITHM } from '../../security/rate-limit.js'
@@ -25,11 +25,13 @@ function extractBearerToken(authorizationHeader: string | undefined): string | n
 }
 
 function getJwtSecret(): string {
-  if (!env.JWT_SECRET) {
+  const secret = getJwtAccessSecret()
+
+  if (!secret) {
     throw new AppError('Internal server error', 500)
   }
 
-  return env.JWT_SECRET
+  return secret
 }
 
 export async function authenticate(

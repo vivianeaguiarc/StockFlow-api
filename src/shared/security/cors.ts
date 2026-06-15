@@ -1,6 +1,7 @@
 import cors, { type CorsOptions } from 'cors'
 
 import { env } from '../../config/env.js'
+import { getCorsOriginsRaw } from '../../config/production-secrets.js'
 
 export function parseCorsOrigins(rawOrigins: string | undefined): string[] {
   if (!rawOrigins) {
@@ -22,7 +23,7 @@ export function isOriginAllowed(origin: string | undefined, allowedOrigins: stri
 }
 
 export function createCorsOptions(): CorsOptions {
-  const allowedOrigins = parseCorsOrigins(env.CORS_ORIGINS)
+  const allowedOrigins = parseCorsOrigins(getCorsOriginsRaw())
 
   if (env.NODE_ENV === 'development' && allowedOrigins.length === 0) {
     return {

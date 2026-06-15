@@ -6,6 +6,8 @@ const envSchema = z.object({
   API_PREFIX: z.string().default('/api/v1'),
   DATABASE_URL: z.string().optional(),
   JWT_SECRET: z.string().optional(),
+  JWT_ACCESS_SECRET: z.string().optional(),
+  JWT_REFRESH_SECRET: z.string().optional(),
   JWT_EXPIRES_IN: z.string().default('15m'),
   REFRESH_TOKEN_EXPIRES_IN_DAYS: z.coerce.number().int().positive().default(7),
   RATE_LIMIT_ENABLED: z.preprocess((value) => {
@@ -61,6 +63,22 @@ const envSchema = z.object({
   PUBLIC_URL: z.string().url().optional(),
   HOST: z.string().default('0.0.0.0'),
   CORS_ORIGINS: z.string().optional(),
+  CORS_ORIGIN: z.string().optional(),
+  TRUST_PROXY: z.preprocess((value) => {
+    if (value === undefined || value === '') {
+      return undefined
+    }
+
+    if (value === true || value === 'true') {
+      return true
+    }
+
+    if (value === false || value === 'false') {
+      return false
+    }
+
+    return value
+  }, z.boolean().optional()),
   RATE_LIMIT_REFRESH_MAX: z.coerce.number().int().positive().default(10),
   RATE_LIMIT_REFRESH_WINDOW_MS: z.coerce
     .number()

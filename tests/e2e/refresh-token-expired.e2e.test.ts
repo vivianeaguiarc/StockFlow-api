@@ -1,9 +1,8 @@
-import { createHash } from 'node:crypto'
-
 import request from 'supertest'
 import { afterEach, describe, it } from 'vitest'
 
 import { createApp } from '../../src/app.js'
+import { hashRefreshToken } from '../../src/modules/auth/utils/refresh-token.utils.js'
 import { prisma } from '../../src/shared/database/prisma.js'
 import { cleanupCompanies } from '../helpers/cleanup.js'
 
@@ -11,10 +10,6 @@ const app = createApp()
 
 function createUniqueId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
-
-function hashRefreshToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex')
 }
 
 describe('Refresh token expiration E2E', () => {

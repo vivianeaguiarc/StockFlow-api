@@ -179,12 +179,12 @@ GET /api/v1/health/ready
 
 ### Configuração por plataforma
 
-| Plataforma         | Campo                      | Valor                                                 |
-| ------------------ | -------------------------- | ----------------------------------------------------- |
-| **Render**         | Health Check Path          | `/api/v1/health/ready`                                |
-| **Railway**        | Healthcheck Path           | `/api/v1/health/ready`                                |
-| **Fly.io**         | `http_service.checks.path` | `/api/v1/health/ready`                                |
-| **Docker Compose** | `healthcheck.test`         | `wget -qO- http://localhost:3333/api/v1/health/ready` |
+| Plataforma         | Campo                      | Valor                                                     |
+| ------------------ | -------------------------- | --------------------------------------------------------- |
+| **Render**         | Health Check Path          | `/api/v1/health` (liveness) · `/api/v1/ready` (readiness) |
+| **Railway**        | Healthcheck Path           | `/api/v1/health/ready`                                    |
+| **Fly.io**         | `http_service.checks.path` | `/api/v1/health/ready`                                    |
+| **Docker Compose** | `healthcheck.test`         | `wget -qO- http://localhost:3333/api/v1/health/ready`     |
 
 ---
 
@@ -214,7 +214,8 @@ Use esta lista antes de cada deploy em produção:
 - [ ] `HOST=0.0.0.0` (ou default do projeto).
 - [ ] `PUBLIC_URL` configurado com a URL pública da API.
 - [ ] `pnpm prisma migrate deploy` executado com sucesso.
-- [ ] Health check configurado em `/api/v1/health/ready`.
+- [ ] Health check configurado em `/api/v1/health`.
+- [ ] Readiness validado em `/api/v1/ready` quando necessário.
 - [ ] Swagger acessível em `/api/docs`.
 - [ ] Smoke test: `GET /api/v1/health/live` → 200.
 - [ ] Smoke test: `GET /api/v1/health/ready` → 200.
@@ -251,7 +252,7 @@ Guia passo a passo dedicado: **[render-deploy.md](render-deploy.md)**
 | **Build Command**      | `pnpm install --frozen-lockfile && pnpm db:generate && pnpm build` |
 | **Pre-Deploy Command** | `pnpm db:migrate:deploy`                                           |
 | **Start Command**      | `pnpm start`                                                       |
-| **Health Check Path**  | `/api/v1/health/ready`                                             |
+| **Health Check Path**  | `/api/v1/health`                                                   |
 
 ### Environment Variables
 

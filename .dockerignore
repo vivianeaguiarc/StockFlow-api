@@ -1,4 +1,4 @@
-# Dependencies
+# Dependencies and build output
 node_modules
 dist
 coverage
@@ -8,12 +8,17 @@ coverage
 .env.*
 !.env.example
 
+# Logs and local data
+logs
+*.log
+backups
+
 # Git and CI
 .git
 .github
 .husky
 
-# Tests and docs
+# Tests and prompts
 tests
 prompts
 **/*.md
@@ -22,16 +27,17 @@ prompts
 # Editor and OS
 .vscode
 .idea
-*.log
 .DS_Store
 Thumbs.db
 
-# Docker
+# Docker (not needed inside image context)
 Dockerfile
 .dockerignore
 docker-compose*.yml
+render.yaml
 
 # Misc
 *.tsbuildinfo
 agent-tools
 terminals
+mcps

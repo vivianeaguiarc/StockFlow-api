@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken'
 
-import { env } from '../../../src/config/env.js'
+import { getJwtAccessSecret } from '../../../src/config/production-secrets.js'
 
 type AccessTokenPayload = {
   userId: string
@@ -12,10 +12,10 @@ export function createAccessToken(
   payload: AccessTokenPayload,
   options?: { secret?: string; expiresIn?: string },
 ): string {
-  const secret = options?.secret ?? env.JWT_SECRET
+  const secret = options?.secret ?? getJwtAccessSecret()
 
   if (!secret) {
-    throw new Error('JWT_SECRET is not configured')
+    throw new Error('JWT access secret is not configured')
   }
 
   return jwt.sign(payload, secret, {

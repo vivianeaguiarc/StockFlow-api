@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import jwt, { type SignOptions } from 'jsonwebtoken'
 
 import { env } from '../../../config/env.js'
+import { getJwtAccessSecret } from '../../../config/production-secrets.js'
 import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { authMeKey, CACHE_DETAIL_TTL_SECONDS } from '../../../shared/cache/cache-keys.js'
 import { cacheService } from '../../../shared/cache/CacheService.js'
@@ -210,11 +211,13 @@ export class AuthService {
   }
 
   private getJwtSecret(): string {
-    if (!env.JWT_SECRET) {
+    const secret = getJwtAccessSecret()
+
+    if (!secret) {
       throw new AppError('Internal server error', 500)
     }
 
-    return env.JWT_SECRET
+    return secret
   }
 
   private getDuplicateMessage(error: Prisma.PrismaClientKnownRequestError): string {

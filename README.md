@@ -361,14 +361,50 @@ docker compose down
 
 ---
 
-## Deploy no Render
+## Deploy em produção
 
-Guia completo: **[docs/render-deploy.md](docs/render-deploy.md)**
+**Serviço ativo no Render:** [https://stockflow-api-l4x4.onrender.com](https://stockflow-api-l4x4.onrender.com)
 
-Resumo rápido:
+| Recurso        | URL                                                                                                            |
+| -------------- | -------------------------------------------------------------------------------------------------------------- |
+| **API (v1)**   | [https://stockflow-api-l4x4.onrender.com/api/v1](https://stockflow-api-l4x4.onrender.com/api/v1)               |
+| **Swagger UI** | [https://stockflow-api-l4x4.onrender.com/api/docs](https://stockflow-api-l4x4.onrender.com/api/docs)           |
+| **Health**     | [https://stockflow-api-l4x4.onrender.com/api/v1/health](https://stockflow-api-l4x4.onrender.com/api/v1/health) |
+| **Readiness**  | [https://stockflow-api-l4x4.onrender.com/api/v1/ready](https://stockflow-api-l4x4.onrender.com/api/v1/ready)   |
 
-1. Crie **PostgreSQL** e **Key Value (Redis)** no Render (mesma região).
-2. Crie **Web Service** conectado ao repositório Git.
+Guia passo a passo: **[docs/render-deploy.md](docs/render-deploy.md)** · Blueprint: [`render.yaml`](render.yaml) · outras plataformas: **[docs/deploy.md](docs/deploy.md)**
+
+### Comandos no Render
+
+| Etapa          | Comando                                                            |
+| -------------- | ------------------------------------------------------------------ |
+| **Build**      | `pnpm install --frozen-lockfile && pnpm db:generate && pnpm build` |
+| **Migrations** | `pnpm db:migrate:deploy` (Pre-Deploy Command)                      |
+| **Start**      | `pnpm start` (`node dist/server.js`)                               |
+
+**Health Check Path (Render):** `/api/v1/health`
+
+> Secrets (`JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `DATABASE_URL`, etc.) são configurados **apenas no painel Render** — nunca commite `.env` com valores reais.
+
+### Docker (recomendado para VPS / stack local)
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+A imagem de produção:
+
+- Build multi-stage com `pnpm install --frozen-lockfile`, `prisma generate` e `tsc`
+- Executa apenas `node dist/server.js` (TypeScript compilado)
+- `NODE_ENV=production`, usuário **não-root** (`stockflow`)
+- Health check interno: `GET /api/v1/health`
+- Migrations via `docker-entrypoint.sh` → `pnpm db:migrate:deploy`
+
+### Render (PaaS)
+
+1. Crie **PostgreSQL** e **Key Value (Redis)** na mesma região.
+2. Conecte o repositório ou aplique o blueprint [`render.yaml`](render.yaml).
 3. Configure os comandos:
 
 | Campo              | Valor                                                              |
@@ -376,12 +412,62 @@ Resumo rápido:
 | Build Command      | `pnpm install --frozen-lockfile && pnpm db:generate && pnpm build` |
 | Pre-Deploy Command | `pnpm db:migrate:deploy`                                           |
 | Start Command      | `pnpm start`                                                       |
-| Health Check Path  | `/api/v1/health/ready`                                             |
+| Health Check Path  | `/api/v1/health`                                                   |
 
-4. Defina variáveis de ambiente (`DATABASE_URL`, `JWT_SECRET`, `REDIS_URL`, `HUSKY=0`, etc.) — ver [`.env.example`](.env.example) e [`docs/render-deploy.md`](docs/render-deploy.md).
-5. Deploy automático a cada push; valide com `GET /api/v1/health/ready`.
+4. Defina variáveis de ambiente no painel (nunca commite secrets reais).
+5. Deploy automático a cada push; valide com `GET /api/v1/ready` para readiness completo.
 
-Outras plataformas (Railway, Fly.io, VPS): **[docs/deploy.md](docs/deploy.md)**
+### Variáveis de ambiente obrigatórias (produção)
+
+| Variável             | Descrição                                               |
+| -------------------- | ------------------------------------------------------- |
+| `NODE_ENV`           | `production`                                            |
+| `PORT`               | Injetado pela plataforma (Render) — não sobrescreva     |
+| `DATABASE_URL`       | PostgreSQL (Internal URL no Render)                     |
+| `JWT_ACCESS_SECRET`  | Secret do access token (min. 32 chars; ou `JWT_SECRET`) |
+| `JWT_REFRESH_SECRET` | Pepper para hash de refresh tokens (min. 32 chars)      |
+| `REDIS_URL`          | Obrigatório quando `CACHE_ENABLED=true`                 |
+| `CORS_ORIGINS`       | Origins permitidas (vírgula) ou `CORS_ORIGIN` única     |
+| `RATE_LIMIT_ENABLED` | `true` em produção                                      |
+
+Recomendadas: `PUBLIC_URL` (Swagger), `HOST=0.0.0.0`, `HUSKY=0`, `TRUST_PROXY=true`.
+
+Referência completa: [`.env.example`](.env.example)
+
+### Health check
+
+| Endpoint             | Uso                                                        |
+| -------------------- | ---------------------------------------------------------- |
+| `GET /api/v1/health` | **Plataforma** — liveness simples (Render, Docker, LB)     |
+| `GET /api/v1/ready`  | **Readiness** — valida PostgreSQL (503 se DB indisponível) |
+
+```bash
+curl https://stockflow-api-l4x4.onrender.com/api/v1/health
+curl https://stockflow-api-l4x4.onrender.com/api/v1/ready
+```
+
+### Migrations em produção
+
+```bash
+# Render Pre-Deploy / CI / release command
+pnpm db:migrate:deploy
+# equivalente: npx prisma migrate deploy
+```
+
+Nunca use `prisma migrate dev` em produção. O `docker-entrypoint.sh` também aplica migrations no startup do container.
+
+### Swagger em produção
+
+| Recurso          | URL                                                                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Swagger UI**   | [https://stockflow-api-l4x4.onrender.com/api/docs](https://stockflow-api-l4x4.onrender.com/api/docs)                           |
+| **OpenAPI JSON** | [https://stockflow-api-l4x4.onrender.com/api/docs/openapi.json](https://stockflow-api-l4x4.onrender.com/api/docs/openapi.json) |
+
+O servidor **Production** no Swagger aponta para `https://stockflow-api-l4x4.onrender.com/api/v1`. Defina `PUBLIC_URL` no Render se o domínio mudar.
+
+### Proxy reverso
+
+Com `TRUST_PROXY=true` (padrão em produção/Docker), a API confia no primeiro proxy (`app.set('trust proxy', 1)`) para IP real em rate limit e auditoria — necessário no Render, Railway e load balancers.
 
 ---
 
@@ -504,17 +590,26 @@ Headers opcionais: `X-Request-ID` (UUID) para rastreamento — a API devolve o m
 
 ## Variáveis de ambiente
 
-| Variável            | Descrição                    | Exemplo                   |
-| ------------------- | ---------------------------- | ------------------------- |
-| `NODE_ENV`          | Ambiente                     | `development`             |
-| `PORT`              | Porta HTTP                   | `3333`                    |
-| `API_PREFIX`        | Prefixo versionado da API    | `/api/v1`                 |
-| `DATABASE_URL`      | Connection string PostgreSQL | ver `.env.example`        |
-| `JWT_SECRET`        | Chave secreta do JWT         | _(defina um valor forte)_ |
-| `JWT_EXPIRES_IN`    | Expiração do token           | `7d`                      |
-| `POSTGRES_USER`     | Usuário do Postgres (Docker) | `stockflow`               |
-| `POSTGRES_PASSWORD` | Senha do Postgres (Docker)   | `stockflow`               |
-| `POSTGRES_DB`       | Nome do banco (Docker)       | `stockflow_db`            |
+| Variável             | Descrição                         | Exemplo / notas                           |
+| -------------------- | --------------------------------- | ----------------------------------------- |
+| `NODE_ENV`           | Ambiente                          | `development` · `production` no Render    |
+| `PORT`               | Porta HTTP                        | `3333` local · injetado pelo Render       |
+| `API_PREFIX`         | Prefixo versionado da API         | `/api/v1`                                 |
+| `DATABASE_URL`       | Connection string PostgreSQL      | ver `.env.example`                        |
+| `JWT_ACCESS_SECRET`  | Secret do access token (prod.)    | min. 32 chars (ou `JWT_SECRET` legado)    |
+| `JWT_REFRESH_SECRET` | Pepper do refresh token (prod.)   | min. 32 chars                             |
+| `JWT_SECRET`         | Legado — fallback do access token | dev local                                 |
+| `JWT_EXPIRES_IN`     | Expiração do access token         | `15m`                                     |
+| `CORS_ORIGINS`       | Origins permitidas (vírgula)      | produção                                  |
+| `CORS_ORIGIN`        | Alias para uma única origin       | produção                                  |
+| `RATE_LIMIT_ENABLED` | Rate limiting                     | `true` em produção                        |
+| `REDIS_URL`          | Redis / Key Value                 | obrigatório se `CACHE_ENABLED=true`       |
+| `CACHE_ENABLED`      | Cache Redis                       | `true` em produção                        |
+| `TRUST_PROXY`        | IP real atrás de proxy            | `true` no Render                          |
+| `PUBLIC_URL`         | URL pública (Swagger)             | `https://stockflow-api-l4x4.onrender.com` |
+| `POSTGRES_USER`      | Usuário Postgres (Docker local)   | `stockflow`                               |
+| `POSTGRES_PASSWORD`  | Senha Postgres (Docker local)     | `stockflow`                               |
+| `POSTGRES_DB`        | Nome do banco (Docker local)      | `stockflow_db`                            |
 
 Referência completa: [`.env.example`](.env.example)
 
@@ -660,7 +755,7 @@ stockflow-api/
 | Testes E2E (Vitest + Supertest)               | Concluído |
 | Docker + Docker Compose                       | Concluído |
 | CI/CD (GitHub Actions)                        | Concluído |
-| Deploy em cloud (documentação)                | Concluído |
+| Deploy em produção (Docker + Render)          | Concluído |
 
 ---
 
@@ -670,7 +765,7 @@ stockflow-api/
 - [x] Rate limiting e proteções adicionais
 - [ ] Notificações de estoque mínimo
 - [ ] Relatórios e dashboards de inventário
-- [ ] Deploy em cloud (Railway, Render, AWS)
+- [x] Deploy em cloud (Render + Docker)
 - [ ] Observabilidade (logs estruturados, métricas)
 
 ---

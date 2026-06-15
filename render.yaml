@@ -1,0 +1,65 @@
+# Render Blueprint — StockFlow API
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Serviço em produção atual: https://stockflow-api-l4x4.onrender.com
+# Este blueprint documenta a configuração recomendada. Serviços já existentes
+# podem ser alinhados manualmente no painel Render (não é obrigatório reaplicar).
+#
+# Configure secrets no painel (nunca commite valores reais):
+# JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, CORS_ORIGINS ou CORS_ORIGIN, PUBLIC_URL
+
+services:
+  - type: web
+    name: stockflow-api
+    runtime: node
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: pnpm install --frozen-lockfile && pnpm db:generate && pnpm build
+    preDeployCommand: pnpm db:migrate:deploy
+    startCommand: pnpm start
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: API_PREFIX
+        value: /api/v1
+      - key: HUSKY
+        value: '0'
+      - key: RATE_LIMIT_ENABLED
+        value: 'true'
+      - key: CACHE_ENABLED
+        value: 'true'
+      - key: TRUST_PROXY
+        value: 'true'
+      - key: PUBLIC_URL
+        value: https://stockflow-api-l4x4.onrender.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: stockflow-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: stockflow-redis
+          property: connectionString
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+
+  - type: keyvalue
+    name: stockflow-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+databases:
+  - name: stockflow-db
+    plan: free
+    databaseName: stockflow_db
+    user: stockflow

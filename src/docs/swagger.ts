@@ -6,24 +6,31 @@ import { env } from '../config/env.js'
 import { swaggerComponents } from './swagger-components.js'
 import { swaggerPaths } from './swagger-paths.js'
 
-const PRODUCTION_SERVER_URL = 'https://stockflow-api-l4x4.onrender.com'
+export const RENDER_PRODUCTION_HOST = 'https://stockflow-api-l4x4.onrender.com'
+
+export function buildApiServerUrl(baseUrl: string): string {
+  const normalized = baseUrl.replace(/\/$/, '')
+
+  if (normalized.endsWith(env.API_PREFIX)) {
+    return normalized
+  }
+
+  return `${normalized}${env.API_PREFIX}`
+}
 
 function buildSwaggerServers() {
   const servers = [
     {
-      url: `http://localhost:${env.PORT}`,
+      url: buildApiServerUrl(`http://localhost:${env.PORT}`),
       description: 'Local development',
     },
   ]
 
-  if (env.PUBLIC_URL) {
+  if (env.NODE_ENV !== 'test') {
+    const productionBase = env.PUBLIC_URL ?? RENDER_PRODUCTION_HOST
+
     servers.push({
-      url: env.PUBLIC_URL,
-      description: 'Production',
-    })
-  } else if (env.NODE_ENV !== 'test') {
-    servers.push({
-      url: PRODUCTION_SERVER_URL,
+      url: buildApiServerUrl(productionBase),
       description: 'Production (Render)',
     })
   }

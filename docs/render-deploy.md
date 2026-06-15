@@ -1,8 +1,10 @@
 # Deploy no Render — StockFlow API
 
-Passo a passo para publicar a StockFlow API no [Render](https://render.com) com **PostgreSQL** e **Redis** gerenciados.
+Passo a passo para publicar e manter a StockFlow API no [Render](https://render.com) com **PostgreSQL** e **Redis** gerenciados.
 
-> Guia genérico de cloud: [`deploy.md`](deploy.md)
+**Produção atual:** [https://stockflow-api-l4x4.onrender.com](https://stockflow-api-l4x4.onrender.com) · [Swagger](https://stockflow-api-l4x4.onrender.com/api/docs)
+
+> Guia genérico de cloud: [`deploy.md`](deploy.md) · Blueprint: [`render.yaml`](../render.yaml)
 
 ---
 
@@ -20,7 +22,7 @@ Passo a passo para publicar a StockFlow API no [Render](https://render.com) com 
 
 - Conta no [Render](https://render.com)
 - Repositório Git (GitHub/GitLab) com o código da StockFlow API
-- `JWT_SECRET` gerado localmente (ex.: `openssl rand -base64 48`) — **nunca** commitar
+- `JWT_ACCESS_SECRET` e `JWT_REFRESH_SECRET` gerados localmente (ex.: `openssl rand -base64 48`) — **nunca** commitar
 
 ---
 
@@ -77,7 +79,7 @@ Render oferece **Key Value** (compatível com Redis). Alternativa: [Upstash Redi
 | **Build Command**      | `pnpm install --frozen-lockfile && pnpm db:generate && pnpm build` |
 | **Pre-Deploy Command** | `pnpm db:migrate:deploy`                                           |
 | **Start Command**      | `pnpm start`                                                       |
-| **Health Check Path**  | `/api/v1/health/ready`                                             |
+| **Health Check Path**  | `/api/v1/health`                                                   |
 
 ### Auto-Deploy
 
@@ -89,21 +91,24 @@ Deixe **Auto-Deploy** habilitado para deploy automático a cada push na branch `
 
 No Web Service → **Environment** → adicione:
 
-| Variável                        | Valor                                | Obrigatório                        |
-| ------------------------------- | ------------------------------------ | ---------------------------------- |
-| `NODE_ENV`                      | `production`                         | Sim                                |
-| `HOST`                          | `0.0.0.0`                            | Sim                                |
-| `HUSKY`                         | `0`                                  | Sim (evita erro do Husky no build) |
-| `DATABASE_URL`                  | Internal Database URL do PostgreSQL  | Sim                                |
-| `JWT_SECRET`                    | Secret longo e aleatório             | Sim                                |
-| `REDIS_URL`                     | URL do Key Value ou Upstash          | Recomendado                        |
-| `JWT_EXPIRES_IN`                | `7d`                                 | Recomendado                        |
-| `REFRESH_TOKEN_EXPIRES_IN_DAYS` | `30`                                 | Recomendado                        |
-| `CACHE_TTL_SECONDS`             | `300`                                | Recomendado                        |
-| `CACHE_ENABLED`                 | `true`                               | Recomendado                        |
-| `API_PREFIX`                    | `/api/v1`                            | Opcional                           |
-| `PUBLIC_URL`                    | `https://stockflow-api.onrender.com` | Recomendado (Swagger)              |
-| `RATE_LIMIT_ENABLED`            | `true`                               | Opcional                           |
+| Variável                        | Valor                                         | Obrigatório                        |
+| ------------------------------- | --------------------------------------------- | ---------------------------------- |
+| `NODE_ENV`                      | `production`                                  | Sim                                |
+| `HOST`                          | `0.0.0.0`                                     | Sim                                |
+| `HUSKY`                         | `0`                                           | Sim (evita erro do Husky no build) |
+| `TRUST_PROXY`                   | `true`                                        | Sim (IP real no Render)            |
+| `DATABASE_URL`                  | Internal Database URL do PostgreSQL           | Sim                                |
+| `JWT_ACCESS_SECRET`             | Secret longo e aleatório (access token)       | Sim                                |
+| `JWT_REFRESH_SECRET`            | Secret longo e aleatório (refresh token hash) | Sim                                |
+| `REDIS_URL`                     | URL do Key Value ou Upstash                   | Sim se `CACHE_ENABLED=true`        |
+| `RATE_LIMIT_ENABLED`            | `true`                                        | Sim                                |
+| `CORS_ORIGINS` ou `CORS_ORIGIN` | Origins do frontend                           | Recomendado                        |
+| `JWT_EXPIRES_IN`                | `15m`                                         | Recomendado                        |
+| `REFRESH_TOKEN_EXPIRES_IN_DAYS` | `7`                                           | Recomendado                        |
+| `CACHE_TTL_SECONDS`             | `300`                                         | Recomendado                        |
+| `CACHE_ENABLED`                 | `true`                                        | Recomendado                        |
+| `API_PREFIX`                    | `/api/v1`                                     | Opcional                           |
+| `PUBLIC_URL`                    | `https://stockflow-api-l4x4.onrender.com`     | Recomendado (Swagger)              |
 
 > **Não defina `PORT` manualmente** — o Render injeta `PORT` automaticamente. A API lê `process.env.PORT` via `config/env.ts`.
 
@@ -116,14 +121,18 @@ NODE_ENV=production
 HOST=0.0.0.0
 HUSKY=0
 API_PREFIX=/api/v1
-PUBLIC_URL=https://stockflow-api.onrender.com
+PUBLIC_URL=https://stockflow-api-l4x4.onrender.com
+TRUST_PROXY=true
+RATE_LIMIT_ENABLED=true
 
 DATABASE_URL=postgresql://user:password@dpg-xxxxx-a/stockflow_db
 REDIS_URL=redis://red-xxxxx:6379
 
-JWT_SECRET=replace-with-long-random-secret
-JWT_EXPIRES_IN=7d
-REFRESH_TOKEN_EXPIRES_IN_DAYS=30
+JWT_ACCESS_SECRET=replace-with-long-random-secret-min-32-chars
+JWT_REFRESH_SECRET=replace-with-another-long-random-secret-min-32-chars
+JWT_EXPIRES_IN=15m
+REFRESH_TOKEN_EXPIRES_IN_DAYS=7
+CORS_ORIGINS=https://your-frontend.example.com
 CACHE_ENABLED=true
 CACHE_TTL_SECONDS=300
 ```
@@ -156,21 +165,20 @@ pnpm install → pnpm db:generate → pnpm build → pnpm db:migrate:deploy → 
 3. Após **Live**, execute smoke tests:
 
 ```bash
-# Substitua pela URL do seu serviço
-export API_URL=https://stockflow-api.onrender.com
+export API_URL=https://stockflow-api-l4x4.onrender.com
 
-curl -i "$API_URL/api/v1/health/live"
-curl -i "$API_URL/api/v1/health/ready"
+curl -i "$API_URL/api/v1/health"
+curl -i "$API_URL/api/v1/ready"
 curl "$API_URL/api/v1/health/details"
 ```
 
 Resultados esperados:
 
-| Endpoint               | HTTP | Body                                                           |
-| ---------------------- | ---- | -------------------------------------------------------------- |
-| `/api/v1/health/live`  | 200  | `{ "status": "ok", ... }`                                      |
-| `/api/v1/health/ready` | 200  | `{ "status": "ready", "services": { "database": "up", ... } }` |
-| `/api/docs`            | 200  | Swagger UI                                                     |
+| Endpoint         | HTTP | Body                                                           |
+| ---------------- | ---- | -------------------------------------------------------------- |
+| `/api/v1/health` | 200  | `{ "status": "ok", ... }` (health check do Render)             |
+| `/api/v1/ready`  | 200  | `{ "status": "ready", "services": { "database": "up", ... } }` |
+| `/api/docs`      | 200  | Swagger UI                                                     |
 
 4. Registre a primeira empresa:
 
@@ -202,7 +210,7 @@ curl -X POST "$API_URL/api/v1/auth/register" \
 Build Command: pnpm install --frozen-lockfile && pnpm db:generate && pnpm build
 Pre-Deploy Command: pnpm db:migrate:deploy
 Start Command: pnpm start
-Health Check Path: /api/v1/health/ready
+Health Check Path: /api/v1/health
 ```
 
 ---
@@ -238,7 +246,8 @@ Configure `PUBLIC_URL` com a URL pública (sem barra final) para o **Try it out*
 
 - [ ] Build concluiu sem erros
 - [ ] Pre-Deploy (`db:migrate:deploy`) aplicou migrations
-- [ ] Health check `/api/v1/health/ready` retorna 200
+- [ ] Health check `/api/v1/health` retorna 200
+- [ ] Readiness `/api/v1/ready` retorna 200 (PostgreSQL up)
 - [ ] Swagger acessível em `/api/docs`
 - [ ] `JWT_SECRET` não é o valor de `.env.example`
 - [ ] PostgreSQL usa Internal URL
