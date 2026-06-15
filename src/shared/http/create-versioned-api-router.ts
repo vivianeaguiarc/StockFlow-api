@@ -11,7 +11,11 @@ import {
 import { createCategoriesRoutes } from '../../modules/categories/routes/categories.routes.js'
 import { createCompaniesRoutes } from '../../modules/companies/routes/companies.routes.js'
 import { createDashboardRoutes } from '../../modules/dashboard/routes/dashboard.routes.js'
-import { createHealthRoutes } from '../../modules/health/routes/health.routes.js'
+import { HealthController } from '../../modules/health/controllers/HealthController.js'
+import {
+  createHealthRoutes,
+  createHealthService,
+} from '../../modules/health/routes/health.routes.js'
 import { createInventoryRoutes } from '../../modules/inventory/routes/inventory.routes.js'
 import { createProductsRoutes } from '../../modules/products/routes/products.routes.js'
 import { createSuppliersRoutes } from '../../modules/suppliers/routes/suppliers.routes.js'
@@ -32,7 +36,11 @@ export function createVersionedApiRouter(): Router {
     })
   })
 
-  apiRouter.use('/health', createHealthRoutes())
+  const healthService = createHealthService()
+  const healthController = new HealthController(healthService)
+
+  apiRouter.use('/health', createHealthRoutes(healthService))
+  apiRouter.get('/ready', (req, res, next) => healthController.handleReady(req, res, next))
   apiRouter.use('/auth', createAuthRoutes())
   apiRouter.use('/companies', createCompaniesRoutes())
   apiRouter.use('/users', createUsersRoutes())

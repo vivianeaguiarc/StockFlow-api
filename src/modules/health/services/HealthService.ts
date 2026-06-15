@@ -16,8 +16,10 @@ export class HealthService {
   getBasic(): HealthResponseDto {
     return {
       status: 'ok',
-      service: APP_NAME,
       timestamp: new Date().toISOString(),
+      uptime: Math.floor(process.uptime()),
+      environment: env.NODE_ENV,
+      service: APP_NAME,
     }
   }
 

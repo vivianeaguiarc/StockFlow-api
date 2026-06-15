@@ -21,8 +21,8 @@ describe('Root endpoint', () => {
       environment: 'test',
       links: {
         docs: '/api/docs',
-        health: '/api/v1/health/live',
-        ready: '/api/v1/health/ready',
+        health: '/api/v1/health',
+        ready: '/api/v1/ready',
       },
     })
   })

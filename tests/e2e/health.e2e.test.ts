@@ -6,15 +6,40 @@ import { apiPath } from '../helpers/api-paths.js'
 
 const app = createApp()
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 describe('Health endpoints', () => {
   it('GET /api/v1/health returns basic payload', async () => {
     const response = await request(app).get(apiPath('/health')).expect(200)
 
     expect(response.body).toMatchObject({
       status: 'ok',
-      service: 'StockFlow API',
+      environment: 'test',
     })
     expect(typeof response.body.timestamp).toBe('string')
+    expect(typeof response.body.uptime).toBe('number')
+    expect(response.body.uptime).toBeGreaterThanOrEqual(0)
+    expect(response.headers['x-request-id']).toMatch(UUID_PATTERN)
+  })
+
+  it('GET /api/v1/ready returns readiness payload when database is available', async () => {
+    const response = await request(app).get(apiPath('/ready')).expect(200)
+
+    expect(response.body.status).toBe('ready')
+    expect(response.body.services.database).toBe('up')
+    expect(['up', 'down']).toContain(response.body.services.redis)
+    expect(response.headers['x-request-id']).toMatch(UUID_PATTERN)
+  })
+
+  it('preserves incoming x-request-id header', async () => {
+    const incomingId = '550e8400-e29b-41d4-a716-446655440000'
+
+    const response = await request(app)
+      .get(apiPath('/health'))
+      .set('x-request-id', incomingId)
+      .expect(200)
+
+    expect(response.headers['x-request-id']).toBe(incomingId)
   })
 
   it('keeps legacy /api/health available temporarily', async () => {
@@ -22,7 +47,7 @@ describe('Health endpoints', () => {
 
     expect(response.body).toMatchObject({
       status: 'ok',
-      service: 'StockFlow API',
+      environment: 'test',
     })
   })
 

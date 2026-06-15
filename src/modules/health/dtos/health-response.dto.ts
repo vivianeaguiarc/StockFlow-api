@@ -2,8 +2,10 @@ export type ServiceStatus = 'up' | 'down'
 
 export type HealthResponseDto = {
   status: 'ok'
-  service: string
   timestamp: string
+  uptime: number
+  environment: string
+  service?: string
 }
 
 export type HealthLiveResponseDto = {

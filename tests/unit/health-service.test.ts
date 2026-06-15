@@ -14,6 +14,20 @@ function createHealthService(services: { database: 'up' | 'down'; redis: 'up' | 
 }
 
 describe('HealthService', () => {
+  it('returns basic payload with uptime and environment', () => {
+    const service = createHealthService({ database: 'up', redis: 'up' })
+    const basic = service.getBasic()
+
+    expect(basic).toMatchObject({
+      status: 'ok',
+      environment: 'test',
+      service: 'StockFlow API',
+    })
+    expect(typeof basic.timestamp).toBe('string')
+    expect(typeof basic.uptime).toBe('number')
+    expect(basic.uptime).toBeGreaterThanOrEqual(0)
+  })
+
   it('returns live payload without checking dependencies', () => {
     const service = createHealthService({ database: 'up', redis: 'up' })
     const live = service.getLive()

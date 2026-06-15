@@ -35,7 +35,14 @@ describe('rate limit helpers', () => {
         path: '/api/health',
         originalUrl: '/api/health',
       } as Request),
-    ).toBe(false)
+    ).toBe(true)
+
+    expect(
+      shouldSkipGlobalRateLimit({
+        path: '/api/v1/ready',
+        originalUrl: '/api/v1/ready',
+      } as Request),
+    ).toBe(true)
   })
 })
 

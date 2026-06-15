@@ -42,7 +42,7 @@ RUN sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh
 EXPOSE 3333
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=25s --retries=5 \
-  CMD wget -qO- http://localhost:3333/api/v1/health/ready || exit 1
+  CMD wget -qO- http://localhost:3333/api/v1/health || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["node", "dist/server.js"]

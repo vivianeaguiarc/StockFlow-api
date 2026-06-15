@@ -2,7 +2,15 @@ import pino from 'pino'
 
 import { env } from '../../config/env.js'
 
-const SENSITIVE_KEYS = new Set(['password', 'passwordHash', 'accessToken', 'refreshToken', 'token'])
+const SENSITIVE_KEYS = new Set([
+  'password',
+  'passwordHash',
+  'accessToken',
+  'refreshToken',
+  'token',
+  'secret',
+  'authorization',
+])
 
 function resolveLogLevel(): pino.LevelWithSilent {
   if (env.NODE_ENV === 'test') {
@@ -54,6 +62,16 @@ export const logger = pino({
   level: resolveLogLevel(),
   base: { service: 'stockflow-api' },
   timestamp: pino.stdTimeFunctions.isoTime,
+  ...(env.NODE_ENV === 'development' && {
+    transport: {
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        translateTime: 'SYS:standard',
+        ignore: 'pid,hostname',
+      },
+    },
+  }),
 })
 
 export function createChildLogger(bindings: Record<string, unknown>): pino.Logger {

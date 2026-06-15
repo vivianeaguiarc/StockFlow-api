@@ -23,8 +23,8 @@ export function buildRootResponse(): RootResponseDto {
     environment: env.NODE_ENV,
     links: {
       docs: '/api/docs',
-      health: `${env.API_PREFIX}/health/live`,
-      ready: `${env.API_PREFIX}/health/ready`,
+      health: `${env.API_PREFIX}/health`,
+      ready: `${env.API_PREFIX}/ready`,
     },
   }
 }

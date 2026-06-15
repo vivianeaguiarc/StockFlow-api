@@ -15,7 +15,14 @@ export function isRateLimitEnabled(): boolean {
 }
 
 export function shouldSkipGlobalRateLimit(req: Request): boolean {
-  const publicPathsWithoutRateLimit = ['/api/docs', '/api/v1/docs', '/api/v1/health']
+  const publicPathsWithoutRateLimit = [
+    '/api/docs',
+    '/api/v1/docs',
+    '/api/v1/health',
+    '/api/health',
+    '/api/v1/ready',
+    '/api/ready',
+  ]
 
   return publicPathsWithoutRateLimit.some((path) => {
     return req.path.startsWith(path) || req.originalUrl.startsWith(path)

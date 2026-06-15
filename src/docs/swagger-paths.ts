@@ -90,13 +90,41 @@ export const swaggerPaths = {
     get: {
       tags: ['Health'],
       summary: 'Basic health check',
-      description: 'Legacy-compatible health endpoint. Returns basic API availability.',
+      description:
+        'Returns API availability with process uptime and environment. Suitable for load balancer liveness probes.',
       responses: {
         '200': {
           description: 'Service is available',
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/HealthResponse' },
+            },
+          },
+        },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+  },
+  '/api/v1/ready': {
+    get: {
+      tags: ['Health'],
+      summary: 'Readiness probe',
+      description:
+        'Validates PostgreSQL connectivity before accepting traffic. Returns 503 when the database is unavailable.',
+      responses: {
+        '200': {
+          description: 'Application is ready to receive traffic',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/HealthReadyResponse' },
+            },
+          },
+        },
+        '503': {
+          description: 'Application is not ready (PostgreSQL unavailable)',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/HealthReadyResponse' },
             },
           },
         },

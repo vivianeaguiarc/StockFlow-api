@@ -27,8 +27,8 @@ export const swaggerComponents = {
           type: 'object',
           properties: {
             docs: { type: 'string', example: '/api/docs' },
-            health: { type: 'string', example: '/api/v1/health/live' },
-            ready: { type: 'string', example: '/api/v1/health/ready' },
+            health: { type: 'string', example: '/api/v1/health' },
+            ready: { type: 'string', example: '/api/v1/ready' },
           },
           required: ['docs', 'health', 'ready'],
         },
@@ -49,10 +49,12 @@ export const swaggerComponents = {
       type: 'object',
       properties: {
         status: { type: 'string', example: 'ok' },
-        service: { type: 'string', example: 'StockFlow API' },
         timestamp: { type: 'string', format: 'date-time' },
+        uptime: { type: 'integer', example: 123 },
+        environment: { type: 'string', example: 'development' },
+        service: { type: 'string', example: 'StockFlow API' },
       },
-      required: ['status', 'service', 'timestamp'],
+      required: ['status', 'timestamp', 'uptime', 'environment'],
     },
     HealthLiveResponse: {
       type: 'object',

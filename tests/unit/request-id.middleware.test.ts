@@ -69,6 +69,24 @@ describe('createRequestIdMiddleware', () => {
     expect(res.getHeader(REQUEST_ID_HEADER)).toBe(FIXED_REQUEST_ID)
     expect(next).toHaveBeenCalledOnce()
   })
+
+  it('preserves a valid incoming x-request-id header', () => {
+    const incomingId = '550e8400-e29b-41d4-a716-446655440000'
+    const generator = { generate: vi.fn(() => FIXED_REQUEST_ID) }
+    const middleware = createRequestIdMiddleware(generator)
+    const req = createMockRequest({
+      headers: { [REQUEST_ID_HEADER.toLowerCase()]: incomingId },
+    })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    middleware(req, res, next)
+
+    expect(generator.generate).not.toHaveBeenCalled()
+    expect(req.requestId).toBe(incomingId)
+    expect(res.getHeader(REQUEST_ID_HEADER)).toBe(incomingId)
+    expect(next).toHaveBeenCalledOnce()
+  })
 })
 
 describe('correlationIdMiddleware', () => {

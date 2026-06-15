@@ -6,16 +6,18 @@ export function httpLogger(req: Request, res: Response, next: NextFunction): voi
   const start = process.hrtime.bigint()
 
   res.on('finish', () => {
-    const duration = Math.round((Number(process.hrtime.bigint() - start) / 1_000_000) * 100) / 100
+    const durationMs = Math.round((Number(process.hrtime.bigint() - start) / 1_000_000) * 100) / 100
 
     logger.info(
       {
         requestId: req.requestId,
         correlationId: req.correlationId,
         method: req.method,
-        route: req.originalUrl,
+        path: req.originalUrl,
         statusCode: res.statusCode,
-        duration,
+        durationMs,
+        ip: req.ip ?? req.socket.remoteAddress ?? null,
+        userAgent: req.get('user-agent') ?? null,
       },
       'request completed',
     )
