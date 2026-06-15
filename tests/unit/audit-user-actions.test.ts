@@ -20,6 +20,12 @@ vi.mock('../../src/shared/cache/cache-invalidation.js', () => ({
   invalidateUserRelatedCache: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('../../src/modules/companies/repositories/companies.repository.js', () => ({
+  companiesRepository: {
+    findActiveById: vi.fn().mockResolvedValue({ id: 'company-1', active: true }),
+  },
+}))
+
 vi.mock('jsonwebtoken', () => ({
   default: {
     sign: vi.fn().mockReturnValue('access-token'),
@@ -56,7 +62,7 @@ describe('Audit logs for user actions', () => {
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      company: { deletedAt: null, status: 'ACTIVE' },
+      company: { deletedAt: null, active: true },
     }
 
     vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(user)
@@ -94,7 +100,7 @@ describe('Audit logs for user actions', () => {
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      company: { deletedAt: null, status: 'ACTIVE' },
+      company: { deletedAt: null, active: true },
     }
 
     vi.mocked(usersRepository.findActiveByEmail).mockResolvedValue(null)
@@ -139,7 +145,7 @@ describe('Audit logs for user actions', () => {
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      company: { deletedAt: null, status: 'ACTIVE' },
+      company: { deletedAt: null, active: true },
     }
 
     const updatedUser = {
@@ -184,7 +190,7 @@ describe('Audit logs for user actions', () => {
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      company: { deletedAt: null, status: 'ACTIVE' },
+      company: { deletedAt: null, active: true },
     }
 
     vi.mocked(usersRepository.findActiveInCompany).mockResolvedValue(user)
@@ -222,7 +228,7 @@ describe('Audit logs for user actions', () => {
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      company: { deletedAt: null, status: 'ACTIVE' },
+      company: { deletedAt: null, active: true },
     }
 
     vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(user)

@@ -22,6 +22,7 @@ export type LoginResponseDto = {
 
 export type JwtPayload = {
   userId: string
-  companyId: string
+  email: string
   role: string
+  companyId: string
 }

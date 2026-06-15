@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const registerCompanySchema = z.object({
   company: z.object({
     name: z.string().trim().min(1, 'Company name is required'),
-    document: z.string().trim().min(1, 'Company document is required'),
+    document: z.string().trim().min(1, 'Company document is required').optional(),
     email: z.string().trim().email('Invalid company email'),
     phone: z.string().trim().optional(),
   }),

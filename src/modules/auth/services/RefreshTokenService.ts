@@ -1,18 +1,10 @@
-import type { User } from '@prisma/client'
-
 import { env } from '../../../config/env.js'
 import { AppError } from '../../../shared/errors/AppError.js'
+import type { UserWithCompany } from '../../users/repositories/users.repository.js'
 import { type RefreshTokensRepository, refreshTokensRepository } from '../repositories/index.js'
 import { generateRefreshTokenValue, hashRefreshToken } from '../utils/refresh-token.utils.js'
 
 const INVALID_REFRESH_TOKEN_MESSAGE = 'Unauthorized'
-
-type UserWithCompany = User & {
-  company: {
-    deletedAt: Date | null
-    status: string
-  }
-}
 
 export class RefreshTokenService {
   constructor(private readonly repository: RefreshTokensRepository = refreshTokensRepository) {}
@@ -77,7 +69,7 @@ export class RefreshTokenService {
       user.deletedAt !== null ||
       user.company.deletedAt !== null ||
       user.status !== 'ACTIVE' ||
-      user.company.status !== 'ACTIVE'
+      !user.company.active
     ) {
       throw new AppError(INVALID_REFRESH_TOKEN_MESSAGE, 401)
     }

@@ -11,6 +11,7 @@ const UNAUTHORIZED_MESSAGE = 'Unauthorized'
 
 const jwtPayloadSchema = z.object({
   userId: z.string(),
+  email: z.string().email(),
   companyId: z.string(),
   role: z.string(),
 })
@@ -61,11 +62,15 @@ export async function authenticate(
       throw new AppError(UNAUTHORIZED_MESSAGE, 401)
     }
 
-    if (user.status !== 'ACTIVE' || user.company.status !== 'ACTIVE') {
+    if (user.status !== 'ACTIVE' || !user.company.active) {
       throw new AppError(UNAUTHORIZED_MESSAGE, 401)
     }
 
-    if (user.companyId !== payload.companyId || user.role !== payload.role) {
+    if (
+      user.companyId !== payload.companyId ||
+      user.role !== payload.role ||
+      user.email !== payload.email
+    ) {
       throw new AppError(UNAUTHORIZED_MESSAGE, 401)
     }
 

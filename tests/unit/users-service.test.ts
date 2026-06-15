@@ -30,6 +30,12 @@ vi.mock('../../src/shared/cache/cache-invalidation.js', () => ({
   invalidateUserRelatedCache: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('../../src/modules/companies/repositories/companies.repository.js', () => ({
+  companiesRepository: {
+    findActiveById: vi.fn().mockResolvedValue({ id: 'company-1', active: true }),
+  },
+}))
+
 describe('UsersService', () => {
   const repository = createUsersRepositoryMock()
 

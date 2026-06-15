@@ -44,7 +44,7 @@ export class AuthService {
       const result = await this.usersRepository.registerCompanyWithAdmin({
         company: {
           name: data.company.name,
-          document: data.company.document,
+          document: data.company.document ?? null,
           email: data.company.email,
           phone: data.company.phone ?? null,
         },
@@ -86,7 +86,7 @@ export class AuthService {
       throw new AppError(INVALID_CREDENTIALS_MESSAGE, 401)
     }
 
-    if (user.status !== 'ACTIVE' || user.company.status !== 'ACTIVE') {
+    if (user.status !== 'ACTIVE' || !user.company.active) {
       throw new AppError(INVALID_CREDENTIALS_MESSAGE, 401)
     }
 
@@ -198,10 +198,11 @@ export class AuthService {
     }
   }
 
-  private signAccessToken(user: Pick<User, 'id' | 'companyId' | 'role'>): string {
+  private signAccessToken(user: Pick<User, 'id' | 'companyId' | 'role' | 'email'>): string {
     return jwt.sign(
       {
         userId: user.id,
+        email: user.email,
         companyId: user.companyId,
         role: user.role,
       } satisfies JwtPayload,

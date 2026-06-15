@@ -30,7 +30,7 @@ describe('UsersService soft delete', () => {
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      company: { deletedAt: null, status: 'ACTIVE' },
+      company: { deletedAt: null, active: true },
     }
 
     vi.mocked(repository.findActiveInCompany).mockResolvedValue(user)

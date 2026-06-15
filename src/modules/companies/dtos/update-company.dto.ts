@@ -18,10 +18,10 @@ export type UpdateCompanyDto = z.infer<typeof updateCompanySchema>
 export type CompanyProfileDto = {
   id: string
   name: string
-  document: string
+  document: string | null
   email: string
   phone: string | null
-  status: string
+  active: boolean
   createdAt: Date
   updatedAt: Date
 }

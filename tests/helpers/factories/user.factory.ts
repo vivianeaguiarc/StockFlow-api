@@ -3,7 +3,7 @@ import type { User, UserRole, UserStatus } from '@prisma/client'
 type UserWithCompany = User & {
   company: {
     deletedAt: Date | null
-    status: string
+    active: boolean
   }
 }
 
@@ -26,7 +26,7 @@ export function buildUser(overrides: Partial<UserWithCompany> = {}): UserWithCom
     ...defaultDates,
     company: {
       deletedAt: null,
-      status: 'ACTIVE',
+      active: true,
     },
     ...overrides,
   }

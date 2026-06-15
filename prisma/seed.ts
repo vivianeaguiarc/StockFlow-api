@@ -1,6 +1,6 @@
 import 'dotenv/config'
 
-import { CompanyStatus, PrismaClient, UserRole, UserStatus } from '@prisma/client'
+import { PrismaClient, UserRole, UserStatus } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -30,7 +30,7 @@ async function main(): Promise<void> {
       name: SEED_COMPANY.name,
       email: SEED_COMPANY.email,
       phone: SEED_COMPANY.phone,
-      status: CompanyStatus.ACTIVE,
+      active: true,
       deletedAt: null,
     },
     create: {
@@ -38,7 +38,7 @@ async function main(): Promise<void> {
       document: SEED_COMPANY.document,
       email: SEED_COMPANY.email,
       phone: SEED_COMPANY.phone,
-      status: CompanyStatus.ACTIVE,
+      active: true,
     },
   })
 

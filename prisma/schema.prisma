@@ -7,11 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum CompanyStatus {
-  ACTIVE
-  INACTIVE
-}
-
 enum UserRole {
   ADMIN
   MANAGER
@@ -50,6 +45,9 @@ enum AuditAction {
   UPDATE_PRODUCT
   DELETE_PRODUCT
   CREATE_STOCK_MOVEMENT
+  CREATE_COMPANY
+  UPDATE_COMPANY
+  DELETE_COMPANY
   LOGIN
   LOGOUT
   REFRESH
@@ -60,15 +58,15 @@ enum AuditAction {
 }
 
 model Company {
-  id        String        @id @default(cuid())
+  id        String    @id @default(uuid())
   name      String
-  document  String        @unique
-  email     String        @unique
+  document  String?   @unique
+  email     String    @unique
   phone     String?
-  status    CompanyStatus @default(ACTIVE)
-  createdAt DateTime      @default(now()) @map("created_at")
-  updatedAt DateTime      @updatedAt @map("updated_at")
-  deletedAt DateTime?     @map("deleted_at")
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
 
   users      User[]
   categories Category[]

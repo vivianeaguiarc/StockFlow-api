@@ -52,7 +52,7 @@ describe('Refresh token flow', () => {
         deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-        company: { deletedAt: null, status: 'ACTIVE' },
+        company: { deletedAt: null, active: true },
       }
 
       vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(user)
@@ -86,7 +86,7 @@ describe('Refresh token flow', () => {
         passwordHash: 'hash',
         createdAt: new Date(),
         updatedAt: new Date(),
-        company: { deletedAt: null, status: 'ACTIVE' },
+        company: { deletedAt: null, active: true },
       }
 
       const refreshTokenService = new RefreshTokenService(refreshTokensRepository)
@@ -164,7 +164,7 @@ describe('Refresh token flow', () => {
         passwordHash: 'hash',
         createdAt: new Date(),
         updatedAt: new Date(),
-        company: { deletedAt: null, status: 'ACTIVE' },
+        company: { deletedAt: null, active: true },
       }
 
       const refreshTokenService = new RefreshTokenService(refreshTokensRepository)

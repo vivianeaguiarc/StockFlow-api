@@ -6,7 +6,7 @@ export type RefreshTokenWithUser = {
   user: User & {
     company: {
       deletedAt: Date | null
-      status: string
+      active: boolean
     }
   }
 }

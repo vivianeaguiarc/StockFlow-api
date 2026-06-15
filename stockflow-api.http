@@ -330,6 +330,25 @@ Authorization: Bearer {{accessToken}}
 GET {{baseUrl}}/dashboard/stock
 Authorization: Bearer {{accessToken}}
 
+### List Companies
+GET {{baseUrl}}/companies?page=1&limit=10
+Authorization: Bearer {{accessToken}}
+
+### Create Company
+POST {{baseUrl}}/companies
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "New Tenant Corp",
+  "document": "98765432000100",
+  "email": "new-tenant@example.com"
+}
+
+### Get Company By Id
+GET {{baseUrl}}/companies/{{companyId}}
+Authorization: Bearer {{accessToken}}
+
 ### List Audit Logs
 GET {{baseUrl}}/audit/logs?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
 Authorization: Bearer {{accessToken}}

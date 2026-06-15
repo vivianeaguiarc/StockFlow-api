@@ -17,6 +17,7 @@ import { cacheService } from '../../../shared/cache/CacheService.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import { buildOrderBy, executePaginatedQuery } from '../../../shared/utils/pagination.js'
 import { auditLogService } from '../../audit/audit-log.service.js'
+import { companiesRepository } from '../../companies/repositories/companies.repository.js'
 import type { CreateUserDto } from '../dtos/create-user.dto.js'
 import type { ListUsersQuery } from '../dtos/list-users-query.dto.js'
 import type { UpdateUserDto } from '../dtos/update-user.dto.js'
@@ -35,6 +36,12 @@ export class UsersService {
     data: CreateUserDto,
     auditContext?: AuditContext,
   ): Promise<UserResponseDto> {
+    const company = await companiesRepository.findActiveById(companyId)
+
+    if (!company) {
+      throw new AppError('Company not found or inactive', 404)
+    }
+
     const passwordHash = await bcrypt.hash(data.password, BCRYPT_SALT_ROUNDS)
 
     try {

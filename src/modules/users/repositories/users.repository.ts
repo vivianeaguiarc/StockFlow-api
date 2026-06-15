@@ -3,7 +3,7 @@ import type { Company, Prisma, User } from '@prisma/client'
 export type UserWithCompany = User & {
   company: {
     deletedAt: Date | null
-    status: string
+    active: boolean
   }
 }
 
@@ -29,7 +29,7 @@ export type CreateUserRecord = {
 export type RegisterCompanyWithAdminInput = {
   company: {
     name: string
-    document: string
+    document?: string | null
     email: string
     phone: string | null
   }

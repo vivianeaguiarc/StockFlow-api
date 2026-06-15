@@ -27,7 +27,7 @@ export class PrismaRefreshTokensRepository implements RefreshTokensRepository {
             company: {
               select: {
                 deletedAt: true,
-                status: true,
+                active: true,
               },
             },
           },

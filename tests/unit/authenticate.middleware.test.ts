@@ -117,7 +117,7 @@ describe('authenticate middleware', () => {
     vi.mocked(usersRepository.findActiveByIdWithCompany).mockResolvedValue(
       buildUser({
         role: 'ADMIN',
-        company: { deletedAt: null, status: 'INACTIVE' },
+        company: { deletedAt: null, active: false },
       }),
     )
 
@@ -134,6 +134,7 @@ describe('authenticate middleware', () => {
       userId: 'user-1',
       companyId: 'company-1',
       role: 'ADMIN',
+      email: 'admin@example.com',
     })
 
     vi.mocked(usersRepository.findActiveByIdWithCompany).mockResolvedValue(

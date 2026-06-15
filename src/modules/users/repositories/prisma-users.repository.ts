@@ -136,7 +136,12 @@ export class PrismaUsersRepository implements UsersRepository {
   ): Promise<RegisterCompanyWithAdminResult> {
     return prisma.$transaction(async (tx) => {
       const company = await tx.company.create({
-        data: input.company,
+        data: {
+          name: input.company.name,
+          document: input.company.document ?? null,
+          email: input.company.email,
+          phone: input.company.phone,
+        },
       })
 
       const admin = await tx.user.create({

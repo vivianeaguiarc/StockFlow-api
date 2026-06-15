@@ -85,7 +85,7 @@ describe('AuthService', () => {
         email: 'inactive-company@example.com',
         passwordHash: await bcrypt.hash('Test@123456', 12),
         role: 'ADMIN',
-        company: { deletedAt: null, status: 'INACTIVE' },
+        company: { deletedAt: null, active: false },
       })
 
       vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(user)
@@ -101,7 +101,7 @@ describe('AuthService', () => {
       const user = buildUser({
         email: 'deleted-company@example.com',
         passwordHash: await bcrypt.hash('Test@123456', 12),
-        company: { deletedAt: new Date(), status: 'ACTIVE' },
+        company: { deletedAt: new Date(), active: true },
       })
 
       vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(user)

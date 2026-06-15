@@ -388,6 +388,126 @@ export const swaggerPaths = {
       },
     },
   },
+  '/api/v1/companies': {
+    post: {
+      tags: ['Companies'],
+      summary: 'Create company',
+      description: 'Requires ADMIN role. Creates a new company record.',
+      security: secured,
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CreateCompanyRequest' },
+          },
+        },
+      },
+      responses: {
+        '201': {
+          description: 'Company created',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Company' },
+            },
+          },
+        },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '403': { $ref: '#/components/responses/Forbidden' },
+        '409': { $ref: '#/components/responses/Conflict' },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+    get: {
+      tags: ['Companies'],
+      summary: 'List companies',
+      description: 'Requires ADMIN or MANAGER role. Returns the authenticated user company only.',
+      security: secured,
+      parameters: [
+        { $ref: '#/components/parameters/PageQuery' },
+        { $ref: '#/components/parameters/LimitQuery' },
+      ],
+      responses: {
+        '200': {
+          description: 'Paginated companies list',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/PaginatedCompaniesResponse' },
+            },
+          },
+        },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '403': { $ref: '#/components/responses/Forbidden' },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+  },
+  '/api/v1/companies/{id}': {
+    get: {
+      tags: ['Companies'],
+      summary: 'Get company by ID',
+      description: 'Requires ADMIN or MANAGER role. Only the authenticated user company.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      responses: {
+        '200': {
+          description: 'Company details',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Company' },
+            },
+          },
+        },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '403': { $ref: '#/components/responses/Forbidden' },
+        '404': { $ref: '#/components/responses/NotFound' },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+    patch: {
+      tags: ['Companies'],
+      summary: 'Update company',
+      description: 'Requires ADMIN role. Only the authenticated user company.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateCompanyCrudRequest' },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Updated company',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Company' },
+            },
+          },
+        },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '403': { $ref: '#/components/responses/Forbidden' },
+        '404': { $ref: '#/components/responses/NotFound' },
+        '409': { $ref: '#/components/responses/Conflict' },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+    delete: {
+      tags: ['Companies'],
+      summary: 'Soft delete company',
+      description: 'Requires ADMIN role. Only the authenticated user company.',
+      security: secured,
+      parameters: [{ $ref: '#/components/parameters/IdPath' }],
+      responses: {
+        '204': { description: 'Company deleted' },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '403': { $ref: '#/components/responses/Forbidden' },
+        '404': { $ref: '#/components/responses/NotFound' },
+        '500': { $ref: '#/components/responses/InternalServerError' },
+      },
+    },
+  },
   '/api/v1/companies/me': {
     get: {
       tags: ['Companies'],
