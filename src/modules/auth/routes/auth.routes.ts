@@ -5,14 +5,22 @@ import { authenticate } from '../../../shared/http/middlewares/authenticate.js'
 import { authorizeRoles } from '../../../shared/http/middlewares/authorize-roles.js'
 import { validateRequest } from '../../../shared/http/middlewares/validate-request.js'
 import { loginRateLimiter, registerRateLimiter } from '../../../shared/security/rate-limit.js'
+import { createUsersRepository } from '../../users/repositories/index.js'
 import { AuthController } from '../controllers/AuthController.js'
 import { loginSchema } from '../dtos/login.dto.js'
 import { logoutSchema, refreshTokenSchema } from '../dtos/refresh-token.dto.js'
 import { registerCompanySchema } from '../dtos/register-company.dto.js'
+import { createRefreshTokensRepository } from '../repositories/index.js'
 import { AuthService } from '../services/AuthService.js'
+import { RefreshTokenService } from '../services/RefreshTokenService.js'
 
 function createAuthController(): AuthController {
-  return new AuthController(new AuthService())
+  const usersRepository = createUsersRepository()
+  const refreshTokensRepository = createRefreshTokensRepository()
+  const refreshTokenService = new RefreshTokenService(refreshTokensRepository)
+  const authService = new AuthService(usersRepository, refreshTokenService)
+
+  return new AuthController(authService)
 }
 
 export function createAuthRoutes(): Router {

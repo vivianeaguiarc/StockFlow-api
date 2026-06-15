@@ -69,7 +69,7 @@ Ideal para portfólio técnico e estudo de backends SaaS.
 
 ## Arquitetura
 
-Padrão **Controller → Service → Routes → DTOs**, organizado por módulos de domínio:
+Padrão **Controller → Service → Repository → DTOs**, organizado por módulos de domínio (refatoração incremental — Task 50):
 
 ```
 src/
@@ -79,26 +79,43 @@ src/
 ├── docs/                  # Configuração Swagger/OpenAPI
 ├── modules/
 │   ├── auth/
-│   ├── companies/
+│   │   ├── controllers/   # HTTP — recebe request/response
+│   │   ├── services/      # Regras de negócio (JWT, login, refresh)
+│   │   ├── repositories/  # RefreshTokensRepository (Prisma isolado)
+│   │   ├── dtos/          # Validação Zod de entrada/saída
+│   │   └── routes/
 │   ├── users/
-│   ├── categories/
-│   ├── suppliers/
-│   ├── products/
-│   ├── inventory/
+│   │   ├── controllers/
+│   │   ├── services/      # CRUD, RBAC, cache, soft delete
+│   │   ├── repositories/  # UsersRepository (Prisma isolado)
+│   │   ├── dtos/
+│   │   └── routes/
 │   ├── audit/
+│   │   ├── services/      # AuditLogService, AuditService
+│   │   └── repositories/  # AuditLogsRepository (Prisma isolado)
+│   ├── companies/ …       # Outros domínios seguem o mesmo padrão gradual
 │   └── health/
 └── shared/
     ├── audit/             # Sanitização e contexto de auditoria
-    ├── database/          # Prisma singleton
+    ├── database/          # Prisma singleton (usado só pelos repositories)
     ├── errors/            # AppError
-    ├── http/              # Rotas centrais, middlewares, responses
-    ├── middlewares/
-    ├── security/            # Rate limiting e proteções HTTP
-    ├── cache/               # Redis client e CacheService
-    ├── logger/              # Logs estruturados (Pino)
+    ├── http/middlewares/  # authenticate, authorizeRoles, validateRequest
+    ├── security/          # Rate limiting
+    ├── cache/             # Redis client e CacheService
+    ├── logger/            # Logs estruturados (Pino)
     ├── types/
     └── utils/             # Paginação, helpers
 ```
+
+**Responsabilidades:**
+
+| Camada         | Papel                                                  |
+| -------------- | ------------------------------------------------------ |
+| **Controller** | Traduz HTTP → chama service → formata resposta         |
+| **Service**    | Regra de negócio, orquestração, cache, auditoria       |
+| **Repository** | Acesso ao banco via Prisma (interface + implementação) |
+| **DTO**        | Validação e tipagem de entrada/saída (Zod)             |
+| **Middleware** | Auth JWT, RBAC, request ID, rate limit, erros          |
 
 **Fluxo de uma requisição:**
 
@@ -107,13 +124,16 @@ HTTP Request
   → global rate limit
   → /api/v1/* (versão atual)
   → /api/* (alias legado temporário)
-  → authenticate (JWT)
+  → authenticate (JWT + UsersRepository)
   → authorizeRoles (RBAC)
   → validateRequest (Zod)
   → Controller
-  → Service (regras + Prisma)
+  → Service (regras de negócio)
+  → Repository (Prisma)
   → Response / Error Handler
 ```
+
+**Repositories implementados (auth, users, audit):** `UsersRepository`, `RefreshTokensRepository`, `AuditLogsRepository`. Demais módulos (products, inventory, etc.) continuam com Prisma nos services até migração futura.
 
 ---
 

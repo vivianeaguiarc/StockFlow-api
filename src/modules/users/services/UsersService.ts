@@ -14,7 +14,6 @@ import {
   usersListKey,
 } from '../../../shared/cache/cache-keys.js'
 import { cacheService } from '../../../shared/cache/CacheService.js'
-import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
   buildLimitPaginationMeta,
@@ -26,11 +25,14 @@ import type { CreateUserDto } from '../dtos/create-user.dto.js'
 import type { ListUsersQuery } from '../dtos/list-users-query.dto.js'
 import type { UpdateUserDto } from '../dtos/update-user.dto.js'
 import type { PaginatedUsersResponseDto, UserResponseDto } from '../dtos/user-response.dto.js'
+import { type UsersRepository, usersRepository } from '../repositories/index.js'
 import { buildUsersListWhere } from '../utils/build-users-list-where.js'
 
 const BCRYPT_SALT_ROUNDS = 12
 
 export class UsersService {
+  constructor(private readonly repository: UsersRepository = usersRepository) {}
+
   async create(
     companyId: string,
     actorUserId: string,
@@ -40,27 +42,19 @@ export class UsersService {
     const passwordHash = await bcrypt.hash(data.password, BCRYPT_SALT_ROUNDS)
 
     try {
-      const existingActiveUser = await prisma.user.findFirst({
-        where: {
-          email: data.email,
-          deletedAt: null,
-        },
-        select: { id: true },
-      })
+      const existingActiveUser = await this.repository.findActiveByEmail(data.email)
 
       if (existingActiveUser) {
         throw new AppError('Email already registered', 409)
       }
 
-      const user = await prisma.user.create({
-        data: {
-          companyId,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          passwordHash,
-          role: data.role,
-        },
+      const user = await this.repository.create({
+        companyId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        passwordHash,
+        role: data.role,
       })
 
       const response = this.toResponse(user)
@@ -114,14 +108,8 @@ export class UsersService {
     const result = await executePaginatedQuery({
       page,
       pageSize: limit,
-      findMany: (skip, take) =>
-        prisma.user.findMany({
-          where,
-          skip,
-          take,
-          orderBy,
-        }),
-      count: () => prisma.user.count({ where }),
+      findMany: (skip, take) => this.repository.findMany(where, skip, take, orderBy),
+      count: () => this.repository.count(where),
     })
 
     return {
@@ -163,19 +151,13 @@ export class UsersService {
       data.password !== undefined ? await bcrypt.hash(data.password, BCRYPT_SALT_ROUNDS) : undefined
 
     try {
-      const updated = await prisma.user.update({
-        where: {
-          id: userId,
-          deletedAt: null,
-        },
-        data: {
-          ...(data.firstName !== undefined && { firstName: data.firstName }),
-          ...(data.lastName !== undefined && { lastName: data.lastName }),
-          ...(data.email !== undefined && { email: data.email }),
-          ...(passwordHash !== undefined && { passwordHash }),
-          ...(data.role !== undefined && { role: data.role }),
-          ...(data.status !== undefined && { status: data.status }),
-        },
+      const updated = await this.repository.updateActive(userId, {
+        ...(data.firstName !== undefined && { firstName: data.firstName }),
+        ...(data.lastName !== undefined && { lastName: data.lastName }),
+        ...(data.email !== undefined && { email: data.email }),
+        ...(passwordHash !== undefined && { passwordHash }),
+        ...(data.role !== undefined && { role: data.role }),
+        ...(data.status !== undefined && { status: data.status }),
       })
 
       const response = this.toResponse(updated)
@@ -229,13 +211,7 @@ export class UsersService {
 
     const deletedAt = new Date()
 
-    await prisma.user.update({
-      where: {
-        id: userId,
-        deletedAt: null,
-      },
-      data: { deletedAt },
-    })
+    await this.repository.softDelete(userId, deletedAt)
 
     await auditLogService.record({
       companyId,
@@ -254,13 +230,7 @@ export class UsersService {
   }
 
   private async findActiveUserInCompany(companyId: string, userId: string) {
-    const user = await prisma.user.findFirst({
-      where: {
-        id: userId,
-        companyId,
-        deletedAt: null,
-      },
-    })
+    const user = await this.repository.findActiveInCompany(companyId, userId)
 
     if (!user) {
       throw new AppError('User not found', 404)
@@ -270,24 +240,8 @@ export class UsersService {
   }
 
   private async ensureNotLastAdmin(companyId: string, userId: string): Promise<void> {
-    const adminCount = await prisma.user.count({
-      where: {
-        companyId,
-        role: UserRole.ADMIN,
-        deletedAt: null,
-        status: 'ACTIVE',
-      },
-    })
-
-    const user = await prisma.user.findFirst({
-      where: {
-        id: userId,
-        companyId,
-        role: UserRole.ADMIN,
-        deletedAt: null,
-        status: 'ACTIVE',
-      },
-    })
+    const adminCount = await this.repository.countActiveAdmins(companyId)
+    const user = await this.repository.findActiveAdminInCompany(companyId, userId)
 
     if (user?.role === UserRole.ADMIN && adminCount <= 1) {
       throw new AppError('Cannot remove the last admin of the company', 409)

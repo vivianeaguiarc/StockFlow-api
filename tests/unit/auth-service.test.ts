@@ -3,23 +3,16 @@ import bcrypt from 'bcryptjs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AuthService } from '../../src/modules/auth/services/AuthService.js'
+import { RefreshTokenService } from '../../src/modules/auth/services/RefreshTokenService.js'
 import { auditLogService } from '../../src/modules/audit/audit-log.service.js'
-import { refreshTokenService } from '../../src/modules/auth/services/RefreshTokenService.js'
 import { AppError } from '../../src/shared/errors/AppError.js'
-import { prisma } from '../../src/shared/database/prisma.js'
 import { buildUser } from '../helpers/factories/user.factory.js'
+import { createRefreshTokensRepositoryMock } from '../helpers/mocks/refresh-tokens-repository.mock.js'
+import { createUsersRepositoryMock } from '../helpers/mocks/users-repository.mock.js'
 
 vi.mock('../../src/modules/audit/audit-log.service.js', () => ({
   auditLogService: {
     record: vi.fn().mockResolvedValue(undefined),
-  },
-}))
-
-vi.mock('../../src/modules/auth/services/RefreshTokenService.js', () => ({
-  refreshTokenService: {
-    issue: vi.fn().mockResolvedValue('refresh-token'),
-    rotate: vi.fn(),
-    revoke: vi.fn(),
   },
 }))
 
@@ -30,19 +23,24 @@ vi.mock('jsonwebtoken', () => ({
 }))
 
 describe('AuthService', () => {
+  const usersRepository = createUsersRepositoryMock()
+  const refreshTokensRepository = createRefreshTokensRepositoryMock()
+  const refreshTokenService = new RefreshTokenService(refreshTokensRepository)
+
   beforeEach(() => {
-    vi.restoreAllMocks()
     vi.clearAllMocks()
   })
 
+  function createService() {
+    return new AuthService(usersRepository, refreshTokenService)
+  }
+
   describe('login', () => {
     it('throws 401 for unknown email', async () => {
-      vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(null)
-
-      const service = new AuthService()
+      vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(null)
 
       await expect(
-        service.login({ email: 'missing@example.com', password: 'Test@123456' }),
+        createService().login({ email: 'missing@example.com', password: 'Test@123456' }),
       ).rejects.toMatchObject({
         message: 'Invalid email or password',
         statusCode: 401,
@@ -56,12 +54,10 @@ describe('AuthService', () => {
         role: 'ADMIN',
       })
 
-      vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(user as never)
-
-      const service = new AuthService()
+      vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(user)
 
       await expect(
-        service.login({ email: 'admin@example.com', password: 'Wrong@123' }),
+        createService().login({ email: 'admin@example.com', password: 'Wrong@123' }),
       ).rejects.toMatchObject({
         statusCode: 401,
       } satisfies Partial<AppError>)
@@ -75,12 +71,10 @@ describe('AuthService', () => {
         role: 'ADMIN',
       })
 
-      vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(user as never)
-
-      const service = new AuthService()
+      vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(user)
 
       await expect(
-        service.login({ email: 'inactive@example.com', password: 'Test@123456' }),
+        createService().login({ email: 'inactive@example.com', password: 'Test@123456' }),
       ).rejects.toMatchObject({
         statusCode: 401,
       } satisfies Partial<AppError>)
@@ -94,12 +88,10 @@ describe('AuthService', () => {
         company: { deletedAt: null, status: 'INACTIVE' },
       })
 
-      vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(user as never)
-
-      const service = new AuthService()
+      vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(user)
 
       await expect(
-        service.login({ email: 'inactive-company@example.com', password: 'Test@123456' }),
+        createService().login({ email: 'inactive-company@example.com', password: 'Test@123456' }),
       ).rejects.toMatchObject({
         statusCode: 401,
       } satisfies Partial<AppError>)
@@ -112,12 +104,10 @@ describe('AuthService', () => {
         company: { deletedAt: new Date(), status: 'ACTIVE' },
       })
 
-      vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(user as never)
-
-      const service = new AuthService()
+      vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(user)
 
       await expect(
-        service.login({ email: 'deleted-company@example.com', password: 'Test@123456' }),
+        createService().login({ email: 'deleted-company@example.com', password: 'Test@123456' }),
       ).rejects.toMatchObject({
         statusCode: 401,
       } satisfies Partial<AppError>)
@@ -130,10 +120,10 @@ describe('AuthService', () => {
         role: 'ADMIN',
       })
 
-      vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(user as never)
+      vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(user)
+      vi.spyOn(refreshTokenService, 'issue').mockResolvedValue('refresh-token')
 
-      const service = new AuthService()
-      const result = await service.login({
+      const result = await createService().login({
         email: 'admin@example.com',
         password: 'Test@123456',
       })
@@ -153,12 +143,10 @@ describe('AuthService', () => {
         meta: { target: ['document'] },
       })
 
-      vi.spyOn(prisma, '$transaction').mockRejectedValue(error)
-
-      const service = new AuthService()
+      vi.mocked(usersRepository.registerCompanyWithAdmin).mockRejectedValue(error)
 
       await expect(
-        service.register({
+        createService().register({
           company: {
             name: 'Acme',
             document: '123',

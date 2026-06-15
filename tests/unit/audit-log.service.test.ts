@@ -1,23 +1,25 @@
-import { AuditAction } from '@prisma/client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { auditLogService } from '../../src/modules/audit/audit-log.service.js'
-import { prisma } from '../../src/shared/database/prisma.js'
+import { AuditLogService } from '../../src/modules/audit/audit-log.service.js'
+import { AuditAction } from '@prisma/client'
 import { logWarn } from '../../src/shared/logger/logger.js'
+import { createAuditLogsRepositoryMock } from '../helpers/mocks/audit-logs-repository.mock.js'
 
 vi.mock('../../src/shared/logger/logger.js', () => ({
   logWarn: vi.fn(),
 }))
 
 describe('AuditLogService', () => {
+  const repository = createAuditLogsRepositoryMock()
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('persists audit log with metadata, ipAddress and userAgent', async () => {
-    const createSpy = vi.spyOn(prisma.auditLog, 'create').mockResolvedValue({} as never)
+    const service = new AuditLogService(repository)
 
-    await auditLogService.record({
+    await service.record({
       companyId: 'company-1',
       userId: 'user-1',
       action: AuditAction.LOGIN,
@@ -28,8 +30,8 @@ describe('AuditLogService', () => {
       userAgent: 'vitest',
     })
 
-    expect(createSpy).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
         companyId: 'company-1',
         userId: 'user-1',
         action: AuditAction.LOGIN,
@@ -39,16 +41,19 @@ describe('AuditLogService', () => {
         ipAddress: '127.0.0.1',
         userAgent: 'vitest',
       }),
-    })
+      undefined,
+    )
     expect(logWarn).not.toHaveBeenCalled()
   })
 
   it('logs a warning and does not throw when persistence fails', async () => {
     const error = new Error('database unavailable')
-    vi.spyOn(prisma.auditLog, 'create').mockRejectedValue(error)
+    vi.mocked(repository.create).mockRejectedValueOnce(error)
+
+    const service = new AuditLogService(repository)
 
     await expect(
-      auditLogService.record({
+      service.record({
         companyId: 'company-1',
         userId: 'user-1',
         action: AuditAction.LOGIN,

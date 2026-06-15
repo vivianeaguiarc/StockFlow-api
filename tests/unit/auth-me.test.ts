@@ -2,9 +2,11 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { AuthMeResponseDto } from '../../src/modules/auth/dtos/auth-me-response.dto.js'
 import { AuthService } from '../../src/modules/auth/services/AuthService.js'
+import { RefreshTokenService } from '../../src/modules/auth/services/RefreshTokenService.js'
 import { cacheService } from '../../src/shared/cache/CacheService.js'
 import { AppError } from '../../src/shared/errors/AppError.js'
-import { prisma } from '../../src/shared/database/prisma.js'
+import { createRefreshTokensRepositoryMock } from '../helpers/mocks/refresh-tokens-repository.mock.js'
+import { createUsersRepositoryMock } from '../helpers/mocks/users-repository.mock.js'
 
 vi.mock('../../src/shared/cache/CacheService.js', () => ({
   cacheService: {
@@ -13,11 +15,18 @@ vi.mock('../../src/shared/cache/CacheService.js', () => ({
 }))
 
 describe('AuthService.getMe', () => {
+  const usersRepository = createUsersRepositoryMock()
+  const refreshTokenService = new RefreshTokenService(createRefreshTokensRepositoryMock())
+
+  function createService() {
+    return new AuthService(usersRepository, refreshTokenService)
+  }
+
   it('returns safe user profile fields', async () => {
     const createdAt = new Date('2026-01-01T00:00:00.000Z')
     const updatedAt = new Date('2026-01-02T00:00:00.000Z')
 
-    vi.spyOn(prisma.user, 'findFirst').mockResolvedValue({
+    vi.mocked(usersRepository.findProfileById).mockResolvedValue({
       id: 'user-1',
       firstName: 'John',
       lastName: 'Doe',
@@ -25,10 +34,9 @@ describe('AuthService.getMe', () => {
       role: 'ADMIN',
       createdAt,
       updatedAt,
-    } as never)
+    })
 
-    const service = new AuthService()
-    const profile = await service.getMe('user-1')
+    const profile = await createService().getMe('user-1')
 
     expect(profile).toEqual({
       id: 'user-1',
@@ -44,20 +52,14 @@ describe('AuthService.getMe', () => {
       expect.any(Function),
       300,
     )
-
-    vi.restoreAllMocks()
   })
 
   it('throws 404 when user is not found', async () => {
-    vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(null)
+    vi.mocked(usersRepository.findProfileById).mockResolvedValue(null)
 
-    const service = new AuthService()
-
-    await expect(service.getMe('missing-user')).rejects.toMatchObject({
+    await expect(createService().getMe('missing-user')).rejects.toMatchObject({
       message: 'User not found',
       statusCode: 404,
     } satisfies Partial<AppError>)
-
-    vi.restoreAllMocks()
   })
 })

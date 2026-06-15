@@ -1,4 +1,4 @@
-import { AuditAction, Prisma, type User, UserRole } from '@prisma/client'
+import { AuditAction, Prisma, type User } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import jwt, { type SignOptions } from 'jsonwebtoken'
 
@@ -6,9 +6,12 @@ import { env } from '../../../config/env.js'
 import type { AuditContext } from '../../../shared/audit/audit-context.js'
 import { authMeKey, CACHE_DETAIL_TTL_SECONDS } from '../../../shared/cache/cache-keys.js'
 import { cacheService } from '../../../shared/cache/CacheService.js'
-import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import { auditLogService } from '../../audit/audit-log.service.js'
+import {
+  type UsersRepository,
+  usersRepository as defaultUsersRepository,
+} from '../../users/repositories/index.js'
 import type { AuthMeResponseDto } from '../dtos/auth-me-response.dto.js'
 import type { JwtPayload, LoginDto, LoginResponseDto } from '../dtos/login.dto.js'
 import type {
@@ -20,38 +23,35 @@ import type {
   RegisterCompanyDto,
   RegisterCompanyResponseDto,
 } from '../dtos/register-company.dto.js'
+import type { RefreshTokenService } from './RefreshTokenService.js'
 import { refreshTokenService } from './RefreshTokenService.js'
 
 const BCRYPT_SALT_ROUNDS = 12
 const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password'
 
 export class AuthService {
+  constructor(
+    private readonly usersRepository: UsersRepository = defaultUsersRepository,
+    private readonly refreshTokens: RefreshTokenService = refreshTokenService,
+  ) {}
+
   async register(data: RegisterCompanyDto): Promise<RegisterCompanyResponseDto> {
     const passwordHash = await bcrypt.hash(data.admin.password, BCRYPT_SALT_ROUNDS)
 
     try {
-      const result = await prisma.$transaction(async (tx) => {
-        const company = await tx.company.create({
-          data: {
-            name: data.company.name,
-            document: data.company.document,
-            email: data.company.email,
-            phone: data.company.phone ?? null,
-          },
-        })
-
-        const admin = await tx.user.create({
-          data: {
-            companyId: company.id,
-            firstName: data.admin.firstName,
-            lastName: data.admin.lastName,
-            email: data.admin.email,
-            passwordHash,
-            role: UserRole.ADMIN,
-          },
-        })
-
-        return { company, admin }
+      const result = await this.usersRepository.registerCompanyWithAdmin({
+        company: {
+          name: data.company.name,
+          document: data.company.document,
+          email: data.company.email,
+          phone: data.company.phone ?? null,
+        },
+        admin: {
+          firstName: data.admin.firstName,
+          lastName: data.admin.lastName,
+          email: data.admin.email,
+          passwordHash,
+        },
       })
 
       return {
@@ -78,13 +78,7 @@ export class AuthService {
   }
 
   async login(data: LoginDto, auditContext?: AuditContext): Promise<LoginResponseDto> {
-    const user = await prisma.user.findFirst({
-      where: {
-        email: data.email,
-        deletedAt: null,
-      },
-      include: { company: true },
-    })
+    const user = await this.usersRepository.findActiveByEmailWithCompany(data.email)
 
     if (!user || user.company.deletedAt !== null) {
       throw new AppError(INVALID_CREDENTIALS_MESSAGE, 401)
@@ -101,7 +95,7 @@ export class AuthService {
     }
 
     const accessToken = this.signAccessToken(user)
-    const refreshToken = await refreshTokenService.issue(user.id)
+    const refreshToken = await this.refreshTokens.issue(user.id)
 
     await auditLogService.record({
       companyId: user.companyId,
@@ -134,7 +128,7 @@ export class AuthService {
     data: RefreshTokenDto,
     auditContext?: AuditContext,
   ): Promise<RefreshTokenResponseDto> {
-    const { token: refreshToken, user } = await refreshTokenService.rotate(data.refreshToken)
+    const { token: refreshToken, user } = await this.refreshTokens.rotate(data.refreshToken)
     const accessToken = this.signAccessToken(user)
 
     await auditLogService.record({
@@ -158,7 +152,7 @@ export class AuthService {
   }
 
   async logout(data: LogoutDto, auditContext?: AuditContext): Promise<void> {
-    const user = await refreshTokenService.revoke(data.refreshToken)
+    const user = await this.refreshTokens.revoke(data.refreshToken)
 
     if (!user) {
       return
@@ -186,21 +180,7 @@ export class AuthService {
   }
 
   private async fetchMe(userId: string): Promise<AuthMeResponseDto> {
-    const user = await prisma.user.findFirst({
-      where: {
-        id: userId,
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    })
+    const user = await this.usersRepository.findProfileById(userId)
 
     if (!user) {
       throw new AppError('User not found', 404)

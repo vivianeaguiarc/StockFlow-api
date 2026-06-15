@@ -1,15 +1,27 @@
 import type { NextFunction, Request, Response } from 'express'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { UsersRepository } from '../../src/modules/users/repositories/users.repository.js'
 import { authenticate } from '../../src/shared/http/middlewares/authenticate.js'
 import { AppError } from '../../src/shared/errors/AppError.js'
-import { prisma } from '../../src/shared/database/prisma.js'
 import { buildUser } from '../helpers/factories/user.factory.js'
 import {
   createAccessToken,
   createExpiredAccessToken,
   createInvalidAccessToken,
 } from '../helpers/factories/token.factory.js'
+
+const usersRepository = vi.hoisted(
+  () =>
+    ({
+      findActiveByIdWithCompany: vi.fn(),
+    }) as Pick<UsersRepository, 'findActiveByIdWithCompany'>,
+)
+
+vi.mock('../../src/modules/users/repositories/index.js', () => ({
+  usersRepository,
+  createUsersRepository: () => usersRepository,
+}))
 
 function createResponse(): { res: Response; next: NextFunction } {
   const next = vi.fn()
@@ -18,7 +30,7 @@ function createResponse(): { res: Response; next: NextFunction } {
 
 describe('authenticate middleware', () => {
   beforeEach(() => {
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('returns 401 when token is missing', async () => {
@@ -64,8 +76,8 @@ describe('authenticate middleware', () => {
       role: 'ADMIN',
     })
 
-    vi.spyOn(prisma.user, 'findUnique').mockResolvedValue(
-      buildUser({ deletedAt: new Date(), role: 'ADMIN' }) as never,
+    vi.mocked(usersRepository.findActiveByIdWithCompany).mockResolvedValue(
+      buildUser({ deletedAt: new Date(), role: 'ADMIN' }),
     )
 
     const req = { headers: { authorization: `Bearer ${token}` } } as Request
@@ -83,7 +95,9 @@ describe('authenticate middleware', () => {
       role: 'ADMIN',
     })
 
-    vi.spyOn(prisma.user, 'findUnique').mockResolvedValue(buildUser({ role: 'USER' }) as never)
+    vi.mocked(usersRepository.findActiveByIdWithCompany).mockResolvedValue(
+      buildUser({ role: 'USER' }),
+    )
 
     const req = { headers: { authorization: `Bearer ${token}` } } as Request
     const { res, next } = createResponse()
@@ -100,11 +114,11 @@ describe('authenticate middleware', () => {
       role: 'ADMIN',
     })
 
-    vi.spyOn(prisma.user, 'findUnique').mockResolvedValue(
+    vi.mocked(usersRepository.findActiveByIdWithCompany).mockResolvedValue(
       buildUser({
         role: 'ADMIN',
         company: { deletedAt: null, status: 'INACTIVE' },
-      }) as never,
+      }),
     )
 
     const req = { headers: { authorization: `Bearer ${token}` } } as Request
@@ -122,8 +136,8 @@ describe('authenticate middleware', () => {
       role: 'ADMIN',
     })
 
-    vi.spyOn(prisma.user, 'findUnique').mockResolvedValue(
-      buildUser({ role: 'ADMIN', email: 'admin@example.com' }) as never,
+    vi.mocked(usersRepository.findActiveByIdWithCompany).mockResolvedValue(
+      buildUser({ role: 'ADMIN', email: 'admin@example.com' }),
     )
 
     const req = { headers: { authorization: `Bearer ${token}` } } as Request

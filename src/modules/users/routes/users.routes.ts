@@ -7,11 +7,13 @@ import { UsersController } from '../controllers/UsersController.js'
 import { createUserSchema } from '../dtos/create-user.dto.js'
 import { listUsersQuerySchema } from '../dtos/list-users-query.dto.js'
 import { updateUserSchema } from '../dtos/update-user.dto.js'
+import { createUsersRepository } from '../repositories/index.js'
 import { UsersService } from '../services/UsersService.js'
 
 export function createUsersRoutes(): Router {
   const router = Router()
-  const usersController = new UsersController(new UsersService())
+  const usersService = new UsersService(createUsersRepository())
+  const usersController = new UsersController(usersService)
 
   router.post(
     '/',

@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import { z } from 'zod'
 
 import { env } from '../../../config/env.js'
-import { prisma } from '../../database/prisma.js'
+import { usersRepository } from '../../../modules/users/repositories/index.js'
 import { AppError } from '../../errors/AppError.js'
 
 const UNAUTHORIZED_MESSAGE = 'Unauthorized'
@@ -52,10 +52,7 @@ export async function authenticate(
       throw new AppError(UNAUTHORIZED_MESSAGE, 401)
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      include: { company: true },
-    })
+    const user = await usersRepository.findActiveByIdWithCompany(payload.userId)
 
     if (!user || user.deletedAt !== null || user.company.deletedAt !== null) {
       throw new AppError(UNAUTHORIZED_MESSAGE, 401)

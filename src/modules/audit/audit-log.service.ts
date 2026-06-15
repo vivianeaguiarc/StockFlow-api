@@ -1,8 +1,7 @@
 import type { AuditAction, Prisma } from '@prisma/client'
 
-import { sanitizeAuditData } from '../../shared/audit/sanitize-audit-data.js'
-import { prisma } from '../../shared/database/prisma.js'
 import { logWarn } from '../../shared/logger/logger.js'
+import { type AuditLogsRepository, auditLogsRepository } from './repositories/index.js'
 
 export type RecordAuditLogInput = {
   companyId: string
@@ -19,30 +18,25 @@ export type RecordAuditLogInput = {
 }
 
 export class AuditLogService {
+  constructor(private readonly repository: AuditLogsRepository = auditLogsRepository) {}
+
   async record(input: RecordAuditLogInput): Promise<void> {
     try {
-      const client = input.tx ?? prisma
-
-      await client.auditLog.create({
-        data: {
+      await this.repository.create(
+        {
           companyId: input.companyId,
           userId: input.userId ?? null,
           action: input.action,
           entity: input.entity,
           entityId: input.entityId ?? null,
-          ...(input.metadata !== undefined && {
-            metadata: sanitizeAuditData(input.metadata),
-          }),
-          ...(input.oldValue !== undefined && {
-            oldValue: sanitizeAuditData(input.oldValue),
-          }),
-          ...(input.newValue !== undefined && {
-            newValue: sanitizeAuditData(input.newValue),
-          }),
+          ...(input.metadata !== undefined && { metadata: input.metadata }),
+          ...(input.oldValue !== undefined && { oldValue: input.oldValue }),
+          ...(input.newValue !== undefined && { newValue: input.newValue }),
           ipAddress: input.ipAddress ?? null,
           userAgent: input.userAgent ?? null,
         },
-      })
+        input.tx,
+      )
     } catch (error) {
       logWarn(
         {

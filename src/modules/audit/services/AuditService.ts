@@ -1,6 +1,5 @@
 import type { AuditLog, Prisma } from '@prisma/client'
 
-import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import { buildOrderBy, executePaginatedQuery } from '../../../shared/utils/pagination.js'
 import type {
@@ -8,8 +7,11 @@ import type {
   PaginatedAuditLogsResponseDto,
 } from '../dtos/audit-log-response.dto.js'
 import type { ListAuditLogsQuery } from '../dtos/list-audit-logs-query.dto.js'
+import { type AuditLogsRepository, auditLogsRepository } from '../repositories/index.js'
 
 export class AuditService {
+  constructor(private readonly repository: AuditLogsRepository = auditLogsRepository) {}
+
   async listLogs(
     companyId: string,
     query: ListAuditLogsQuery,
@@ -32,14 +34,8 @@ export class AuditService {
     const result = await executePaginatedQuery({
       page,
       pageSize,
-      findMany: (skip, take) =>
-        prisma.auditLog.findMany({
-          where,
-          skip,
-          take,
-          orderBy,
-        }),
-      count: () => prisma.auditLog.count({ where }),
+      findMany: (skip, take) => this.repository.findMany(where, skip, take, orderBy),
+      count: () => this.repository.count(where),
     })
 
     return {
@@ -49,12 +45,7 @@ export class AuditService {
   }
 
   async getLogById(companyId: string, logId: string): Promise<AuditLogResponseDto> {
-    const log = await prisma.auditLog.findFirst({
-      where: {
-        id: logId,
-        companyId,
-      },
-    })
+    const log = await this.repository.findByIdInCompany(companyId, logId)
 
     if (!log) {
       throw new AppError('Audit log not found', 404)

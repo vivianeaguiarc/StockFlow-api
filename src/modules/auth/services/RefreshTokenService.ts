@@ -1,8 +1,8 @@
 import type { User } from '@prisma/client'
 
 import { env } from '../../../config/env.js'
-import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
+import { type RefreshTokensRepository, refreshTokensRepository } from '../repositories/index.js'
 import { generateRefreshTokenValue, hashRefreshToken } from '../utils/refresh-token.utils.js'
 
 const INVALID_REFRESH_TOKEN_MESSAGE = 'Unauthorized'
@@ -15,18 +15,14 @@ type UserWithCompany = User & {
 }
 
 export class RefreshTokenService {
+  constructor(private readonly repository: RefreshTokensRepository = refreshTokensRepository) {}
+
   async issue(userId: string): Promise<string> {
     const token = generateRefreshTokenValue()
     const tokenHash = hashRefreshToken(token)
     const expiresAt = this.getExpirationDate()
 
-    await prisma.refreshToken.create({
-      data: {
-        userId,
-        tokenHash,
-        expiresAt,
-      },
-    })
+    await this.repository.create(userId, tokenHash, expiresAt)
 
     return token
   }
@@ -45,19 +41,13 @@ export class RefreshTokenService {
     const expiresAt = this.getExpirationDate()
     const revokedAt = new Date()
 
-    await prisma.$transaction([
-      prisma.refreshToken.update({
-        where: { id: storedToken.id },
-        data: { revokedAt },
-      }),
-      prisma.refreshToken.create({
-        data: {
-          userId: storedToken.userId,
-          tokenHash: newTokenHash,
-          expiresAt,
-        },
-      }),
-    ])
+    await this.repository.rotate(
+      storedToken.id,
+      storedToken.userId,
+      newTokenHash,
+      expiresAt,
+      revokedAt,
+    )
 
     return {
       token: newToken,
@@ -72,38 +62,14 @@ export class RefreshTokenService {
       return null
     }
 
-    await prisma.refreshToken.update({
-      where: { id: storedToken.id },
-      data: { revokedAt: new Date() },
-    })
+    await this.repository.revoke(storedToken.id, new Date())
 
     return storedToken.user
   }
 
   private async findActiveToken(refreshToken: string) {
     const tokenHash = hashRefreshToken(refreshToken)
-
-    return prisma.refreshToken.findFirst({
-      where: {
-        tokenHash,
-        revokedAt: null,
-        expiresAt: {
-          gt: new Date(),
-        },
-      },
-      include: {
-        user: {
-          include: {
-            company: {
-              select: {
-                deletedAt: true,
-                status: true,
-              },
-            },
-          },
-        },
-      },
-    })
+    return this.repository.findActiveWithUser(tokenHash)
   }
 
   private ensureUserCanAuthenticate(user: UserWithCompany): void {

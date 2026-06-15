@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AuditService } from '../../src/modules/audit/services/AuditService.js'
 import { AppError } from '../../src/shared/errors/AppError.js'
-import { prisma } from '../../src/shared/database/prisma.js'
+import { createAuditLogsRepositoryMock } from '../helpers/mocks/audit-logs-repository.mock.js'
 
 describe('AuditService', () => {
+  const repository = createAuditLogsRepositoryMock()
+
   beforeEach(() => {
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('lists audit logs for a company', async () => {
@@ -25,10 +27,10 @@ describe('AuditService', () => {
       createdAt: new Date(),
     }
 
-    vi.spyOn(prisma.auditLog, 'findMany').mockResolvedValue([log] as never)
-    vi.spyOn(prisma.auditLog, 'count').mockResolvedValue(1 as never)
+    vi.mocked(repository.findMany).mockResolvedValue([log] as never)
+    vi.mocked(repository.count).mockResolvedValue(1)
 
-    const service = new AuditService()
+    const service = new AuditService(repository)
     const result = await service.listLogs('company-1', {
       page: 1,
       pageSize: 10,
@@ -56,18 +58,18 @@ describe('AuditService', () => {
       createdAt: new Date(),
     }
 
-    vi.spyOn(prisma.auditLog, 'findFirst').mockResolvedValue(log as never)
+    vi.mocked(repository.findByIdInCompany).mockResolvedValue(log as never)
 
-    const service = new AuditService()
+    const service = new AuditService(repository)
     const result = await service.getLogById('company-1', 'log-1')
 
     expect(result.id).toBe('log-1')
   })
 
   it('throws 404 when audit log is not found', async () => {
-    vi.spyOn(prisma.auditLog, 'findFirst').mockResolvedValue(null)
+    vi.mocked(repository.findByIdInCompany).mockResolvedValue(null)
 
-    const service = new AuditService()
+    const service = new AuditService(repository)
 
     await expect(service.getLogById('company-1', 'missing')).rejects.toMatchObject({
       message: 'Audit log not found',

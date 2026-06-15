@@ -6,8 +6,9 @@ import { AuthService } from '../../src/modules/auth/services/AuthService.js'
 import { RefreshTokenService } from '../../src/modules/auth/services/RefreshTokenService.js'
 import { auditLogService } from '../../src/modules/audit/audit-log.service.js'
 import { hashRefreshToken } from '../../src/modules/auth/utils/refresh-token.utils.js'
-import { prisma } from '../../src/shared/database/prisma.js'
 import { AppError } from '../../src/shared/errors/AppError.js'
+import { createRefreshTokensRepositoryMock } from '../helpers/mocks/refresh-tokens-repository.mock.js'
+import { createUsersRepositoryMock } from '../helpers/mocks/users-repository.mock.js'
 
 vi.mock('jsonwebtoken', () => ({
   default: {
@@ -22,10 +23,20 @@ vi.mock('../../src/modules/audit/audit-log.service.js', () => ({
 }))
 
 describe('Refresh token flow', () => {
+  const usersRepository = createUsersRepositoryMock()
+  let refreshTokensRepository = createRefreshTokensRepositoryMock()
+
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
+    refreshTokensRepository = createRefreshTokensRepositoryMock()
   })
+
+  function createAuthService(
+    refreshTokenService = new RefreshTokenService(refreshTokensRepository),
+  ) {
+    return new AuthService(usersRepository, refreshTokenService)
+  }
 
   describe('AuthService.login', () => {
     it('returns accessToken and refreshToken on successful login', async () => {
@@ -36,16 +47,20 @@ describe('Refresh token flow', () => {
         lastName: 'User',
         email: 'login@example.com',
         passwordHash: await bcrypt.hash('Test@123456', 12),
-        role: 'ADMIN',
+        role: 'ADMIN' as const,
         status: 'ACTIVE',
+        deletedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
         company: { deletedAt: null, status: 'ACTIVE' },
       }
 
-      vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(user as never)
-      vi.spyOn(RefreshTokenService.prototype, 'issue').mockResolvedValue('issued-refresh-token')
+      vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(user)
 
-      const authService = new AuthService()
-      const result = await authService.login({
+      const refreshTokenService = new RefreshTokenService(refreshTokensRepository)
+      vi.spyOn(refreshTokenService, 'issue').mockResolvedValue('issued-refresh-token')
+
+      const result = await createAuthService(refreshTokenService).login({
         email: 'login@example.com',
         password: 'Test@123456',
       })
@@ -65,19 +80,24 @@ describe('Refresh token flow', () => {
         firstName: 'Login',
         lastName: 'User',
         email: 'login@example.com',
-        role: 'ADMIN',
+        role: 'ADMIN' as const,
         status: 'ACTIVE',
         deletedAt: null,
+        passwordHash: 'hash',
+        createdAt: new Date(),
+        updatedAt: new Date(),
         company: { deletedAt: null, status: 'ACTIVE' },
       }
 
-      vi.spyOn(RefreshTokenService.prototype, 'rotate').mockResolvedValue({
+      const refreshTokenService = new RefreshTokenService(refreshTokensRepository)
+      vi.spyOn(refreshTokenService, 'rotate').mockResolvedValue({
         token: 'rotated-refresh-token',
-        user: user as never,
+        user,
       })
 
-      const authService = new AuthService()
-      const result = await authService.refresh({ refreshToken: 'valid-token' })
+      const result = await createAuthService(refreshTokenService).refresh({
+        refreshToken: 'valid-token',
+      })
 
       expect(result).toEqual({
         accessToken: 'new-access-token',
@@ -95,9 +115,9 @@ describe('Refresh token flow', () => {
 
   describe('RefreshTokenService.rotate', () => {
     it('returns 401 for expired refresh token', async () => {
-      vi.spyOn(prisma.refreshToken, 'findFirst').mockResolvedValue(null)
+      vi.mocked(refreshTokensRepository.findActiveWithUser).mockResolvedValue(null)
 
-      const service = new RefreshTokenService()
+      const service = new RefreshTokenService(refreshTokensRepository)
 
       await expect(service.rotate('expired-token')).rejects.toMatchObject({
         message: 'Unauthorized',
@@ -106,9 +126,9 @@ describe('Refresh token flow', () => {
     })
 
     it('returns 401 for revoked refresh token', async () => {
-      vi.spyOn(prisma.refreshToken, 'findFirst').mockResolvedValue(null)
+      vi.mocked(refreshTokensRepository.findActiveWithUser).mockResolvedValue(null)
 
-      const service = new RefreshTokenService()
+      const service = new RefreshTokenService(refreshTokensRepository)
 
       await expect(service.rotate('revoked-token')).rejects.toMatchObject({
         message: 'Unauthorized',
@@ -119,18 +139,14 @@ describe('Refresh token flow', () => {
 
   describe('RefreshTokenService.issue', () => {
     it('persists only the token hash, never the plain token', async () => {
-      const createSpy = vi.spyOn(prisma.refreshToken, 'create').mockResolvedValue({} as never)
-
-      const service = new RefreshTokenService()
+      const service = new RefreshTokenService(refreshTokensRepository)
       const token = await service.issue('user-1')
 
-      expect(createSpy).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          userId: 'user-1',
-          tokenHash: hashRefreshToken(token),
-        }),
-      })
-      expect(createSpy.mock.calls[0]?.[0].data.tokenHash).not.toBe(token)
+      expect(refreshTokensRepository.create).toHaveBeenCalledWith(
+        'user-1',
+        hashRefreshToken(token),
+        expect.any(Date),
+      )
     })
   })
 
@@ -140,13 +156,21 @@ describe('Refresh token flow', () => {
         id: 'user-1',
         companyId: 'company-1',
         email: 'login@example.com',
-        role: 'ADMIN',
+        role: 'ADMIN' as const,
+        firstName: 'Login',
+        lastName: 'User',
+        status: 'ACTIVE',
+        deletedAt: null,
+        passwordHash: 'hash',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        company: { deletedAt: null, status: 'ACTIVE' },
       }
 
-      vi.spyOn(RefreshTokenService.prototype, 'revoke').mockResolvedValue(user as never)
+      const refreshTokenService = new RefreshTokenService(refreshTokensRepository)
+      vi.spyOn(refreshTokenService, 'revoke').mockResolvedValue(user)
 
-      const authService = new AuthService()
-      await authService.logout({ refreshToken: 'valid-token' })
+      await createAuthService(refreshTokenService).logout({ refreshToken: 'valid-token' })
 
       expect(auditLogService.record).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -158,11 +182,12 @@ describe('Refresh token flow', () => {
     })
 
     it('returns successfully when refresh token is invalid', async () => {
-      vi.spyOn(RefreshTokenService.prototype, 'revoke').mockResolvedValue(null)
+      const refreshTokenService = new RefreshTokenService(refreshTokensRepository)
+      vi.spyOn(refreshTokenService, 'revoke').mockResolvedValue(null)
 
-      const authService = new AuthService()
-
-      await expect(authService.logout({ refreshToken: 'invalid-token' })).resolves.toBeUndefined()
+      await expect(
+        createAuthService(refreshTokenService).logout({ refreshToken: 'invalid-token' }),
+      ).resolves.toBeUndefined()
       expect(auditLogService.record).not.toHaveBeenCalled()
     })
   })

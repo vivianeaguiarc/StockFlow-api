@@ -3,9 +3,11 @@ import bcrypt from 'bcryptjs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AuthService } from '../../src/modules/auth/services/AuthService.js'
+import { RefreshTokenService } from '../../src/modules/auth/services/RefreshTokenService.js'
 import { auditLogService } from '../../src/modules/audit/audit-log.service.js'
 import { UsersService } from '../../src/modules/users/services/UsersService.js'
-import { prisma } from '../../src/shared/database/prisma.js'
+import { createRefreshTokensRepositoryMock } from '../helpers/mocks/refresh-tokens-repository.mock.js'
+import { createUsersRepositoryMock } from '../helpers/mocks/users-repository.mock.js'
 
 vi.mock('../../src/modules/audit/audit-log.service.js', () => ({
   auditLogService: {
@@ -13,12 +15,9 @@ vi.mock('../../src/modules/audit/audit-log.service.js', () => ({
   },
 }))
 
-vi.mock('../../src/modules/auth/services/RefreshTokenService.js', () => ({
-  refreshTokenService: {
-    issue: vi.fn().mockResolvedValue('refresh-token'),
-    rotate: vi.fn(),
-    revoke: vi.fn(),
-  },
+vi.mock('../../src/shared/cache/cache-invalidation.js', () => ({
+  invalidateUsersListCache: vi.fn().mockResolvedValue(undefined),
+  invalidateUserRelatedCache: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('jsonwebtoken', () => ({
@@ -28,9 +27,21 @@ vi.mock('jsonwebtoken', () => ({
 }))
 
 describe('Audit logs for user actions', () => {
+  const usersRepository = createUsersRepositoryMock()
+  const refreshTokenService = new RefreshTokenService(createRefreshTokensRepositoryMock())
+
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.spyOn(refreshTokenService, 'issue').mockResolvedValue('refresh-token')
   })
+
+  function createAuthService() {
+    return new AuthService(usersRepository, refreshTokenService)
+  }
+
+  function createUsersService() {
+    return new UsersService(usersRepository)
+  }
 
   it('records LOGIN audit log on successful login', async () => {
     const user = {
@@ -40,16 +51,17 @@ describe('Audit logs for user actions', () => {
       lastName: 'Admin',
       email: 'admin@example.com',
       passwordHash: await bcrypt.hash('Test@123456', 12),
-      role: 'ADMIN',
+      role: 'ADMIN' as const,
       status: 'ACTIVE',
+      deletedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
       company: { deletedAt: null, status: 'ACTIVE' },
     }
 
-    vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(user as never)
+    vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(user)
 
-    const authService = new AuthService()
-
-    await authService.login(
+    await createAuthService().login(
       { email: 'admin@example.com', password: 'Test@123456' },
       { ipAddress: '10.0.0.1', userAgent: 'jest-agent' },
     )
@@ -76,18 +88,19 @@ describe('Audit logs for user actions', () => {
       firstName: 'New',
       lastName: 'User',
       email: 'new@example.com',
-      role: 'USER',
+      role: 'USER' as const,
       status: 'ACTIVE',
+      passwordHash: 'hash',
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
+      company: { deletedAt: null, status: 'ACTIVE' },
     }
 
-    vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(null)
-    vi.spyOn(prisma.user, 'create').mockResolvedValue(createdUser as never)
+    vi.mocked(usersRepository.findActiveByEmail).mockResolvedValue(null)
+    vi.mocked(usersRepository.create).mockResolvedValue(createdUser)
 
-    const usersService = new UsersService()
-
-    await usersService.create(
+    await createUsersService().create(
       'company-1',
       'admin-1',
       {
@@ -120,10 +133,13 @@ describe('Audit logs for user actions', () => {
       firstName: 'Old',
       lastName: 'Name',
       email: 'old@example.com',
-      role: 'USER',
+      role: 'USER' as const,
       status: 'ACTIVE',
+      passwordHash: 'hash',
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
+      company: { deletedAt: null, status: 'ACTIVE' },
     }
 
     const updatedUser = {
@@ -131,12 +147,10 @@ describe('Audit logs for user actions', () => {
       firstName: 'New',
     }
 
-    vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(existingUser as never)
-    vi.spyOn(prisma.user, 'update').mockResolvedValue(updatedUser as never)
+    vi.mocked(usersRepository.findActiveInCompany).mockResolvedValue(existingUser)
+    vi.mocked(usersRepository.updateActive).mockResolvedValue(updatedUser)
 
-    const usersService = new UsersService()
-
-    await usersService.update(
+    await createUsersService().update(
       'company-1',
       'admin-1',
       'user-2',
@@ -164,19 +178,20 @@ describe('Audit logs for user actions', () => {
       firstName: 'Delete',
       lastName: 'Me',
       email: 'delete@example.com',
-      role: 'USER',
+      role: 'USER' as const,
       status: 'ACTIVE',
+      passwordHash: 'hash',
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
+      company: { deletedAt: null, status: 'ACTIVE' },
     }
 
-    vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(user as never)
-    vi.spyOn(prisma.user, 'count').mockResolvedValue(2 as never)
-    vi.spyOn(prisma.user, 'update').mockResolvedValue({ ...user, deletedAt: new Date() } as never)
+    vi.mocked(usersRepository.findActiveInCompany).mockResolvedValue(user)
+    vi.mocked(usersRepository.countActiveAdmins).mockResolvedValue(2)
+    vi.mocked(usersRepository.softDelete).mockResolvedValue(undefined)
 
-    const usersService = new UsersService()
-
-    await usersService.delete('company-1', 'admin-1', 'user-2', 'admin-1', {
+    await createUsersService().delete('company-1', 'admin-1', 'user-2', 'admin-1', {
       ipAddress: '10.0.0.4',
       userAgent: 'vitest',
     })
@@ -202,18 +217,19 @@ describe('Audit logs for user actions', () => {
       lastName: 'Admin',
       email: 'admin@example.com',
       passwordHash: await bcrypt.hash('Test@123456', 12),
-      role: 'ADMIN',
+      role: 'ADMIN' as const,
       status: 'ACTIVE',
+      deletedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
       company: { deletedAt: null, status: 'ACTIVE' },
     }
 
-    vi.spyOn(prisma.user, 'findFirst').mockResolvedValue(user as never)
+    vi.mocked(usersRepository.findActiveByEmailWithCompany).mockResolvedValue(user)
     vi.mocked(auditLogService.record).mockResolvedValue(undefined)
 
-    const authService = new AuthService()
-
     await expect(
-      authService.login({ email: 'admin@example.com', password: 'Test@123456' }),
+      createAuthService().login({ email: 'admin@example.com', password: 'Test@123456' }),
     ).resolves.toMatchObject({
       accessToken: 'access-token',
       refreshToken: 'refresh-token',

@@ -12,6 +12,9 @@ export default defineConfig({
       include: [
         'src/modules/auth/services/**/*.ts',
         'src/modules/users/services/**/*.ts',
+        'src/modules/users/repositories/**/*.ts',
+        'src/modules/auth/repositories/**/*.ts',
+        'src/modules/audit/repositories/**/*.ts',
         'src/modules/audit/audit-log.service.ts',
         'src/modules/audit/services/**/*.ts',
         'src/shared/http/middlewares/**/*.ts',
