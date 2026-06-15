@@ -197,7 +197,7 @@ export const swaggerComponents = {
         firstName: { type: 'string' },
         lastName: { type: 'string' },
         email: { type: 'string', format: 'email' },
-        role: { type: 'string', enum: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        role: { type: 'string', enum: ['ADMIN', 'MANAGER', 'USER'] },
       },
     },
     CurrentUser: {
@@ -206,7 +206,7 @@ export const swaggerComponents = {
         id: { type: 'string' },
         companyId: { type: 'string' },
         email: { type: 'string', format: 'email' },
-        role: { type: 'string', enum: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        role: { type: 'string', enum: ['ADMIN', 'MANAGER', 'USER'] },
       },
     },
     CompanyProfile: {
@@ -238,7 +238,7 @@ export const swaggerComponents = {
         firstName: { type: 'string' },
         lastName: { type: 'string' },
         email: { type: 'string', format: 'email' },
-        role: { type: 'string', enum: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        role: { type: 'string', enum: ['ADMIN', 'MANAGER', 'USER'] },
         status: { type: 'string', enum: ['ACTIVE', 'INACTIVE'] },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' },
@@ -251,7 +251,7 @@ export const swaggerComponents = {
         lastName: { type: 'string' },
         email: { type: 'string', format: 'email' },
         password: { type: 'string', minLength: 8 },
-        role: { type: 'string', enum: ['MANAGER', 'EMPLOYEE'] },
+        role: { type: 'string', enum: ['MANAGER', 'USER'] },
       },
       required: ['firstName', 'lastName', 'email', 'password', 'role'],
     },
@@ -262,7 +262,7 @@ export const swaggerComponents = {
         lastName: { type: 'string' },
         email: { type: 'string', format: 'email' },
         password: { type: 'string', minLength: 8 },
-        role: { type: 'string', enum: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        role: { type: 'string', enum: ['ADMIN', 'MANAGER', 'USER'] },
         status: { type: 'string', enum: ['ACTIVE', 'INACTIVE'] },
       },
     },
@@ -666,7 +666,7 @@ export const swaggerComponents = {
     UserRoleFilterQuery: {
       name: 'role',
       in: 'query',
-      schema: { type: 'string', enum: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+      schema: { type: 'string', enum: ['ADMIN', 'MANAGER', 'USER'] },
     },
     CategoriesSortByQuery: {
       name: 'sortBy',

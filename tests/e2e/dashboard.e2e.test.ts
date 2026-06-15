@@ -188,7 +188,7 @@ describe('Dashboard E2E', () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
 
-    const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
+    const employee = await createUserWithRole(admin.accessToken, 'USER')
 
     await request(app)
       .get('/api/v1/dashboard/summary')
@@ -205,7 +205,7 @@ describe('Dashboard E2E', () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
 
-    const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
+    const employee = await createUserWithRole(admin.accessToken, 'USER')
     const suffix = uniqueSuffix()
     await createLowStockProduct(admin.accessToken, suffix)
 

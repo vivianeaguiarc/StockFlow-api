@@ -10,7 +10,7 @@ export type ApiErrorResponse = {
 
 export type { PaginatedResponse, PaginationMeta } from './paginated-response.js'
 
-export type UserRole = 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
+export type UserRole = 'ADMIN' | 'MANAGER' | 'USER'
 
 export type ProductStatus = 'ACTIVE' | 'INACTIVE'
 

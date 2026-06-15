@@ -24,7 +24,7 @@ export function createUsersRoutes(): Router {
   router.get(
     '/',
     authenticate,
-    authorizeRoles('ADMIN', 'MANAGER'),
+    authorizeRoles('ADMIN'),
     validateRequest(listUsersQuerySchema, 'query'),
     (req, res, next) => usersController.list(req, res, next),
   )
@@ -36,7 +36,7 @@ export function createUsersRoutes(): Router {
   router.patch(
     '/:id',
     authenticate,
-    authorizeRoles('ADMIN'),
+    authorizeRoles('ADMIN', 'MANAGER'),
     validateRequest(updateUserSchema),
     (req, res, next) => usersController.update(req, res, next),
   )

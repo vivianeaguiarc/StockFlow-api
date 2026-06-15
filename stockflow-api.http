@@ -84,7 +84,7 @@ Content-Type: application/json
   "lastName": "Silva",
   "email": "joao@empresa.com",
   "password": "Senha@123",
-  "role": "EMPLOYEE"
+  "role": "USER"
 }
 
 ### List Users
@@ -92,7 +92,7 @@ GET {{baseUrl}}/users?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
 Authorization: Bearer {{accessToken}}
 
 ### Search Users
-GET {{baseUrl}}/users?search=joao&role=EMPLOYEE&status=ACTIVE
+GET {{baseUrl}}/users?search=joao&role=USER&status=ACTIVE
 Authorization: Bearer {{accessToken}}
 
 ### Get User By Id

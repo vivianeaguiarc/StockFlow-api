@@ -75,7 +75,7 @@ export async function login(email: string, password: string): Promise<AuthSessio
 
 export async function createUserWithRole(
   adminToken: string,
-  role: 'MANAGER' | 'EMPLOYEE',
+  role: 'MANAGER' | 'USER',
   suffix = uniqueSuffix(),
 ): Promise<AuthSession> {
   const email = `${role.toLowerCase()}-${suffix}@test.com`

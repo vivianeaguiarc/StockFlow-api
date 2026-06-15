@@ -24,16 +24,13 @@ export function createCategoriesRoutes(): Router {
   router.get(
     '/',
     authenticate,
-    authorizeRoles('ADMIN', 'MANAGER', 'EMPLOYEE'),
+    authorizeRoles('ADMIN', 'MANAGER', 'USER'),
     validateRequest(listCategoriesQuerySchema, 'query'),
     (req, res, next) => categoriesController.list(req, res, next),
   )
 
-  router.get(
-    '/:id',
-    authenticate,
-    authorizeRoles('ADMIN', 'MANAGER', 'EMPLOYEE'),
-    (req, res, next) => categoriesController.getById(req, res, next),
+  router.get('/:id', authenticate, authorizeRoles('ADMIN', 'MANAGER', 'USER'), (req, res, next) =>
+    categoriesController.getById(req, res, next),
   )
 
   router.patch(

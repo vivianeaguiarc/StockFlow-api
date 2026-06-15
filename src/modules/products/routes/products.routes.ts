@@ -24,16 +24,13 @@ export function createProductsRoutes(): Router {
   router.get(
     '/',
     authenticate,
-    authorizeRoles('ADMIN', 'MANAGER', 'EMPLOYEE'),
+    authorizeRoles('ADMIN', 'MANAGER', 'USER'),
     validateRequest(listProductsQuerySchema, 'query'),
     (req, res, next) => productsController.list(req, res, next),
   )
 
-  router.get(
-    '/:id',
-    authenticate,
-    authorizeRoles('ADMIN', 'MANAGER', 'EMPLOYEE'),
-    (req, res, next) => productsController.getById(req, res, next),
+  router.get('/:id', authenticate, authorizeRoles('ADMIN', 'MANAGER', 'USER'), (req, res, next) =>
+    productsController.getById(req, res, next),
   )
 
   router.patch(

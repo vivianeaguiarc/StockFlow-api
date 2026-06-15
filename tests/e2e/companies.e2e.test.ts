@@ -46,7 +46,7 @@ describe('Companies E2E', () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
 
-    const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
+    const employee = await createUserWithRole(admin.accessToken, 'USER')
 
     const response = await request(app)
       .patch('/api/v1/companies/me')

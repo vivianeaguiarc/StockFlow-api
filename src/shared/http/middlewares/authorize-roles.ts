@@ -21,3 +21,6 @@ export function authorizeRoles(...allowedRoles: UserRole[]) {
     next()
   }
 }
+
+/** Alias for authorizeRoles — restricts access to the given roles. */
+export const ensureRole = authorizeRoles

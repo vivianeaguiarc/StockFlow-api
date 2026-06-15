@@ -26,7 +26,7 @@ describe('Users E2E', () => {
         lastName: 'Auth',
         email: `no-auth-${uniqueSuffix()}@test.com`,
         password: 'Test@123456',
-        role: 'EMPLOYEE',
+        role: 'USER',
       })
       .expect(401)
 
@@ -37,7 +37,7 @@ describe('Users E2E', () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
 
-    const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
+    const employee = await createUserWithRole(admin.accessToken, 'USER')
 
     const response = await request(app)
       .post('/api/v1/users')
@@ -47,20 +47,50 @@ describe('Users E2E', () => {
         lastName: 'User',
         email: `blocked-${uniqueSuffix()}@test.com`,
         password: 'Test@123456',
-        role: 'EMPLOYEE',
+        role: 'USER',
       })
       .expect(403)
 
     expect(response.body.message).toBe('Forbidden')
   })
 
-  it('returns 403 when employee tries to list users', async () => {
+  it('returns 403 when manager tries to list users', async () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
 
-    const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
+    const manager = await createUserWithRole(admin.accessToken, 'MANAGER')
 
-    await request(app).get('/api/v1/users').set(authHeader(employee.accessToken)).expect(403)
+    await request(app).get('/api/v1/users').set(authHeader(manager.accessToken)).expect(403)
+  })
+
+  it('allows manager to update user but not delete', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const target = await createUserWithRole(admin.accessToken, 'USER')
+    const manager = await createUserWithRole(admin.accessToken, 'MANAGER')
+
+    const updated = await request(app)
+      .patch(`/api/v1/users/${target.userId}`)
+      .set(authHeader(manager.accessToken))
+      .send({ firstName: 'ManagerUpdated' })
+      .expect(200)
+
+    expect(updated.body.firstName).toBe('ManagerUpdated')
+
+    await request(app)
+      .delete(`/api/v1/users/${target.userId}`)
+      .set(authHeader(manager.accessToken))
+      .expect(403)
+  })
+
+  it('returns 403 when user tries to list users', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const user = await createUserWithRole(admin.accessToken, 'USER')
+
+    await request(app).get('/api/v1/users').set(authHeader(user.accessToken)).expect(403)
   })
 
   it('supports create, list, get, update and soft delete as admin', async () => {
@@ -142,7 +172,7 @@ describe('Users E2E', () => {
       })
       .expect(201)
 
-    const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
+    const employee = await createUserWithRole(admin.accessToken, 'USER')
 
     const managers = await request(app)
       .get('/api/v1/users?role=MANAGER')

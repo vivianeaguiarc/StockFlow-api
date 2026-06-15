@@ -148,7 +148,7 @@ describe('Products E2E', () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
 
-    const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
+    const employee = await createUserWithRole(admin.accessToken, 'USER')
     const suffix = uniqueSuffix()
     const categoryId = await createCategory(admin.accessToken, suffix)
     const supplierId = await createSupplier(admin.accessToken, suffix)

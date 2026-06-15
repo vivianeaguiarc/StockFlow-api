@@ -339,7 +339,7 @@ export const swaggerPaths = {
     post: {
       tags: ['Users'],
       summary: 'Create user',
-      description: 'Requires ADMIN role.',
+      description: 'Requires ADMIN role. Bearer token required.',
       security: secured,
       requestBody: {
         required: true,
@@ -365,7 +365,7 @@ export const swaggerPaths = {
     get: {
       tags: ['Users'],
       summary: 'List users',
-      description: 'Requires ADMIN or MANAGER role.',
+      description: 'Requires ADMIN role. Bearer token required.',
       security: secured,
       parameters: usersListParams,
       responses: {
@@ -385,7 +385,7 @@ export const swaggerPaths = {
     get: {
       tags: ['Users'],
       summary: 'Get user by ID',
-      description: 'Requires ADMIN or MANAGER role.',
+      description: 'Requires ADMIN or MANAGER role. Bearer token required.',
       security: secured,
       parameters: [{ $ref: '#/components/parameters/IdPath' }],
       responses: {
@@ -403,7 +403,7 @@ export const swaggerPaths = {
     patch: {
       tags: ['Users'],
       summary: 'Update user',
-      description: 'Requires ADMIN role.',
+      description: 'Requires ADMIN or MANAGER role. Bearer token required.',
       security: secured,
       parameters: [{ $ref: '#/components/parameters/IdPath' }],
       requestBody: {
@@ -430,7 +430,7 @@ export const swaggerPaths = {
     delete: {
       tags: ['Users'],
       summary: 'Soft delete user',
-      description: 'Requires ADMIN role.',
+      description: 'Requires ADMIN role. Bearer token required.',
       security: secured,
       parameters: [{ $ref: '#/components/parameters/IdPath' }],
       responses: {
@@ -877,7 +877,7 @@ export const swaggerPaths = {
       tags: ['Dashboard'],
       summary: 'List low stock products',
       description:
-        'Requires ADMIN, MANAGER or EMPLOYEE role. Returns active non-deleted products where quantity <= minimumStock.',
+        'Requires ADMIN, MANAGER or USER role. Returns active non-deleted products where quantity <= minimumStock.',
       security: secured,
       responses: {
         '200': {

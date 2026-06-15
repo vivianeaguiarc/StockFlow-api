@@ -35,7 +35,7 @@ Ideal para portfólio técnico e estudo de backends SaaS.
 | -------------- | ---------------------------------------------------------------------------------------------------------- |
 | **Auth**       | Registro de empresa + admin, login com JWT                                                                 |
 | **Companies**  | Perfil da empresa autenticada                                                                              |
-| **Users**      | CRUD de usuários com RBAC (ADMIN, MANAGER, EMPLOYEE)                                                       |
+| **Users**      | CRUD de usuários com RBAC (ADMIN, MANAGER, USER)                                                           |
 | **Categories** | CRUD de categorias de produtos                                                                             |
 | **Suppliers**  | CRUD de fornecedores                                                                                       |
 | **Products**   | CRUD de produtos com SKU, preços e estoque                                                                 |
@@ -125,11 +125,11 @@ HTTP Request
 
 ### RBAC
 
-| Papel        | Permissões resumidas                                            |
-| ------------ | --------------------------------------------------------------- |
-| **ADMIN**    | Acesso total, incluindo auditoria e gestão de usuários          |
-| **MANAGER**  | CRUD operacional (sem deletar usuários/categorias/fornecedores) |
-| **EMPLOYEE** | Consultas e movimentação de estoque (sem listar histórico)      |
+| Papel       | Permissões resumidas                                            |
+| ----------- | --------------------------------------------------------------- |
+| **ADMIN**   | Acesso total, incluindo auditoria e gestão de usuários          |
+| **MANAGER** | CRUD operacional (sem deletar usuários/categorias/fornecedores) |
+| **USER**    | Consultas e movimentação de estoque (sem listar histórico)      |
 
 ### Estoque (Inventory)
 
@@ -494,21 +494,21 @@ Referência completa: [`.env.example`](.env.example)
 
 ### Autenticadas
 
-| Método | Rota                          | RBAC                         | Descrição                  |
-| ------ | ----------------------------- | ---------------------------- | -------------------------- |
-| GET    | `/api/v1/me`                  | Todos                        | Usuário autenticado        |
-| GET    | `/api/v1/companies/me`        | Todos                        | Perfil da empresa          |
-| PATCH  | `/api/v1/companies/me`        | ADMIN                        | Atualizar empresa          |
-| CRUD   | `/api/v1/users`               | ADMIN / MANAGER              | Gestão de usuários         |
-| CRUD   | `/api/v1/categories`          | ADMIN / MANAGER / EMPLOYEE\* | Categorias                 |
-| CRUD   | `/api/v1/suppliers`           | ADMIN / MANAGER / EMPLOYEE\* | Fornecedores               |
-| CRUD   | `/api/v1/products`            | ADMIN / MANAGER / EMPLOYEE\* | Produtos                   |
-| POST   | `/api/v1/inventory/movements` | ADMIN / MANAGER / EMPLOYEE   | Movimentar estoque         |
-| GET    | `/api/v1/inventory/movements` | ADMIN / MANAGER              | Histórico de movimentações |
-| GET    | `/api/v1/dashboard/summary`   | ADMIN / MANAGER              | Métricas do dashboard      |
-| GET    | `/api/v1/audit/logs`          | ADMIN                        | Logs de auditoria          |
+| Método | Rota                          | RBAC                                       | Descrição                  |
+| ------ | ----------------------------- | ------------------------------------------ | -------------------------- |
+| GET    | `/api/v1/me`                  | Todos                                      | Usuário autenticado        |
+| GET    | `/api/v1/companies/me`        | Todos                                      | Perfil da empresa          |
+| PATCH  | `/api/v1/companies/me`        | ADMIN                                      | Atualizar empresa          |
+| CRUD   | `/api/v1/users`               | ADMIN (list/delete); ADMIN/MANAGER (patch) | Gestão de usuários         |
+| CRUD   | `/api/v1/categories`          | ADMIN / MANAGER / USER\*                   | Categorias                 |
+| CRUD   | `/api/v1/suppliers`           | ADMIN / MANAGER / USER\*                   | Fornecedores               |
+| CRUD   | `/api/v1/products`            | ADMIN / MANAGER / USER\*                   | Produtos                   |
+| POST   | `/api/v1/inventory/movements` | ADMIN / MANAGER / USER                     | Movimentar estoque         |
+| GET    | `/api/v1/inventory/movements` | ADMIN / MANAGER                            | Histórico de movimentações |
+| GET    | `/api/v1/dashboard/summary`   | ADMIN / MANAGER                            | Métricas do dashboard      |
+| GET    | `/api/v1/audit/logs`          | ADMIN                                      | Logs de auditoria          |
 
-\* EMPLOYEE: somente leitura (GET).
+\* USER: somente leitura (GET).
 
 ### Exemplo — Login
 

@@ -24,16 +24,13 @@ export function createSuppliersRoutes(): Router {
   router.get(
     '/',
     authenticate,
-    authorizeRoles('ADMIN', 'MANAGER', 'EMPLOYEE'),
+    authorizeRoles('ADMIN', 'MANAGER', 'USER'),
     validateRequest(listSuppliersQuerySchema, 'query'),
     (req, res, next) => suppliersController.list(req, res, next),
   )
 
-  router.get(
-    '/:id',
-    authenticate,
-    authorizeRoles('ADMIN', 'MANAGER', 'EMPLOYEE'),
-    (req, res, next) => suppliersController.getById(req, res, next),
+  router.get('/:id', authenticate, authorizeRoles('ADMIN', 'MANAGER', 'USER'), (req, res, next) =>
+    suppliersController.getById(req, res, next),
   )
 
   router.patch(

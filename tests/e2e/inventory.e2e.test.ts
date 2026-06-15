@@ -158,7 +158,7 @@ describe('Inventory Movements E2E', () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
 
-    const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
+    const employee = await createUserWithRole(admin.accessToken, 'USER')
 
     await request(app)
       .get('/api/v1/inventory/movements')
@@ -170,7 +170,7 @@ describe('Inventory Movements E2E', () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)
 
-    const employee = await createUserWithRole(admin.accessToken, 'EMPLOYEE')
+    const employee = await createUserWithRole(admin.accessToken, 'USER')
     const suffix = uniqueSuffix()
     const productId = await createProductWithStock(admin.accessToken, suffix, 5)
 

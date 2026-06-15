@@ -18,7 +18,7 @@ export function createDashboardRoutes(): Router {
   router.get(
     '/low-stock-products',
     authenticate,
-    authorizeRoles('ADMIN', 'MANAGER', 'EMPLOYEE'),
+    authorizeRoles('ADMIN', 'MANAGER', 'USER'),
     (req, res, next) => dashboardController.getLowStockProducts(req, res, next),
   )
 
