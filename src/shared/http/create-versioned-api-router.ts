@@ -20,7 +20,7 @@ import { createInventoryRoutes } from '../../modules/inventory/routes/inventory.
 import { createProductsRoutes } from '../../modules/products/routes/products.routes.js'
 import { createSuppliersRoutes } from '../../modules/suppliers/routes/suppliers.routes.js'
 import { createUsersRoutes } from '../../modules/users/routes/users.routes.js'
-import { sendSuccess } from './response.js'
+import { successResponse } from './response.js'
 
 const LEGACY_API_PREFIX = '/api'
 
@@ -28,12 +28,16 @@ export function createVersionedApiRouter(): Router {
   const apiRouter = createRouter()
 
   apiRouter.get('/', (_req, res) => {
-    sendSuccess(res, {
-      name: 'StockFlow API',
-      version: '1.0.0',
-      apiVersion: 'v1',
-      description: 'SaaS multi-tenant inventory management platform',
-    })
+    successResponse(
+      res,
+      {
+        name: 'StockFlow API',
+        version: '1.0.0',
+        apiVersion: 'v1',
+        description: 'SaaS multi-tenant inventory management platform',
+      },
+      'API metadata retrieved successfully',
+    )
   })
 
   const healthService = createHealthService()

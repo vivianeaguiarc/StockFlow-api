@@ -1,6 +1,7 @@
 import request from 'supertest'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { getAuthTokens } from '../helpers/api-response.js'
 import { app, authHeader, registerCompanyAndAdmin } from '../helpers/auth-helper.js'
 import { cleanupCompanies } from '../helpers/cleanup.js'
 import { uniqueSuffix } from '../helpers/test-data.js'
@@ -36,10 +37,9 @@ describe('Audit Logs E2E', () => {
       .send({ email: managerEmail, password: 'Test@123456' })
       .expect(200)
 
-    await request(app)
-      .get('/api/v1/audit/logs')
-      .set(authHeader(login.body.accessToken as string))
-      .expect(403)
+    const { accessToken } = getAuthTokens(login.body)
+
+    await request(app).get('/api/v1/audit/logs').set(authHeader(accessToken)).expect(403)
   })
 
   it('supports pagination, sorting and filters on list', async () => {
@@ -59,9 +59,9 @@ describe('Audit Logs E2E', () => {
       .set(authHeader(admin.accessToken))
       .expect(200)
 
-    expect(list.body.meta).toMatchObject({
+    expect(list.body.pagination).toMatchObject({
       page: 1,
-      pageSize: 5,
+      limit: 5,
       totalItems: expect.any(Number),
       totalPages: expect.any(Number),
     })

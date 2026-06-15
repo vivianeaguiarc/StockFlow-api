@@ -46,7 +46,7 @@ describe('Suppliers E2E', () => {
       })
       .expect(201)
 
-    const supplierId = created.body.id as string
+    const supplierId = created.body.data.id as string
 
     const list = await request(app)
       .get('/api/v1/suppliers')
@@ -60,7 +60,7 @@ describe('Suppliers E2E', () => {
       .set(authHeader(admin.accessToken))
       .expect(200)
 
-    expect(fetched.body.document).toBe(`supplier-doc-${suffix}`)
+    expect(fetched.body.data.document).toBe(`supplier-doc-${suffix}`)
 
     const updated = await request(app)
       .patch(`/api/suppliers/${supplierId}`)
@@ -68,7 +68,7 @@ describe('Suppliers E2E', () => {
       .send({ tradeName: `Updated Trade ${suffix}` })
       .expect(200)
 
-    expect(updated.body.tradeName).toBe(`Updated Trade ${suffix}`)
+    expect(updated.body.data.tradeName).toBe(`Updated Trade ${suffix}`)
 
     await request(app)
       .delete(`/api/suppliers/${supplierId}`)
@@ -99,7 +99,7 @@ describe('Suppliers E2E', () => {
       .expect(201)
 
     await request(app)
-      .delete(`/api/suppliers/${created.body.id as string}`)
+      .delete(`/api/suppliers/${created.body.data.id as string}`)
       .set(authHeader(manager.accessToken))
       .expect(403)
   })
@@ -121,7 +121,7 @@ describe('Suppliers E2E', () => {
       })
       .expect(201)
 
-    const supplierId = created.body.id as string
+    const supplierId = created.body.data.id as string
 
     await request(app)
       .get(`/api/suppliers/${supplierId}`)
@@ -165,6 +165,6 @@ describe('Suppliers E2E', () => {
       .expect(200)
 
     expect(paginated.body.data).toHaveLength(1)
-    expect(paginated.body.meta.pageSize).toBe(1)
+    expect(paginated.body.pagination.limit).toBe(1)
   })
 })

@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express'
 import { describe, expect, it, vi } from 'vitest'
 
 import { env } from '../../src/config/env.js'
+import { ERROR_CODES } from '../../src/shared/errors/error-codes.js'
 import { errorHandler } from '../../src/shared/http/middlewares/error-handler.js'
 import { AppError } from '../../src/shared/errors/AppError.js'
 
@@ -23,7 +24,7 @@ function createMockResponse() {
 }
 
 describe('errorHandler security', () => {
-  it('includes requestId in error responses', () => {
+  it('includes requestId in standardized error responses', () => {
     const req = { requestId: 'req-123', originalUrl: '/test', method: 'GET' } as Request
     const res = createMockResponse()
     const next = vi.fn() as NextFunction
@@ -32,8 +33,12 @@ describe('errorHandler security', () => {
 
     expect(res.statusCode).toBe(403)
     expect(res.body).toEqual({
-      status: 'error',
+      success: false,
       message: 'Forbidden',
+      error: {
+        code: ERROR_CODES.FORBIDDEN,
+        details: [],
+      },
       requestId: 'req-123',
     })
   })
@@ -50,8 +55,12 @@ describe('errorHandler security', () => {
 
     expect(res.statusCode).toBe(500)
     expect(res.body).toEqual({
-      status: 'error',
+      success: false,
       message: 'An unexpected error occurred',
+      error: {
+        code: ERROR_CODES.INTERNAL_SERVER_ERROR,
+        details: [],
+      },
       requestId: 'req-500',
     })
     expect(res.body).not.toHaveProperty('stack')
@@ -70,8 +79,12 @@ describe('errorHandler security', () => {
 
     expect(res.statusCode).toBe(413)
     expect(res.body).toMatchObject({
-      status: 'error',
+      success: false,
       message: 'Payload too large',
+      error: {
+        code: ERROR_CODES.PAYLOAD_TOO_LARGE,
+        details: [],
+      },
       requestId: 'req-413',
     })
   })

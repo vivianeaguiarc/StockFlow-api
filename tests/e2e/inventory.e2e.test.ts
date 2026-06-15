@@ -35,8 +35,8 @@ async function createProductWithStock(
     .post('/api/v1/products')
     .set(authHeader(token))
     .send({
-      categoryId: category.body.id as string,
-      supplierId: supplier.body.id as string,
+      categoryId: category.body.data.id as string,
+      supplierId: supplier.body.data.id as string,
       name: `Inventory Product ${suffix}`,
       sku: `inv-sku-${suffix}`,
       costPrice: 10,
@@ -45,7 +45,7 @@ async function createProductWithStock(
     })
     .expect(201)
 
-  return product.body.id as string
+  return product.body.data.id as string
 }
 
 describe('Inventory Movements E2E', () => {
@@ -86,7 +86,7 @@ describe('Inventory Movements E2E', () => {
       })
       .expect(201)
 
-    expect(movement.body).toMatchObject({
+    expect(movement.body.data).toMatchObject({
       productId,
       type: 'ENTRY',
       previousQuantity: 10,
@@ -98,7 +98,7 @@ describe('Inventory Movements E2E', () => {
       .set(authHeader(admin.accessToken))
       .expect(200)
 
-    expect(product.body.quantity).toBe(15)
+    expect(product.body.data.quantity).toBe(15)
   })
 
   it('decreases stock with EXIT movement', async () => {
@@ -119,7 +119,7 @@ describe('Inventory Movements E2E', () => {
       })
       .expect(201)
 
-    expect(movement.body).toMatchObject({
+    expect(movement.body.data).toMatchObject({
       type: 'EXIT',
       previousQuantity: 20,
       newQuantity: 12,
@@ -130,7 +130,7 @@ describe('Inventory Movements E2E', () => {
       .set(authHeader(admin.accessToken))
       .expect(200)
 
-    expect(product.body.quantity).toBe(12)
+    expect(product.body.data.quantity).toBe(12)
   })
 
   it('returns 400 when EXIT exceeds available stock', async () => {

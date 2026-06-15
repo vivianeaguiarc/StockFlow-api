@@ -2,6 +2,12 @@ import type { NextFunction, Request, Response } from 'express'
 
 import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
+import {
+  paginatedResponse,
+  sendCreated,
+  sendNoContent,
+  successResponse,
+} from '../../../shared/http/response.js'
 import type { CreateProductDto } from '../dtos/create-product.dto.js'
 import type { ListProductsQuery } from '../dtos/list-products-query.dto.js'
 import type { UpdateProductDto } from '../dtos/update-product.dto.js'
@@ -23,7 +29,7 @@ export class ProductsController {
         data,
         getAuditContext(req),
       )
-      res.status(201).json(product)
+      sendCreated(res, product, 'Product created successfully')
     } catch (error) {
       next(error)
     }
@@ -37,7 +43,7 @@ export class ProductsController {
 
       const query = req.query as unknown as ListProductsQuery
       const result = await this.productsService.list(req.user.companyId, query)
-      res.status(200).json(result)
+      paginatedResponse(res, result, 'Products retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -53,7 +59,7 @@ export class ProductsController {
         req.user.companyId,
         req.params['id'] as string,
       )
-      res.status(200).json(product)
+      successResponse(res, product, 'Product retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -73,7 +79,7 @@ export class ProductsController {
         data,
         getAuditContext(req),
       )
-      res.status(200).json(product)
+      successResponse(res, product, 'Product updated successfully')
     } catch (error) {
       next(error)
     }
@@ -91,7 +97,7 @@ export class ProductsController {
         req.params['id'] as string,
         getAuditContext(req),
       )
-      res.status(204).send()
+      sendNoContent(res)
     } catch (error) {
       next(error)
     }

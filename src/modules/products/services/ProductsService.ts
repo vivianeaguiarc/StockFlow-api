@@ -120,7 +120,7 @@ export class ProductsService {
 
     return {
       data: result.data.map((product) => this.toResponse(product)),
-      meta: result.meta,
+      pagination: result.pagination,
     }
   }
 

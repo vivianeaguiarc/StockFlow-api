@@ -27,8 +27,34 @@ export const swaggerComponents = {
     ErrorResponse: {
       type: 'object',
       properties: {
-        status: { type: 'string', example: 'error' },
-        message: { type: 'string', example: 'Invalid email or password' },
+        success: { type: 'boolean', example: false },
+        message: { type: 'string', example: 'Validation error' },
+        error: {
+          type: 'object',
+          properties: {
+            code: {
+              type: 'string',
+              example: 'VALIDATION_ERROR',
+              enum: [
+                'VALIDATION_ERROR',
+                'UNAUTHORIZED',
+                'FORBIDDEN',
+                'NOT_FOUND',
+                'CONFLICT',
+                'TOO_MANY_REQUESTS',
+                'PAYLOAD_TOO_LARGE',
+                'INTERNAL_SERVER_ERROR',
+                'SERVICE_UNAVAILABLE',
+              ],
+            },
+            details: {
+              type: 'array',
+              items: { type: 'object' },
+              example: [],
+            },
+          },
+          required: ['code', 'details'],
+        },
         requestId: {
           type: 'string',
           format: 'uuid',
@@ -36,9 +62,28 @@ export const swaggerComponents = {
           description: 'Request tracing identifier (also returned in X-Request-ID header)',
         },
       },
-      required: ['status', 'message'],
+      required: ['success', 'message', 'error'],
       description:
         'Standard error envelope. Never includes passwords, token hashes, stack traces, or internal secrets.',
+    },
+    SuccessResponse: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Operation completed successfully' },
+        data: { type: 'object' },
+      },
+      required: ['success', 'message', 'data'],
+    },
+    PaginatedResponse: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Resources retrieved successfully' },
+        data: { type: 'array', items: { type: 'object' } },
+        pagination: { $ref: '#/components/schemas/PaginationMeta' },
+      },
+      required: ['success', 'message', 'data', 'pagination'],
     },
     RootResponse: {
       type: 'object',
@@ -63,11 +108,13 @@ export const swaggerComponents = {
       type: 'object',
       properties: {
         page: { type: 'integer', example: 1 },
-        pageSize: { type: 'integer', example: 10 },
+        limit: { type: 'integer', example: 10 },
         totalItems: { type: 'integer', example: 100 },
         totalPages: { type: 'integer', example: 10 },
+        hasNextPage: { type: 'boolean', example: true },
+        hasPreviousPage: { type: 'boolean', example: false },
       },
-      required: ['page', 'pageSize', 'totalItems', 'totalPages'],
+      required: ['page', 'limit', 'totalItems', 'totalPages', 'hasNextPage', 'hasPreviousPage'],
     },
     HealthResponse: {
       type: 'object',
@@ -158,17 +205,25 @@ export const swaggerComponents = {
     LoginResponse: {
       type: 'object',
       properties: {
-        accessToken: {
-          type: 'string',
-          description: 'Short-lived JWT access token',
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Login successful' },
+        data: {
+          type: 'object',
+          properties: {
+            accessToken: {
+              type: 'string',
+              description: 'Short-lived JWT access token',
+            },
+            refreshToken: {
+              type: 'string',
+              description: 'Opaque refresh token for rotation (not the database hash)',
+            },
+            user: { $ref: '#/components/schemas/AuthUser' },
+          },
+          required: ['accessToken', 'refreshToken', 'user'],
         },
-        refreshToken: {
-          type: 'string',
-          description: 'Opaque refresh token for rotation (not the database hash)',
-        },
-        user: { $ref: '#/components/schemas/AuthUser' },
       },
-      required: ['accessToken', 'refreshToken', 'user'],
+      required: ['success', 'message', 'data'],
       example: loginResponseExample,
     },
     RefreshTokenRequest: {
@@ -182,13 +237,21 @@ export const swaggerComponents = {
     RefreshTokenResponse: {
       type: 'object',
       properties: {
-        accessToken: { type: 'string' },
-        refreshToken: {
-          type: 'string',
-          description: 'New refresh token (previous one is revoked)',
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Token refreshed successfully' },
+        data: {
+          type: 'object',
+          properties: {
+            accessToken: { type: 'string' },
+            refreshToken: {
+              type: 'string',
+              description: 'New refresh token (previous one is revoked)',
+            },
+          },
+          required: ['accessToken', 'refreshToken'],
         },
       },
-      required: ['accessToken', 'refreshToken'],
+      required: ['success', 'message', 'data'],
       example: refreshTokenResponseExample,
     },
     RegisterCompanyRequest: {
@@ -338,12 +401,23 @@ export const swaggerComponents = {
       },
     },
     PaginatedUsersResponse: {
-      type: 'object',
-      properties: {
-        data: { type: 'array', items: { $ref: '#/components/schemas/User' } },
-        pagination: { $ref: '#/components/schemas/UsersPaginationMeta' },
+      allOf: [
+        { $ref: '#/components/schemas/PaginatedResponse' },
+        {
+          type: 'object',
+          properties: {
+            message: { type: 'string', example: 'Users retrieved successfully' },
+            data: { type: 'array', items: { $ref: '#/components/schemas/User' } },
+            pagination: { $ref: '#/components/schemas/PaginationMeta' },
+          },
+        },
+      ],
+      example: {
+        success: true,
+        message: 'Users retrieved successfully',
+        data: paginatedUsersResponseExample.data,
+        pagination: paginatedUsersResponseExample.pagination,
       },
-      example: paginatedUsersResponseExample,
     },
     UsersPaginationMeta: {
       type: 'object',
@@ -389,7 +463,7 @@ export const swaggerComponents = {
       type: 'object',
       properties: {
         data: { type: 'array', items: { $ref: '#/components/schemas/Category' } },
-        meta: { $ref: '#/components/schemas/PaginationMeta' },
+        pagination: { $ref: '#/components/schemas/PaginationMeta' },
       },
     },
     Supplier: {
@@ -433,7 +507,7 @@ export const swaggerComponents = {
       type: 'object',
       properties: {
         data: { type: 'array', items: { $ref: '#/components/schemas/Supplier' } },
-        meta: { $ref: '#/components/schemas/PaginationMeta' },
+        pagination: { $ref: '#/components/schemas/PaginationMeta' },
       },
     },
     Product: {
@@ -492,7 +566,7 @@ export const swaggerComponents = {
       type: 'object',
       properties: {
         data: { type: 'array', items: { $ref: '#/components/schemas/Product' } },
-        meta: { $ref: '#/components/schemas/PaginationMeta' },
+        pagination: { $ref: '#/components/schemas/PaginationMeta' },
       },
     },
     InventoryMovement: {
@@ -524,7 +598,7 @@ export const swaggerComponents = {
       type: 'object',
       properties: {
         data: { type: 'array', items: { $ref: '#/components/schemas/InventoryMovement' } },
-        meta: { $ref: '#/components/schemas/PaginationMeta' },
+        pagination: { $ref: '#/components/schemas/PaginationMeta' },
       },
     },
     AuditLog: {
@@ -565,7 +639,7 @@ export const swaggerComponents = {
       type: 'object',
       properties: {
         data: { type: 'array', items: { $ref: '#/components/schemas/AuditLog' } },
-        meta: { $ref: '#/components/schemas/PaginationMeta' },
+        pagination: { $ref: '#/components/schemas/PaginationMeta' },
       },
     },
     DashboardSummary: {
@@ -710,8 +784,12 @@ export const swaggerComponents = {
         'application/json': {
           schema: { $ref: '#/components/schemas/ErrorResponse' },
           example: {
-            status: 'error',
+            success: false,
             message: 'Too many requests',
+            error: {
+              code: 'TOO_MANY_REQUESTS',
+              details: [],
+            },
             requestId: '550e8400-e29b-41d4-a716-446655440000',
           },
         },

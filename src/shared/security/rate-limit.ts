@@ -4,6 +4,7 @@ import { RedisStore } from 'rate-limit-redis'
 
 import { env } from '../../config/env.js'
 import { getRedisClient, isCacheEnabled } from '../cache/redis-client.js'
+import { buildErrorResponseBody } from '../http/api-response.js'
 import { logWarn } from '../logger/logger.js'
 
 export const RATE_LIMIT_MESSAGE = 'Too many requests'
@@ -57,11 +58,11 @@ function createLimitedHandler(limiterName: string): NonNullable<Options['handler
       'Rate limit exceeded',
     )
 
-    res.status(options.statusCode).json({
-      status: 'error',
-      message: RATE_LIMIT_MESSAGE,
-      requestId: req.requestId,
-    })
+    res.status(options.statusCode).json(
+      buildErrorResponseBody(req, RATE_LIMIT_MESSAGE, {
+        statusCode: options.statusCode,
+      }),
+    )
   }
 }
 

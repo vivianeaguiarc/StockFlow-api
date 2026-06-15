@@ -31,8 +31,8 @@ async function createLowStockProduct(token: string, suffix: string): Promise<str
     .post('/api/v1/products')
     .set(authHeader(token))
     .send({
-      categoryId: category.body.id as string,
-      supplierId: supplier.body.id as string,
+      categoryId: category.body.data.id as string,
+      supplierId: supplier.body.data.id as string,
       name: `Low Stock Product ${suffix}`,
       sku: `dash-low-${suffix}`,
       costPrice: 10,
@@ -42,7 +42,7 @@ async function createLowStockProduct(token: string, suffix: string): Promise<str
     })
     .expect(201)
 
-  return product.body.id as string
+  return product.body.data.id as string
 }
 
 describe('Dashboard E2E', () => {
@@ -80,7 +80,7 @@ describe('Dashboard E2E', () => {
       .set(authHeader(admin.accessToken))
       .expect(200)
 
-    expect(summary.body).toMatchObject({
+    expect(summary.body.data).toMatchObject({
       totalUsers: expect.any(Number),
       totalCategories: expect.any(Number),
       totalSuppliers: expect.any(Number),
@@ -94,9 +94,9 @@ describe('Dashboard E2E', () => {
       adjustmentsToday: expect.any(Number),
     })
 
-    expect(summary.body.totalUsers).toBeGreaterThanOrEqual(1)
-    expect(summary.body.lowStockProducts).toBeGreaterThanOrEqual(2)
-    expect(summary.body.entriesToday).toBeGreaterThanOrEqual(1)
+    expect(summary.body.data.totalUsers).toBeGreaterThanOrEqual(1)
+    expect(summary.body.data.lowStockProducts).toBeGreaterThanOrEqual(2)
+    expect(summary.body.data.entriesToday).toBeGreaterThanOrEqual(1)
   })
 
   it('returns low stock products with category and supplier', async () => {
@@ -111,9 +111,9 @@ describe('Dashboard E2E', () => {
       .set(authHeader(admin.accessToken))
       .expect(200)
 
-    expect(response.body.length).toBeGreaterThan(0)
+    expect(response.body.data.length).toBeGreaterThan(0)
 
-    const product = response.body.find((item: { id: string }) => item.id === productId)
+    const product = response.body.data.find((item: { id: string }) => item.id === productId)
 
     expect(product).toMatchObject({
       id: productId,
@@ -155,10 +155,10 @@ describe('Dashboard E2E', () => {
       .set(authHeader(admin.accessToken))
       .expect(200)
 
-    expect(response.body.length).toBeGreaterThan(0)
-    expect(response.body.length).toBeLessThanOrEqual(5)
+    expect(response.body.data.length).toBeGreaterThan(0)
+    expect(response.body.data.length).toBeLessThanOrEqual(5)
 
-    const movement = response.body[0]
+    const movement = response.body.data[0]
 
     expect(movement).toMatchObject({
       id: expect.any(String),
@@ -214,7 +214,7 @@ describe('Dashboard E2E', () => {
       .set(authHeader(employee.accessToken))
       .expect(200)
 
-    expect(response.body.length).toBeGreaterThan(0)
+    expect(response.body.data.length).toBeGreaterThan(0)
   })
 
   it('does not expose dashboard data from another company', async () => {
@@ -235,9 +235,9 @@ describe('Dashboard E2E', () => {
       .set(authHeader(companyB.accessToken))
       .expect(200)
 
-    expect(lowStockB.body.some((item: { sku: string }) => item.sku.includes('dash-low'))).toBe(
+    expect(lowStockB.body.data.some((item: { sku: string }) => item.sku.includes('dash-low'))).toBe(
       false,
     )
-    expect(summaryB.body.totalProducts).toBe(0)
+    expect(summaryB.body.data.totalProducts).toBe(0)
   })
 })

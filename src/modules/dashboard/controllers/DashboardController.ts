@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 
 import { AppError } from '../../../shared/errors/AppError.js'
+import { successResponse } from '../../../shared/http/response.js'
 import type { RecentMovementsQuery } from '../dtos/recent-movements-query.dto.js'
 import type { DashboardService } from '../services/DashboardService.js'
 
@@ -14,7 +15,7 @@ export class DashboardController {
       }
 
       const summary = await this.dashboardService.getSummary(req.user.companyId)
-      res.status(200).json(summary)
+      successResponse(res, summary, 'Dashboard summary retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -27,7 +28,7 @@ export class DashboardController {
       }
 
       const products = await this.dashboardService.getLowStockProducts(req.user.companyId)
-      res.status(200).json(products)
+      successResponse(res, products, 'Low stock products retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -44,7 +45,7 @@ export class DashboardController {
         req.user.companyId,
         query.limit,
       )
-      res.status(200).json(movements)
+      successResponse(res, movements, 'Recent movements retrieved successfully')
     } catch (error) {
       next(error)
     }

@@ -2,6 +2,12 @@ import type { NextFunction, Request, Response } from 'express'
 
 import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
+import {
+  paginatedResponse,
+  sendCreated,
+  sendNoContent,
+  successResponse,
+} from '../../../shared/http/response.js'
 import type { CreateSupplierDto } from '../dtos/create-supplier.dto.js'
 import type { ListSuppliersQuery } from '../dtos/list-suppliers-query.dto.js'
 import type { UpdateSupplierDto } from '../dtos/update-supplier.dto.js'
@@ -23,7 +29,7 @@ export class SuppliersController {
         data,
         getAuditContext(req),
       )
-      res.status(201).json(supplier)
+      sendCreated(res, supplier, 'Supplier created successfully')
     } catch (error) {
       next(error)
     }
@@ -37,7 +43,7 @@ export class SuppliersController {
 
       const query = req.query as unknown as ListSuppliersQuery
       const result = await this.suppliersService.list(req.user.companyId, query)
-      res.status(200).json(result)
+      paginatedResponse(res, result, 'Suppliers retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -53,7 +59,7 @@ export class SuppliersController {
         req.user.companyId,
         req.params['id'] as string,
       )
-      res.status(200).json(supplier)
+      successResponse(res, supplier, 'Supplier retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -73,7 +79,7 @@ export class SuppliersController {
         data,
         getAuditContext(req),
       )
-      res.status(200).json(supplier)
+      successResponse(res, supplier, 'Supplier updated successfully')
     } catch (error) {
       next(error)
     }
@@ -91,7 +97,7 @@ export class SuppliersController {
         req.params['id'] as string,
         getAuditContext(req),
       )
-      res.status(204).send()
+      sendNoContent(res)
     } catch (error) {
       next(error)
     }

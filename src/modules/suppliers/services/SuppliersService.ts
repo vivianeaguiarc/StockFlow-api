@@ -95,7 +95,7 @@ export class SuppliersService {
 
     return {
       data: result.data.map((supplier) => this.toResponse(supplier)),
-      meta: result.meta,
+      pagination: result.pagination,
     }
   }
 

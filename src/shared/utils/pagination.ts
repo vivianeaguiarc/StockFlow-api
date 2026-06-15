@@ -2,29 +2,9 @@ import type { PaginationMeta } from '../types/paginated-response.js'
 
 export function buildPaginationMeta(
   page: number,
-  pageSize: number,
-  totalItems: number,
-): PaginationMeta {
-  return {
-    page,
-    pageSize,
-    totalItems,
-    totalPages: Math.ceil(totalItems / pageSize) || 0,
-  }
-}
-
-export function buildLimitPaginationMeta(
-  page: number,
   limit: number,
   totalItems: number,
-): {
-  page: number
-  limit: number
-  totalItems: number
-  totalPages: number
-  hasNextPage: boolean
-  hasPreviousPage: boolean
-} {
+): PaginationMeta {
   const totalPages = Math.ceil(totalItems / limit) || 0
 
   return {
@@ -37,8 +17,8 @@ export function buildLimitPaginationMeta(
   }
 }
 
-export function getPaginationOffset(page: number, pageSize: number): number {
-  return (page - 1) * pageSize
+export function getPaginationOffset(page: number, limit: number): number {
+  return (page - 1) * limit
 }
 
 export function buildOrderBy<T extends string>(
@@ -73,7 +53,7 @@ export async function executePaginatedQuery<T>(options: {
   pageSize: number
   findMany: (skip: number, take: number) => Promise<T[]>
   count: () => Promise<number>
-}): Promise<{ data: T[]; meta: PaginationMeta }> {
+}): Promise<{ data: T[]; pagination: PaginationMeta }> {
   const { page, pageSize, findMany, count } = options
   const offset = getPaginationOffset(page, pageSize)
 
@@ -81,6 +61,6 @@ export async function executePaginatedQuery<T>(options: {
 
   return {
     data,
-    meta: buildPaginationMeta(page, pageSize, totalItems),
+    pagination: buildPaginationMeta(page, pageSize, totalItems),
   }
 }

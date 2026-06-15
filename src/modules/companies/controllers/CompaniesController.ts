@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 
 import { AppError } from '../../../shared/errors/AppError.js'
+import { successResponse } from '../../../shared/http/response.js'
 import type { UpdateCompanyDto } from '../dtos/update-company.dto.js'
 import type { CompaniesService } from '../services/CompaniesService.js'
 
@@ -14,7 +15,7 @@ export class CompaniesController {
       }
 
       const company = await this.companiesService.getProfile(req.user.companyId)
-      res.status(200).json(company)
+      successResponse(res, company, 'Company profile retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -28,7 +29,7 @@ export class CompaniesController {
 
       const data = req.body as UpdateCompanyDto
       const company = await this.companiesService.updateProfile(req.user.companyId, data)
-      res.status(200).json(company)
+      successResponse(res, company, 'Company profile updated successfully')
     } catch (error) {
       next(error)
     }

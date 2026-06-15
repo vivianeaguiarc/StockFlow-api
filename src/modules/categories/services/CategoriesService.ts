@@ -90,7 +90,7 @@ export class CategoriesService {
 
     return {
       data: result.data.map((category) => this.toResponse(category)),
-      meta: result.meta,
+      pagination: result.pagination,
     }
   }
 

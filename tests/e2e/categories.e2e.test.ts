@@ -35,7 +35,7 @@ describe('Categories E2E', () => {
       .send({ name, description: 'Test category' })
       .expect(201)
 
-    const categoryId = created.body.id as string
+    const categoryId = created.body.data.id as string
 
     const list = await request(app)
       .get('/api/v1/categories')
@@ -49,7 +49,7 @@ describe('Categories E2E', () => {
       .set(authHeader(admin.accessToken))
       .expect(200)
 
-    expect(fetched.body.name).toBe(name)
+    expect(fetched.body.data.name).toBe(name)
 
     const updated = await request(app)
       .patch(`/api/categories/${categoryId}`)
@@ -57,7 +57,7 @@ describe('Categories E2E', () => {
       .send({ name: `${name} Updated` })
       .expect(200)
 
-    expect(updated.body.name).toBe(`${name} Updated`)
+    expect(updated.body.data.name).toBe(`${name} Updated`)
 
     await request(app)
       .delete(`/api/categories/${categoryId}`)
@@ -83,7 +83,7 @@ describe('Categories E2E', () => {
       .expect(201)
 
     await request(app)
-      .delete(`/api/categories/${created.body.id as string}`)
+      .delete(`/api/categories/${created.body.data.id as string}`)
       .set(authHeader(manager.accessToken))
       .expect(403)
   })
@@ -99,7 +99,7 @@ describe('Categories E2E', () => {
       .send({ name: `Private Category ${uniqueSuffix()}` })
       .expect(201)
 
-    const categoryId = created.body.id as string
+    const categoryId = created.body.data.id as string
 
     await request(app)
       .get(`/api/categories/${categoryId}`)
@@ -148,9 +148,9 @@ describe('Categories E2E', () => {
       .expect(200)
 
     expect(paginated.body.data).toHaveLength(1)
-    expect(paginated.body.meta).toMatchObject({
+    expect(paginated.body.pagination).toMatchObject({
       page: 1,
-      pageSize: 1,
+      limit: 1,
       totalItems: expect.any(Number),
       totalPages: expect.any(Number),
     })

@@ -22,7 +22,7 @@ describe('Companies E2E', () => {
     const response = await request(app).get('/api/v1/companies/me').expect(401)
 
     expect(response.body).toMatchObject({
-      status: 'error',
+      success: false,
       message: 'Unauthorized',
     })
   })
@@ -36,7 +36,7 @@ describe('Companies E2E', () => {
       .set(authHeader(admin.accessToken))
       .expect(200)
 
-    expect(response.body).toMatchObject({
+    expect(response.body.data).toMatchObject({
       id: admin.companyId,
       name: admin.companyName,
     })
@@ -69,7 +69,7 @@ describe('Companies E2E', () => {
       .send({ name: updatedName })
       .expect(200)
 
-    expect(response.body.name).toBe(updatedName)
+    expect(response.body.data.name).toBe(updatedName)
   })
 
   it('does not expose one company profile to another tenant', async () => {
@@ -82,8 +82,8 @@ describe('Companies E2E', () => {
       .set(authHeader(companyB.accessToken))
       .expect(200)
 
-    expect(profileB.body.id).toBe(companyB.companyId)
-    expect(profileB.body.id).not.toBe(companyA.companyId)
-    expect(profileB.body.name).toBe(companyB.companyName)
+    expect(profileB.body.data.id).toBe(companyB.companyId)
+    expect(profileB.body.data.id).not.toBe(companyA.companyId)
+    expect(profileB.body.data.name).toBe(companyB.companyName)
   })
 })

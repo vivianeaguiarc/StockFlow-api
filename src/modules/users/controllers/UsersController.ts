@@ -2,6 +2,12 @@ import type { NextFunction, Request, Response } from 'express'
 
 import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
+import {
+  paginatedResponse,
+  sendCreated,
+  sendNoContent,
+  successResponse,
+} from '../../../shared/http/response.js'
 import type { CreateUserDto } from '../dtos/create-user.dto.js'
 import type { ListUsersQuery } from '../dtos/list-users-query.dto.js'
 import type { UpdateUserDto } from '../dtos/update-user.dto.js'
@@ -23,7 +29,7 @@ export class UsersController {
         data,
         getAuditContext(req),
       )
-      res.status(201).json(user)
+      sendCreated(res, user, 'User created successfully')
     } catch (error) {
       next(error)
     }
@@ -37,7 +43,7 @@ export class UsersController {
 
       const query = req.query as unknown as ListUsersQuery
       const result = await this.usersService.list(req.user.companyId, query)
-      res.status(200).json(result)
+      paginatedResponse(res, result, 'Users retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -50,7 +56,7 @@ export class UsersController {
       }
 
       const user = await this.usersService.getById(req.user.companyId, req.params['id'] as string)
-      res.status(200).json(user)
+      successResponse(res, user, 'User retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -70,7 +76,7 @@ export class UsersController {
         data,
         getAuditContext(req),
       )
-      res.status(200).json(user)
+      successResponse(res, user, 'User updated successfully')
     } catch (error) {
       next(error)
     }
@@ -89,7 +95,7 @@ export class UsersController {
         req.user.id,
         getAuditContext(req),
       )
-      res.status(204).send()
+      sendNoContent(res)
     } catch (error) {
       next(error)
     }

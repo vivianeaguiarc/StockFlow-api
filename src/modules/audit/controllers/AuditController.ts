@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 
 import { AppError } from '../../../shared/errors/AppError.js'
+import { paginatedResponse, successResponse } from '../../../shared/http/response.js'
 import type { ListAuditLogsQuery } from '../dtos/list-audit-logs-query.dto.js'
 import type { AuditService } from '../services/AuditService.js'
 
@@ -15,7 +16,7 @@ export class AuditController {
 
       const query = req.query as unknown as ListAuditLogsQuery
       const result = await this.auditService.listLogs(req.user.companyId, query)
-      res.status(200).json(result)
+      paginatedResponse(res, result, 'Audit logs retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -28,7 +29,7 @@ export class AuditController {
       }
 
       const log = await this.auditService.getLogById(req.user.companyId, req.params['id'] as string)
-      res.status(200).json(log)
+      successResponse(res, log, 'Audit log retrieved successfully')
     } catch (error) {
       next(error)
     }

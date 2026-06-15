@@ -17,7 +17,7 @@ async function createCategory(token: string, suffix: string): Promise<string> {
     .send({ name: `Category ${suffix}` })
     .expect(201)
 
-  return response.body.id as string
+  return response.body.data.id as string
 }
 
 async function createSupplier(token: string, suffix: string): Promise<string> {
@@ -31,7 +31,7 @@ async function createSupplier(token: string, suffix: string): Promise<string> {
     })
     .expect(201)
 
-  return response.body.id as string
+  return response.body.data.id as string
 }
 
 describe('Products E2E', () => {
@@ -79,7 +79,7 @@ describe('Products E2E', () => {
       })
       .expect(201)
 
-    expect(response.body).toMatchObject({
+    expect(response.body.data).toMatchObject({
       categoryId,
       supplierId,
       name: `Product ${suffix}`,
@@ -109,7 +109,7 @@ describe('Products E2E', () => {
       })
       .expect(201)
 
-    const productId = created.body.id as string
+    const productId = created.body.data.id as string
 
     const list = await request(app)
       .get('/api/v1/products')
@@ -123,7 +123,7 @@ describe('Products E2E', () => {
       .set(authHeader(admin.accessToken))
       .expect(200)
 
-    expect(fetched.body.sku).toBe(`crud-sku-${suffix}`)
+    expect(fetched.body.data.sku).toBe(`crud-sku-${suffix}`)
 
     const updated = await request(app)
       .patch(`/api/products/${productId}`)
@@ -131,7 +131,7 @@ describe('Products E2E', () => {
       .send({ name: `Updated Product ${suffix}` })
       .expect(200)
 
-    expect(updated.body.name).toBe(`Updated Product ${suffix}`)
+    expect(updated.body.data.name).toBe(`Updated Product ${suffix}`)
 
     await request(app)
       .delete(`/api/products/${productId}`)
@@ -189,7 +189,7 @@ describe('Products E2E', () => {
       })
       .expect(201)
 
-    const productId = created.body.id as string
+    const productId = created.body.data.id as string
 
     await request(app)
       .get(`/api/products/${productId}`)
@@ -261,6 +261,6 @@ describe('Products E2E', () => {
       .expect(200)
 
     expect(filtered.body.data).toHaveLength(1)
-    expect(filtered.body.meta.totalItems).toBeGreaterThanOrEqual(2)
+    expect(filtered.body.pagination.totalItems).toBeGreaterThanOrEqual(2)
   })
 })

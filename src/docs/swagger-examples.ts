@@ -13,7 +13,7 @@ export const loginRequestExample = {
   password: 'Admin@123456',
 }
 
-export const loginResponseExample = {
+export const loginResponseDataExample = {
   accessToken: EXAMPLE_ACCESS_TOKEN,
   refreshToken: EXAMPLE_REFRESH_TOKEN,
   user: {
@@ -26,13 +26,23 @@ export const loginResponseExample = {
   },
 }
 
+export const loginResponseExample = {
+  success: true,
+  message: 'Login successful',
+  data: loginResponseDataExample,
+}
+
 export const refreshTokenRequestExample = {
   refreshToken: EXAMPLE_REFRESH_TOKEN,
 }
 
 export const refreshTokenResponseExample = {
-  accessToken: EXAMPLE_ACCESS_TOKEN,
-  refreshToken: 'b2c3d4e5-f6a7-8901-bcde-f12345678901.example-refresh-token',
+  success: true,
+  message: 'Token refreshed successfully',
+  data: {
+    accessToken: EXAMPLE_ACCESS_TOKEN,
+    refreshToken: 'b2c3d4e5-f6a7-8901-bcde-f12345678901.example-refresh-token',
+  },
 }
 
 export const createUserRequestExample = {
@@ -68,18 +78,39 @@ export const paginatedUsersResponseExample = {
 }
 
 export const validationErrorExample = {
-  status: 'error',
+  success: false,
   message: 'Password must be at least 8 characters, Role must be ADMIN, MANAGER or USER',
+  error: {
+    code: 'VALIDATION_ERROR',
+    details: [],
+  },
+  requestId: '550e8400-e29b-41d4-a716-446655440000',
 }
 
 export const forbiddenErrorExample = {
-  status: 'error',
+  success: false,
   message: 'Forbidden',
+  error: {
+    code: 'FORBIDDEN',
+    details: [],
+  },
+  requestId: '550e8400-e29b-41d4-a716-446655440000',
 }
 
 export const unauthorizedErrorExample = {
-  status: 'error',
+  success: false,
   message: 'Unauthorized',
+  error: {
+    code: 'UNAUTHORIZED',
+    details: [],
+  },
+  requestId: '550e8400-e29b-41d4-a716-446655440000',
+}
+
+export const successEnvelopeExample = {
+  success: true,
+  message: 'Operation completed successfully',
+  data: {},
 }
 
 export const healthResponseExample = {

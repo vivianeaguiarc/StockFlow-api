@@ -2,6 +2,12 @@ import type { NextFunction, Request, Response } from 'express'
 
 import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
+import {
+  paginatedResponse,
+  sendCreated,
+  sendNoContent,
+  successResponse,
+} from '../../../shared/http/response.js'
 import type { CreateCategoryDto } from '../dtos/create-category.dto.js'
 import type { ListCategoriesQuery } from '../dtos/list-categories-query.dto.js'
 import type { UpdateCategoryDto } from '../dtos/update-category.dto.js'
@@ -23,7 +29,7 @@ export class CategoriesController {
         data,
         getAuditContext(req),
       )
-      res.status(201).json(category)
+      sendCreated(res, category, 'Category created successfully')
     } catch (error) {
       next(error)
     }
@@ -37,7 +43,7 @@ export class CategoriesController {
 
       const query = req.query as unknown as ListCategoriesQuery
       const result = await this.categoriesService.list(req.user.companyId, query)
-      res.status(200).json(result)
+      paginatedResponse(res, result, 'Categories retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -53,7 +59,7 @@ export class CategoriesController {
         req.user.companyId,
         req.params['id'] as string,
       )
-      res.status(200).json(category)
+      successResponse(res, category, 'Category retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -73,7 +79,7 @@ export class CategoriesController {
         data,
         getAuditContext(req),
       )
-      res.status(200).json(category)
+      successResponse(res, category, 'Category updated successfully')
     } catch (error) {
       next(error)
     }
@@ -91,7 +97,7 @@ export class CategoriesController {
         req.params['id'] as string,
         getAuditContext(req),
       )
-      res.status(204).send()
+      sendNoContent(res)
     } catch (error) {
       next(error)
     }

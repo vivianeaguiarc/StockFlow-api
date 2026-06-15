@@ -76,7 +76,7 @@ describe('Users E2E', () => {
       .send({ firstName: 'ManagerUpdated' })
       .expect(200)
 
-    expect(updated.body.firstName).toBe('ManagerUpdated')
+    expect(updated.body.data.firstName).toBe('ManagerUpdated')
 
     await request(app)
       .delete(`/api/v1/users/${target.userId}`)
@@ -112,7 +112,7 @@ describe('Users E2E', () => {
       })
       .expect(201)
 
-    const userId = created.body.id as string
+    const userId = created.body.data.id as string
 
     const list = await request(app)
       .get('/api/v1/users')
@@ -126,7 +126,7 @@ describe('Users E2E', () => {
       .set(authHeader(admin.accessToken))
       .expect(200)
 
-    expect(fetched.body.email).toBe(email)
+    expect(fetched.body.data.email).toBe(email)
 
     const updated = await request(app)
       .patch(`/api/users/${userId}`)
@@ -134,7 +134,7 @@ describe('Users E2E', () => {
       .send({ firstName: 'UpdatedManager' })
       .expect(200)
 
-    expect(updated.body.firstName).toBe('UpdatedManager')
+    expect(updated.body.data.firstName).toBe('UpdatedManager')
 
     await request(app).delete(`/api/users/${userId}`).set(authHeader(admin.accessToken)).expect(204)
 

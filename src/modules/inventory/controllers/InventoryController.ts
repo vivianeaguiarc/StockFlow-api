@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from 'express'
 import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import type { PaginationQuery } from '../../../shared/dtos/pagination-query.dto.js'
 import { AppError } from '../../../shared/errors/AppError.js'
+import { paginatedResponse, sendCreated, successResponse } from '../../../shared/http/response.js'
 import type { CreateMovementDto } from '../dtos/create-movement.dto.js'
 import type { InventoryService } from '../services/InventoryService.js'
 
@@ -22,7 +23,7 @@ export class InventoryController {
         data,
         getAuditContext(req),
       )
-      res.status(201).json(movement)
+      sendCreated(res, movement, 'Inventory movement created successfully')
     } catch (error) {
       next(error)
     }
@@ -36,7 +37,7 @@ export class InventoryController {
 
       const query = req.query as unknown as PaginationQuery
       const result = await this.inventoryService.listMovements(req.user.companyId, query)
-      res.status(200).json(result)
+      paginatedResponse(res, result, 'Inventory movements retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -52,7 +53,7 @@ export class InventoryController {
         req.user.companyId,
         req.params['id'] as string,
       )
-      res.status(200).json(movement)
+      successResponse(res, movement, 'Inventory movement retrieved successfully')
     } catch (error) {
       next(error)
     }

@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express'
 
 import { getAuditContext } from '../../../shared/audit/audit-context.js'
 import { AppError } from '../../../shared/errors/AppError.js'
+import { sendCreated, sendNoContent, successResponse } from '../../../shared/http/response.js'
 import type { LoginDto } from '../dtos/login.dto.js'
 import type { LogoutDto, RefreshTokenDto } from '../dtos/refresh-token.dto.js'
 import type { RegisterCompanyDto } from '../dtos/register-company.dto.js'
@@ -14,7 +15,7 @@ export class AuthController {
     try {
       const data = req.body as RegisterCompanyDto
       const result = await this.authService.register(data)
-      res.status(201).json(result)
+      sendCreated(res, result, 'Company registered successfully')
     } catch (error) {
       next(error)
     }
@@ -24,7 +25,7 @@ export class AuthController {
     try {
       const data = req.body as LoginDto
       const result = await this.authService.login(data, getAuditContext(req))
-      res.status(200).json(result)
+      successResponse(res, result, 'Login successful')
     } catch (error) {
       next(error)
     }
@@ -34,7 +35,7 @@ export class AuthController {
     try {
       const data = req.body as RefreshTokenDto
       const result = await this.authService.refresh(data, getAuditContext(req))
-      res.status(200).json(result)
+      successResponse(res, result, 'Token refreshed successfully')
     } catch (error) {
       next(error)
     }
@@ -44,7 +45,7 @@ export class AuthController {
     try {
       const data = req.body as LogoutDto
       await this.authService.logout(data, getAuditContext(req))
-      res.status(204).send()
+      sendNoContent(res)
     } catch (error) {
       next(error)
     }
@@ -57,7 +58,7 @@ export class AuthController {
       }
 
       const profile = await this.authService.getMe(req.user.id)
-      res.status(200).json(profile)
+      successResponse(res, profile, 'Authenticated user retrieved successfully')
     } catch (error) {
       next(error)
     }
@@ -69,12 +70,16 @@ export class AuthController {
         throw new AppError('Unauthorized', 401)
       }
 
-      res.status(200).json({
-        id: req.user.id,
-        companyId: req.user.companyId,
-        email: req.user.email,
-        role: req.user.role,
-      })
+      successResponse(
+        res,
+        {
+          id: req.user.id,
+          companyId: req.user.companyId,
+          email: req.user.email,
+          role: req.user.role,
+        },
+        'Current user claims retrieved successfully',
+      )
     } catch (error) {
       next(error)
     }
@@ -86,10 +91,14 @@ export class AuthController {
         throw new AppError('Unauthorized', 401)
       }
 
-      res.status(200).json({
-        message: 'Admin access granted',
-        role: req.user.role,
-      })
+      successResponse(
+        res,
+        {
+          message: 'Admin access granted',
+          role: req.user.role,
+        },
+        'Admin access granted',
+      )
     } catch (error) {
       next(error)
     }
@@ -101,10 +110,14 @@ export class AuthController {
         throw new AppError('Unauthorized', 401)
       }
 
-      res.status(200).json({
-        message: 'Management access granted',
-        role: req.user.role,
-      })
+      successResponse(
+        res,
+        {
+          message: 'Management access granted',
+          role: req.user.role,
+        },
+        'Management access granted',
+      )
     } catch (error) {
       next(error)
     }

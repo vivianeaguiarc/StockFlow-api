@@ -40,7 +40,7 @@ export class AuditService {
 
     return {
       data: result.data.map((log) => this.toResponse(log)),
-      meta: result.meta,
+      pagination: result.pagination,
     }
   }
 

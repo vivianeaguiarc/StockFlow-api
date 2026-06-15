@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildLimitPaginationMeta } from '../../src/shared/utils/pagination.js'
+import { buildPaginationMeta } from '../../src/shared/utils/pagination.js'
 
-describe('buildLimitPaginationMeta', () => {
+describe('buildPaginationMeta', () => {
   it('builds pagination metadata with navigation flags', () => {
-    expect(buildLimitPaginationMeta(1, 10, 50)).toEqual({
+    expect(buildPaginationMeta(1, 10, 50)).toEqual({
       page: 1,
       limit: 10,
       totalItems: 50,
@@ -15,7 +15,7 @@ describe('buildLimitPaginationMeta', () => {
   })
 
   it('marks hasPreviousPage on later pages', () => {
-    expect(buildLimitPaginationMeta(3, 10, 50)).toEqual({
+    expect(buildPaginationMeta(3, 10, 50)).toEqual({
       page: 3,
       limit: 10,
       totalItems: 50,
@@ -26,7 +26,7 @@ describe('buildLimitPaginationMeta', () => {
   })
 
   it('marks hasNextPage false on last page', () => {
-    expect(buildLimitPaginationMeta(5, 10, 50)).toEqual({
+    expect(buildPaginationMeta(5, 10, 50)).toEqual({
       page: 5,
       limit: 10,
       totalItems: 50,
@@ -37,7 +37,7 @@ describe('buildLimitPaginationMeta', () => {
   })
 
   it('handles empty result sets', () => {
-    expect(buildLimitPaginationMeta(1, 10, 0)).toEqual({
+    expect(buildPaginationMeta(1, 10, 0)).toEqual({
       page: 1,
       limit: 10,
       totalItems: 0,

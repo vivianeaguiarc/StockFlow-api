@@ -2,6 +2,7 @@ import request from 'supertest'
 import { describe, expect, it } from 'vitest'
 
 import { createApp } from '../../src/app.js'
+import { getAuthTokens, getResponseData } from '../helpers/api-response.js'
 
 const app = createApp()
 
@@ -40,11 +41,13 @@ async function registerAndLogin(uniqueId: string): Promise<{
     .send({ email, password })
     .expect(200)
 
+  const { accessToken, refreshToken } = getAuthTokens(response.body)
+
   return {
     email,
     password,
-    accessToken: response.body.accessToken as string,
-    refreshToken: response.body.refreshToken as string,
+    accessToken,
+    refreshToken,
   }
 }
 
@@ -69,18 +72,23 @@ describe('POST /api/auth/register', () => {
       })
       .expect(201)
 
-    expect(response.body.company).toMatchObject({
+    const data = getResponseData<{
+      company: { id: string; name: string; email: string }
+      admin: { id: string; firstName: string; lastName: string; email: string; role: string }
+    }>(response.body)
+
+    expect(data.company).toMatchObject({
       name: `Test Company ${uniqueId}`,
       email: `company-${uniqueId}@test.com`,
     })
-    expect(response.body.company.id).toEqual(expect.any(String))
-    expect(response.body.admin).toMatchObject({
+    expect(data.company.id).toEqual(expect.any(String))
+    expect(data.admin).toMatchObject({
       firstName: 'Test',
       lastName: 'Admin',
       email: `admin-${uniqueId}@test.com`,
       role: 'ADMIN',
     })
-    expect(response.body.admin.id).toEqual(expect.any(String))
+    expect(data.admin.id).toEqual(expect.any(String))
   })
 })
 
@@ -121,9 +129,11 @@ describe('POST /api/auth/refresh', () => {
       .send({ refreshToken: session.refreshToken })
       .expect(200)
 
-    expect(typeof refreshed.body.accessToken).toBe('string')
-    expect(typeof refreshed.body.refreshToken).toBe('string')
-    expect(refreshed.body.refreshToken).not.toBe(session.refreshToken)
+    const tokens = getAuthTokens(refreshed.body)
+
+    expect(typeof tokens.accessToken).toBe('string')
+    expect(typeof tokens.refreshToken).toBe('string')
+    expect(tokens.refreshToken).not.toBe(session.refreshToken)
 
     await request(app)
       .post('/api/v1/auth/refresh')
@@ -132,7 +142,7 @@ describe('POST /api/auth/refresh', () => {
 
     await request(app)
       .get('/api/v1/me')
-      .set('Authorization', `Bearer ${refreshed.body.accessToken as string}`)
+      .set('Authorization', `Bearer ${tokens.accessToken}`)
       .expect(200)
   })
 
@@ -158,16 +168,27 @@ describe('GET /api/v1/auth/me', () => {
       .set('Authorization', `Bearer ${session.accessToken}`)
       .expect(200)
 
-    expect(response.body).toMatchObject({
+    const profile = getResponseData<{
+      id: string
+      email: string
+      role: string
+      name: string
+      createdAt: string
+      updatedAt: string
+      password?: string
+      passwordHash?: string
+    }>(response.body)
+
+    expect(profile).toMatchObject({
       email: session.email,
       role: 'ADMIN',
       name: 'Login User',
     })
-    expect(response.body.id).toEqual(expect.any(String))
-    expect(response.body.createdAt).toEqual(expect.any(String))
-    expect(response.body.updatedAt).toEqual(expect.any(String))
-    expect(response.body.password).toBeUndefined()
-    expect(response.body.passwordHash).toBeUndefined()
+    expect(profile.id).toEqual(expect.any(String))
+    expect(profile.createdAt).toEqual(expect.any(String))
+    expect(profile.updatedAt).toEqual(expect.any(String))
+    expect(profile.password).toBeUndefined()
+    expect(profile.passwordHash).toBeUndefined()
   })
 })
 

@@ -116,7 +116,7 @@ export class InventoryService {
 
     return {
       data: result.data.map((movement) => this.toResponse(movement)),
-      meta: result.meta,
+      pagination: result.pagination,
     }
   }
 

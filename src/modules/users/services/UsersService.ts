@@ -15,11 +15,7 @@ import {
 } from '../../../shared/cache/cache-keys.js'
 import { cacheService } from '../../../shared/cache/CacheService.js'
 import { AppError } from '../../../shared/errors/AppError.js'
-import {
-  buildLimitPaginationMeta,
-  buildOrderBy,
-  executePaginatedQuery,
-} from '../../../shared/utils/pagination.js'
+import { buildOrderBy, executePaginatedQuery } from '../../../shared/utils/pagination.js'
 import { auditLogService } from '../../audit/audit-log.service.js'
 import type { CreateUserDto } from '../dtos/create-user.dto.js'
 import type { ListUsersQuery } from '../dtos/list-users-query.dto.js'
@@ -114,7 +110,7 @@ export class UsersService {
 
     return {
       data: result.data.map((user) => this.toResponse(user)),
-      pagination: buildLimitPaginationMeta(page, limit, result.meta.totalItems),
+      pagination: result.pagination,
     }
   }
 

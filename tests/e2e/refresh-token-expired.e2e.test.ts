@@ -2,6 +2,7 @@ import request from 'supertest'
 import { afterEach, describe, it } from 'vitest'
 
 import { createApp } from '../../src/app.js'
+import { getAuthTokens, getResponseData } from '../helpers/api-response.js'
 import { hashRefreshToken } from '../../src/modules/auth/utils/refresh-token.utils.js'
 import { prisma } from '../../src/shared/database/prisma.js'
 import { cleanupCompanies } from '../helpers/cleanup.js'
@@ -42,14 +43,15 @@ describe('Refresh token expiration E2E', () => {
       })
       .expect(201)
 
-    companyIds.push(register.body.company.id as string)
+    const registerData = getResponseData<{ company: { id: string } }>(register.body)
+    companyIds.push(registerData.company.id)
 
     const login = await request(app)
       .post('/api/v1/auth/login')
       .send({ email, password })
       .expect(200)
 
-    const refreshToken = login.body.refreshToken as string
+    const { refreshToken } = getAuthTokens(login.body)
 
     await prisma.refreshToken.updateMany({
       where: { tokenHash: hashRefreshToken(refreshToken) },

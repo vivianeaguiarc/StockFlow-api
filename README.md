@@ -211,6 +211,57 @@ POST /api/v1/auth/login
 GET /api/v1/products
 ```
 
+### Padrão de respostas da API
+
+Todas as respostas JSON seguem um contrato consistente para facilitar o consumo pelo frontend.
+
+**Sucesso (recurso único ou ação):**
+
+```json
+{
+  "success": true,
+  "message": "Operation completed successfully",
+  "data": {}
+}
+```
+
+**Sucesso paginado:**
+
+```json
+{
+  "success": true,
+  "message": "Users retrieved successfully",
+  "data": [],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "totalItems": 100,
+    "totalPages": 10,
+    "hasNextPage": true,
+    "hasPreviousPage": false
+  }
+}
+```
+
+**Erro padronizado (400, 401, 403, 404, 409, 429, 500):**
+
+```json
+{
+  "success": false,
+  "message": "Validation error",
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "details": []
+  },
+  "requestId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+- Helpers HTTP: `successResponse`, `paginatedResponse`, `errorResponse` em `src/shared/http/api-response.ts`
+- `DELETE` e `logout` retornam **204 No Content** sem corpo
+- Respostas **nunca** incluem `password`, `passwordHash`, stack trace em produção ou tokens em logs
+- `requestId` espelha o header `X-Request-ID` para rastreamento
+
 ### Health checks
 
 | Endpoint                     | Propósito                                                        | Autenticação |

@@ -1,6 +1,7 @@
 import request from 'supertest'
 
 import { createApp } from '../../src/app.js'
+import { getAuthTokens, getResponseData } from './api-response.js'
 import { apiPath } from './api-paths.js'
 import { DEFAULT_TEST_PASSWORD, uniqueSuffix } from './test-data.js'
 
@@ -43,15 +44,22 @@ export async function registerCompanyAndAdmin(suffix = uniqueSuffix()): Promise<
     })
     .expect(201)
 
+  const registerData = getResponseData<{
+    company: { id: string }
+    admin: { id: string }
+  }>(registerResponse.body)
+
   const loginResponse = await request(app)
     .post(apiPath('/auth/login'))
     .send({ email: adminEmail, password: DEFAULT_TEST_PASSWORD })
     .expect(200)
 
+  const { accessToken } = getAuthTokens(loginResponse.body)
+
   return {
-    accessToken: loginResponse.body.accessToken as string,
-    userId: registerResponse.body.admin.id as string,
-    companyId: registerResponse.body.company.id as string,
+    accessToken,
+    userId: registerData.admin.id,
+    companyId: registerData.company.id,
     email: adminEmail,
     password: DEFAULT_TEST_PASSWORD,
     companyName,
@@ -64,10 +72,15 @@ export async function login(email: string, password: string): Promise<AuthSessio
     .send({ email, password })
     .expect(200)
 
+  const loginData = getResponseData<{
+    accessToken: string
+    user: { id: string; companyId: string }
+  }>(response.body)
+
   return {
-    accessToken: response.body.accessToken as string,
-    userId: response.body.user.id as string,
-    companyId: response.body.user.companyId as string,
+    accessToken: loginData.accessToken,
+    userId: loginData.user.id,
+    companyId: loginData.user.companyId,
     email,
     password,
   }

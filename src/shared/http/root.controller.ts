@@ -2,6 +2,7 @@ import type { Request, Response } from 'express'
 
 import { APP_NAME, APP_VERSION } from '../../config/app-meta.js'
 import { env } from '../../config/env.js'
+import { successResponse } from './response.js'
 
 export type RootResponseDto = {
   name: string
@@ -30,7 +31,7 @@ export function buildRootResponse(): RootResponseDto {
 }
 
 export function handleRoot(_req: Request, res: Response): void {
-  res.status(200).json(buildRootResponse())
+  successResponse(res, buildRootResponse(), 'StockFlow API is running')
 }
 
 export function handleRootHead(_req: Request, res: Response): void {

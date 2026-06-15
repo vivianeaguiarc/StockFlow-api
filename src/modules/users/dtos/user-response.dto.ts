@@ -1,5 +1,7 @@
 import type { UserRole, UserStatus } from '@prisma/client'
 
+import type { PaginatedResponse } from '../../../shared/types/paginated-response.js'
+
 export type UserResponseDto = {
   id: string
   companyId: string
@@ -12,16 +14,4 @@ export type UserResponseDto = {
   updatedAt: Date
 }
 
-export type PaginatedUsersResponseDto = {
-  data: UserResponseDto[]
-  pagination: UsersPaginationMeta
-}
-
-export type UsersPaginationMeta = {
-  page: number
-  limit: number
-  totalItems: number
-  totalPages: number
-  hasNextPage: boolean
-  hasPreviousPage: boolean
-}
+export type PaginatedUsersResponseDto = PaginatedResponse<UserResponseDto>

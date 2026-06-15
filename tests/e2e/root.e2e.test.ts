@@ -14,7 +14,7 @@ describe('Root endpoint', () => {
     )
     expect(response.headers['x-correlation-id']).toBeDefined()
 
-    expect(response.body).toMatchObject({
+    expect(response.body.data).toMatchObject({
       name: 'StockFlow API',
       status: 'running',
       version: '1.0.0',

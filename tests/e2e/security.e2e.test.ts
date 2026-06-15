@@ -28,8 +28,12 @@ describe('Security hardening (e2e)', () => {
       .expect(413)
 
     expect(response.body).toMatchObject({
-      status: 'error',
+      success: false,
       message: 'Payload too large',
+      error: {
+        code: 'PAYLOAD_TOO_LARGE',
+        details: [],
+      },
     })
     expect(response.body.requestId).toBeDefined()
   })
@@ -41,8 +45,12 @@ describe('Security hardening (e2e)', () => {
       .expect(401)
 
     expect(response.body).toMatchObject({
-      status: 'error',
+      success: false,
       message: 'Unauthorized',
+      error: {
+        code: 'UNAUTHORIZED',
+        details: [],
+      },
     })
     expect(response.body).not.toHaveProperty('stack')
     expect(response.body).not.toHaveProperty('password')
