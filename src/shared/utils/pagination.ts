@@ -13,6 +13,30 @@ export function buildPaginationMeta(
   }
 }
 
+export function buildLimitPaginationMeta(
+  page: number,
+  limit: number,
+  totalItems: number,
+): {
+  page: number
+  limit: number
+  totalItems: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+} {
+  const totalPages = Math.ceil(totalItems / limit) || 0
+
+  return {
+    page,
+    limit,
+    totalItems,
+    totalPages,
+    hasNextPage: page < totalPages,
+    hasPreviousPage: page > 1,
+  }
+}
+
 export function getPaginationOffset(page: number, pageSize: number): number {
   return (page - 1) * pageSize
 }

@@ -88,7 +88,7 @@ Content-Type: application/json
 }
 
 ### List Users
-GET {{baseUrl}}/users?page=1&pageSize=10&sortBy=createdAt&sortOrder=desc
+GET {{baseUrl}}/users?page=1&limit=10&sortBy=createdAt&sortOrder=desc
 Authorization: Bearer {{accessToken}}
 
 ### Search Users

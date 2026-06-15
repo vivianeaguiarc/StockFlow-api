@@ -282,8 +282,43 @@ export const swaggerComponents = {
       type: 'object',
       properties: {
         data: { type: 'array', items: { $ref: '#/components/schemas/User' } },
-        meta: { $ref: '#/components/schemas/PaginationMeta' },
+        pagination: { $ref: '#/components/schemas/UsersPaginationMeta' },
       },
+      example: {
+        data: [
+          {
+            id: 'clx123',
+            companyId: 'clx456',
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john@example.com',
+            role: 'USER',
+            status: 'ACTIVE',
+            createdAt: '2026-06-13T12:00:00.000Z',
+            updatedAt: '2026-06-13T12:00:00.000Z',
+          },
+        ],
+        pagination: {
+          page: 1,
+          limit: 10,
+          totalItems: 50,
+          totalPages: 5,
+          hasNextPage: true,
+          hasPreviousPage: false,
+        },
+      },
+    },
+    UsersPaginationMeta: {
+      type: 'object',
+      properties: {
+        page: { type: 'integer', example: 1 },
+        limit: { type: 'integer', example: 10 },
+        totalItems: { type: 'integer', example: 50 },
+        totalPages: { type: 'integer', example: 5 },
+        hasNextPage: { type: 'boolean', example: true },
+        hasPreviousPage: { type: 'boolean', example: false },
+      },
+      required: ['page', 'limit', 'totalItems', 'totalPages', 'hasNextPage', 'hasPreviousPage'],
     },
     Category: {
       type: 'object',
@@ -648,6 +683,12 @@ export const swaggerComponents = {
     PageSizeQuery: {
       name: 'pageSize',
       in: 'query',
+      schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+    },
+    LimitQuery: {
+      name: 'limit',
+      in: 'query',
+      description: 'Number of items per page (max 100)',
       schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
     },
     SortOrderQuery: {

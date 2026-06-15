@@ -15,7 +15,9 @@ const basePaginationParams = [
 ]
 
 const usersListParams = [
-  ...basePaginationParams,
+  { $ref: '#/components/parameters/PageQuery' },
+  { $ref: '#/components/parameters/LimitQuery' },
+  { $ref: '#/components/parameters/SortOrderQuery' },
   { $ref: '#/components/parameters/UsersSortByQuery' },
   { $ref: '#/components/parameters/UserRoleFilterQuery' },
   { $ref: '#/components/parameters/StatusFilterQuery' },

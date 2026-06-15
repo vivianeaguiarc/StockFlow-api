@@ -231,11 +231,13 @@ describe('Users E2E', () => {
       .set(authHeader(admin.accessToken))
       .expect(200)
 
-    expect(managers.body.meta).toMatchObject({
+    expect(managers.body.pagination).toMatchObject({
       page: 1,
-      pageSize: 10,
+      limit: 10,
       totalItems: expect.any(Number),
       totalPages: expect.any(Number),
+      hasNextPage: expect.any(Boolean),
+      hasPreviousPage: false,
     })
     expect(managers.body.data.every((user: { role: string }) => user.role === 'MANAGER')).toBe(true)
 
@@ -251,12 +253,12 @@ describe('Users E2E', () => {
     ).toBe(true)
 
     const page1 = await request(app)
-      .get('/api/v1/users?page=1&pageSize=1&sortBy=createdAt&sortOrder=asc')
+      .get('/api/v1/users?page=1&limit=1&sortBy=createdAt&sortOrder=asc')
       .set(authHeader(admin.accessToken))
       .expect(200)
 
     expect(page1.body.data).toHaveLength(1)
-    expect(page1.body.meta.pageSize).toBe(1)
+    expect(page1.body.pagination.limit).toBe(1)
 
     await request(app)
       .delete(`/api/users/${employee.userId}`)
@@ -271,5 +273,87 @@ describe('Users E2E', () => {
     expect(afterDelete.body.data.some((user: { id: string }) => user.id === employee.userId)).toBe(
       false,
     )
+  })
+
+  it('uses default pagination when page and limit are omitted', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const response = await request(app)
+      .get('/api/v1/users')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(response.body.pagination).toEqual({
+      page: 1,
+      limit: 10,
+      totalItems: 1,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    })
+  })
+
+  it('supports custom pagination with page and limit', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    await createUserWithRole(admin.accessToken, 'USER', 'custom-page-1')
+    await createUserWithRole(admin.accessToken, 'USER', 'custom-page-2')
+    await createUserWithRole(admin.accessToken, 'USER', 'custom-page-3')
+
+    const response = await request(app)
+      .get('/api/v1/users?page=2&limit=2')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(response.body.data).toHaveLength(2)
+    expect(response.body.pagination).toMatchObject({
+      page: 2,
+      limit: 2,
+      totalItems: 4,
+      totalPages: 2,
+      hasNextPage: false,
+      hasPreviousPage: true,
+    })
+  })
+
+  it('accepts the maximum limit of 100', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const response = await request(app)
+      .get('/api/v1/users?limit=100')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(response.body.pagination.limit).toBe(100)
+  })
+
+  it('rejects limit above the maximum', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    await request(app).get('/api/v1/users?limit=101').set(authHeader(admin.accessToken)).expect(400)
+  })
+
+  it('returns empty data for a page beyond the last page', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const response = await request(app)
+      .get('/api/v1/users?page=99&limit=10')
+      .set(authHeader(admin.accessToken))
+      .expect(200)
+
+    expect(response.body.data).toEqual([])
+    expect(response.body.pagination).toMatchObject({
+      page: 99,
+      limit: 10,
+      totalItems: 1,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPreviousPage: true,
+    })
   })
 })

@@ -6,6 +6,7 @@ import { prisma } from '../../../shared/database/prisma.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import {
   buildContainsSearchFilter,
+  buildLimitPaginationMeta,
   buildOrderBy,
   executePaginatedQuery,
 } from '../../../shared/utils/pagination.js'
@@ -73,7 +74,7 @@ export class UsersService {
   }
 
   async list(companyId: string, query: ListUsersQuery): Promise<PaginatedUsersResponseDto> {
-    const { page, pageSize, sortBy, sortOrder, role, status, search } = query
+    const { page, limit, sortBy, sortOrder, role, status, search } = query
     const searchFilter = buildContainsSearchFilter(search, ['firstName', 'lastName', 'email'])
     const orderBy = buildOrderBy(
       sortBy,
@@ -92,7 +93,7 @@ export class UsersService {
 
     const result = await executePaginatedQuery({
       page,
-      pageSize,
+      pageSize: limit,
       findMany: (skip, take) =>
         prisma.user.findMany({
           where,
@@ -105,7 +106,7 @@ export class UsersService {
 
     return {
       data: result.data.map((user) => this.toResponse(user)),
-      meta: result.meta,
+      pagination: buildLimitPaginationMeta(page, limit, result.meta.totalItems),
     }
   }
 
