@@ -141,6 +141,58 @@ describe('Users E2E', () => {
     await request(app).get(`/api/users/${userId}`).set(authHeader(admin.accessToken)).expect(404)
   })
 
+  it('returns 404 when deleting an already soft-deleted user', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const target = await createUserWithRole(admin.accessToken, 'USER')
+
+    await request(app)
+      .delete(`/api/v1/users/${target.userId}`)
+      .set(authHeader(admin.accessToken))
+      .expect(204)
+
+    await request(app)
+      .delete(`/api/v1/users/${target.userId}`)
+      .set(authHeader(admin.accessToken))
+      .expect(404)
+  })
+
+  it('returns 404 when updating a soft-deleted user', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const target = await createUserWithRole(admin.accessToken, 'USER')
+
+    await request(app)
+      .delete(`/api/v1/users/${target.userId}`)
+      .set(authHeader(admin.accessToken))
+      .expect(204)
+
+    await request(app)
+      .patch(`/api/v1/users/${target.userId}`)
+      .set(authHeader(admin.accessToken))
+      .send({ firstName: 'ShouldFail' })
+      .expect(404)
+  })
+
+  it('blocks login for a soft-deleted user', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const target = await createUserWithRole(admin.accessToken, 'USER')
+
+    await request(app)
+      .delete(`/api/v1/users/${target.userId}`)
+      .set(authHeader(admin.accessToken))
+      .expect(204)
+
+    await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: target.email, password: target.password })
+      .expect(401)
+  })
+
   it('does not allow accessing users from another company', async () => {
     const companyA = await registerCompanyAndAdmin(`users-a-${uniqueSuffix()}`)
     const companyB = await registerCompanyAndAdmin(`users-b-${uniqueSuffix()}`)

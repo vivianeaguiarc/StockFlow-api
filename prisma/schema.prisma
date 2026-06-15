@@ -95,6 +95,7 @@ model User {
   auditLogs          AuditLog[]
   refreshTokens      RefreshToken[]
 
+  @@index([companyId, deletedAt])
   @@map("users")
 }
 

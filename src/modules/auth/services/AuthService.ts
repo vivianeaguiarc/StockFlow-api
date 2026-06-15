@@ -77,12 +77,15 @@ export class AuthService {
   }
 
   async login(data: LoginDto, auditContext?: AuditContext): Promise<LoginResponseDto> {
-    const user = await prisma.user.findUnique({
-      where: { email: data.email },
+    const user = await prisma.user.findFirst({
+      where: {
+        email: data.email,
+        deletedAt: null,
+      },
       include: { company: true },
     })
 
-    if (!user || user.deletedAt !== null || user.company.deletedAt !== null) {
+    if (!user || user.company.deletedAt !== null) {
       throw new AppError(INVALID_CREDENTIALS_MESSAGE, 401)
     }
 

@@ -27,6 +27,18 @@ export class UsersService {
     const passwordHash = await bcrypt.hash(data.password, BCRYPT_SALT_ROUNDS)
 
     try {
+      const existingActiveUser = await prisma.user.findFirst({
+        where: {
+          email: data.email,
+          deletedAt: null,
+        },
+        select: { id: true },
+      })
+
+      if (existingActiveUser) {
+        throw new AppError('Email already registered', 409)
+      }
+
       const user = await prisma.user.create({
         data: {
           companyId,
@@ -121,7 +133,10 @@ export class UsersService {
 
     try {
       const updated = await prisma.user.update({
-        where: { id: userId },
+        where: {
+          id: userId,
+          deletedAt: null,
+        },
         data: {
           ...(data.firstName !== undefined && { firstName: data.firstName }),
           ...(data.lastName !== undefined && { lastName: data.lastName }),
@@ -147,6 +162,10 @@ export class UsersService {
 
       return response
     } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new AppError('User not found', 404)
+      }
+
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new AppError('Email already registered', 409)
       }
@@ -176,7 +195,10 @@ export class UsersService {
     const deletedAt = new Date()
 
     await prisma.user.update({
-      where: { id: userId },
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
       data: { deletedAt },
     })
 
@@ -218,7 +240,15 @@ export class UsersService {
       },
     })
 
-    const user = await prisma.user.findUnique({ where: { id: userId } })
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        companyId,
+        role: UserRole.ADMIN,
+        deletedAt: null,
+        status: 'ACTIVE',
+      },
+    })
 
     if (user?.role === UserRole.ADMIN && adminCount <= 1) {
       throw new AppError('Cannot remove the last admin of the company', 409)

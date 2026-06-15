@@ -451,13 +451,17 @@ export const swaggerPaths = {
     delete: {
       tags: ['Users'],
       summary: 'Soft delete user',
-      description: 'Requires ADMIN role. Bearer token required.',
+      description:
+        'Performs a soft delete by setting deletedAt. The record remains in the database but is excluded from listings and lookups. Requires ADMIN role and Bearer token.',
       security: secured,
       parameters: [{ $ref: '#/components/parameters/IdPath' }],
       responses: {
-        '204': { description: 'User deleted' },
-        ...defaultErrors,
+        '204': { description: 'User soft-deleted successfully' },
+        '401': { $ref: '#/components/responses/Unauthorized' },
+        '403': { $ref: '#/components/responses/Forbidden' },
+        '404': { $ref: '#/components/responses/NotFound' },
         '409': { $ref: '#/components/responses/Conflict' },
+        '500': { $ref: '#/components/responses/InternalServerError' },
       },
     },
   },
