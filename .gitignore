@@ -37,3 +37,4 @@ backups/*
 !backups/.gitkeep
 backups/*.sql
 backups/*.dump
+.prompts
