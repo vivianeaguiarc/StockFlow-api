@@ -23,19 +23,22 @@ const stockMovementListInclude = {
 } as const
 
 export class PrismaStockMovementsRepository implements StockMovementsRepository {
-  findProductForMovement(companyId: string, productId: string, tx?: Prisma.TransactionClient) {
-    const client = tx ?? prisma
-    return client.product.findFirst({
-      where: {
-        id: productId,
-        companyId,
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        quantity: true,
-      },
-    })
+  /**
+   * Reads the product row with `FOR UPDATE`, holding a row lock until the transaction
+   * ends. Concurrent movements on the same product wait here and then read the
+   * committed quantity, so read-modify-write cannot lose updates.
+   */
+  async lockProductForMovement(companyId: string, productId: string, tx: Prisma.TransactionClient) {
+    const rows = await tx.$queryRaw<{ id: string; quantity: number }[]>`
+      SELECT id, quantity
+      FROM products
+      WHERE id = ${productId}
+        AND company_id = ${companyId}
+        AND deleted_at IS NULL
+      FOR UPDATE
+    `
+
+    return rows[0] ?? null
   }
 
   createMovement(data: CreateStockMovementRecord, tx?: Prisma.TransactionClient) {

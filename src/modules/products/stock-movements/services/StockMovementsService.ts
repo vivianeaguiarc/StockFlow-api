@@ -21,6 +21,11 @@ import {
 import { buildStockMovementsListWhere } from '../utils/build-stock-movements-list-where.js'
 import { calculateStockQuantities } from '../utils/calculate-stock-quantities.js'
 
+export type CreateStockMovementOptions = {
+  /** Audit action to record; defaults to CREATE_STOCK_MOVEMENT. */
+  auditAction?: AuditAction
+}
+
 export class StockMovementsService {
   constructor(private readonly repository: StockMovementsRepository = stockMovementsRepository) {}
 
@@ -30,9 +35,11 @@ export class StockMovementsService {
     productId: string,
     data: CreateStockMovementDto,
     auditContext?: AuditContext,
+    options: CreateStockMovementOptions = {},
   ): Promise<StockMovementResponseDto> {
     const movement = await this.repository.runInTransaction(async (tx) => {
-      const product = await this.repository.findProductForMovement(companyId, productId, tx)
+      // Row lock serializes concurrent movements on this product until commit.
+      const product = await this.repository.lockProductForMovement(companyId, productId, tx)
 
       if (!product) {
         throw new AppError('Product not found', 404)
@@ -67,7 +74,7 @@ export class StockMovementsService {
       await auditLogger.log({
         companyId,
         userId,
-        action: AuditAction.CREATE_STOCK_MOVEMENT,
+        action: options.auditAction ?? AuditAction.CREATE_STOCK_MOVEMENT,
         entity: 'StockMovement',
         entityId: createdMovement.id,
         oldValue: {

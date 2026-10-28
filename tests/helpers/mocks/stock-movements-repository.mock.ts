@@ -6,7 +6,7 @@ export function createStockMovementsRepositoryMock(
   overrides: Partial<StockMovementsRepository> = {},
 ): StockMovementsRepository {
   return {
-    findProductForMovement: vi.fn(),
+    lockProductForMovement: vi.fn(),
     createMovement: vi.fn(),
     updateProductQuantity: vi.fn(),
     runInTransaction: vi.fn(),

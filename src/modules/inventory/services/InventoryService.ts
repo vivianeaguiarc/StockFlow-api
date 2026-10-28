@@ -1,13 +1,11 @@
 import { AuditAction, type StockMovement, StockMovementType } from '@prisma/client'
 
 import type { AuditContext } from '../../../shared/audit/audit-context.js'
-import { invalidateProductRelatedCache } from '../../../shared/cache/cache-invalidation.js'
 import { prisma } from '../../../shared/database/prisma.js'
 import type { PaginationQuery } from '../../../shared/dtos/pagination-query.dto.js'
 import { AppError } from '../../../shared/errors/AppError.js'
 import { buildOrderBy, executePaginatedQuery } from '../../../shared/utils/pagination.js'
-import { auditLogger } from '../../audit/services/AuditLoggerService.js'
-import { calculateStockQuantities } from '../../products/stock-movements/utils/calculate-stock-quantities.js'
+import { StockMovementsService } from '../../products/stock-movements/services/StockMovementsService.js'
 import type {
   CreateMovementDto,
   MovementResponseDto,
@@ -15,77 +13,21 @@ import type {
 } from '../dtos/create-movement.dto.js'
 
 export class InventoryService {
+  constructor(
+    private readonly stockMovementsService: StockMovementsService = new StockMovementsService(),
+  ) {}
+
   async createMovement(
     companyId: string,
     userId: string,
     data: CreateMovementDto,
     auditContext?: AuditContext,
   ): Promise<MovementResponseDto> {
-    const movement = await prisma.$transaction(async (tx) => {
-      const product = await tx.product.findFirst({
-        where: {
-          id: data.productId,
-          companyId,
-          deletedAt: null,
-        },
-      })
+    const { productId, ...movement } = data
 
-      if (!product) {
-        throw new AppError('Product not found', 404)
-      }
-
-      const previousQuantity = product.quantity
-      const movementType = data.type as StockMovementType
-      const { newQuantity, movementQuantity } = calculateStockQuantities(
-        movementType,
-        data.quantity,
-        previousQuantity,
-      )
-
-      await tx.product.update({
-        where: { id: product.id },
-        data: { quantity: newQuantity },
-      })
-
-      const createdMovement = await tx.stockMovement.create({
-        data: {
-          companyId,
-          productId: product.id,
-          userId,
-          type: movementType,
-          quantity: movementQuantity,
-          previousQuantity,
-          newQuantity,
-          reason: data.reason ?? null,
-        },
-      })
-
-      await auditLogger.log({
-        companyId,
-        userId,
-        action: this.mapMovementTypeToAuditAction(movementType),
-        entity: 'StockMovement',
-        entityId: createdMovement.id,
-        oldValue: {
-          productId: product.id,
-          quantity: previousQuantity,
-        },
-        newValue: {
-          productId: product.id,
-          quantity: newQuantity,
-          type: movementType,
-          reason: data.reason ?? null,
-        },
-        tx,
-        ...auditContext,
-      })
-
-      return createdMovement
+    return this.stockMovementsService.create(companyId, userId, productId, movement, auditContext, {
+      auditAction: this.mapMovementTypeToAuditAction(data.type as StockMovementType),
     })
-
-    await invalidateProductRelatedCache(companyId, data.productId)
-
-    return this.toResponse(movement)
   }
 
   async listMovements(

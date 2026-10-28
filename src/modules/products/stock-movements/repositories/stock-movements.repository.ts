@@ -23,10 +23,10 @@ export type CreateStockMovementRecord = {
 }
 
 export interface StockMovementsRepository {
-  findProductForMovement(
+  lockProductForMovement(
     companyId: string,
     productId: string,
-    tx?: Prisma.TransactionClient,
+    tx: Prisma.TransactionClient,
   ): Promise<{ id: string; quantity: number } | null>
   createMovement(
     data: CreateStockMovementRecord,

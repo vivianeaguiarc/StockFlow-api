@@ -29,7 +29,7 @@ describe('StockMovementsService', () => {
   it('creates IN movement and records CREATE_STOCK_MOVEMENT audit log', async () => {
     const product = buildProduct({ id: 'product-1', quantity: 10 })
 
-    vi.mocked(repository.findProductForMovement).mockResolvedValue({
+    vi.mocked(repository.lockProductForMovement).mockResolvedValue({
       id: product.id,
       quantity: product.quantity,
     })
@@ -69,7 +69,7 @@ describe('StockMovementsService', () => {
   })
 
   it('throws 404 when product is not found', async () => {
-    vi.mocked(repository.findProductForMovement).mockResolvedValue(null)
+    vi.mocked(repository.lockProductForMovement).mockResolvedValue(null)
 
     const service = new StockMovementsService(repository)
 
@@ -82,7 +82,7 @@ describe('StockMovementsService', () => {
   })
 
   it('throws 409 when OUT exceeds available stock', async () => {
-    vi.mocked(repository.findProductForMovement).mockResolvedValue({ id: 'product-1', quantity: 2 })
+    vi.mocked(repository.lockProductForMovement).mockResolvedValue({ id: 'product-1', quantity: 2 })
 
     const service = new StockMovementsService(repository)
 
