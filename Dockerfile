@@ -10,7 +10,7 @@ WORKDIR /app
 
 ENV HUSKY=0
 
-RUN npm install -g pnpm@11.6.0
+RUN npm install -g pnpm@11.28.9
 
 FROM base AS deps
 
@@ -32,7 +32,7 @@ COPY prisma ./prisma
 
 RUN pnpm db:generate \
   && pnpm prune --prod \
-  && pnpm add prisma@6.9.0
+  && pnpm add prisma@6.19.3
 
 FROM base AS production
 
