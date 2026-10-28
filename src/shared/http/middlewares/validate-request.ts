@@ -25,7 +25,7 @@ export function validateRequest(schema: ZodSchema, source: RequestSource = 'body
       next()
     } catch (error) {
       if (error instanceof ZodError) {
-        const message = error.errors.map((issue) => issue.message).join(', ')
+        const message = error.issues.map((issue) => issue.message).join(', ')
         next(new AppError(message, source === 'query' ? 400 : 422))
         return
       }

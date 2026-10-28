@@ -12,7 +12,7 @@ WORKDIR /app
 
 ENV HUSKY=0
 
-RUN npm install -g pnpm@11.6.0
+RUN npm install -g pnpm@11.28.9
 
 FROM base AS deps
 

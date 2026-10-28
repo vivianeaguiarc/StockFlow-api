@@ -8,7 +8,7 @@ export const updateUserSchema = z
     password: z.string().min(8, 'Password must be at least 8 characters').optional(),
     role: z
       .enum(['MANAGER', 'USER'], {
-        errorMap: () => ({ message: 'Role must be MANAGER or USER' }),
+        error: 'Role must be MANAGER or USER',
       })
       .optional(),
     status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
