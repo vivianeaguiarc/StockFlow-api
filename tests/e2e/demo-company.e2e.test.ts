@@ -23,7 +23,7 @@ async function registerDemoCompany(): Promise<RegisteredCompany> {
 }
 
 function expectDemoReadOnly(response: request.Response): void {
-  expect(response.body.code).toBe('DEMO_READ_ONLY')
+  expect(response.body.error.code).toBe('DEMO_READ_ONLY')
 }
 
 describe('Demo company protection E2E', () => {
