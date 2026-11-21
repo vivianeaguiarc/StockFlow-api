@@ -81,6 +81,7 @@ export async function authenticate(
       role: user.role,
       firstName: user.firstName,
       lastName: user.lastName,
+      isDemoCompany: user.company.isDemo === true,
     }
 
     next()

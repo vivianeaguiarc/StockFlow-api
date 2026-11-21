@@ -152,6 +152,32 @@ describe('authenticate middleware', () => {
       companyId: 'company-1',
       email: 'admin@example.com',
       role: 'ADMIN',
+      isDemoCompany: false,
     })
+  })
+
+  it('flags users from demo companies', async () => {
+    const token = createAccessToken({
+      userId: 'user-1',
+      companyId: 'company-1',
+      role: 'ADMIN',
+      email: 'admin@example.com',
+    })
+
+    vi.mocked(usersRepository.findActiveByIdWithCompany).mockResolvedValue(
+      buildUser({
+        role: 'ADMIN',
+        email: 'admin@example.com',
+        company: { deletedAt: null, active: true, isDemo: true },
+      }),
+    )
+
+    const req = { headers: { authorization: `Bearer ${token}` } } as Request
+    const { res, next } = createResponse()
+
+    await authenticate(req, res, next)
+
+    expect(next).toHaveBeenCalledWith()
+    expect(req.user?.isDemoCompany).toBe(true)
   })
 })
