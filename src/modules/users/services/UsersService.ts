@@ -23,6 +23,7 @@ import type { ListUsersQuery } from '../dtos/list-users-query.dto.js'
 import type { UpdateUserDto } from '../dtos/update-user.dto.js'
 import type { PaginatedUsersResponseDto, UserResponseDto } from '../dtos/user-response.dto.js'
 import { type UsersRepository, usersRepository } from '../repositories/index.js'
+import { assertCanUpdateUser, type UserUpdateActor } from '../utils/assert-can-update-user.js'
 import { buildUsersListWhere } from '../utils/build-users-list-where.js'
 
 const BCRYPT_SALT_ROUNDS = 12
@@ -138,12 +139,15 @@ export class UsersService {
 
   async update(
     companyId: string,
-    actorUserId: string,
+    actor: UserUpdateActor,
     userId: string,
     data: UpdateUserDto,
     auditContext?: AuditContext,
   ): Promise<UserResponseDto> {
     const user = await this.findActiveUserInCompany(companyId, userId)
+
+    assertCanUpdateUser(actor, { id: user.id, role: user.role }, data)
+
     const oldValue = this.toResponse(user)
 
     if (user.role === UserRole.ADMIN && (data.role !== undefined || data.status === 'INACTIVE')) {
@@ -167,7 +171,7 @@ export class UsersService {
 
       await auditLogService.record({
         companyId,
-        userId: actorUserId,
+        userId: actor.id,
         action: AuditAction.UPDATE_USER,
         entity: 'User',
         entityId: userId,
