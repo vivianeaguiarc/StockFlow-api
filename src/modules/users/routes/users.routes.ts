@@ -2,6 +2,10 @@ import { Router } from 'express'
 
 import { authenticate } from '../../../shared/http/middlewares/authenticate.js'
 import { authorizeRoles } from '../../../shared/http/middlewares/authorize-roles.js'
+import {
+  blockDemoCompany,
+  bodyHasAnyField,
+} from '../../../shared/http/middlewares/block-demo-company.js'
 import { validateRequest } from '../../../shared/http/middlewares/validate-request.js'
 import { UsersController } from '../controllers/UsersController.js'
 import { createUserSchema } from '../dtos/create-user.dto.js'
@@ -40,11 +44,16 @@ export function createUsersRoutes(): Router {
     authenticate,
     authorizeRoles('ADMIN', 'MANAGER'),
     validateRequest(updateUserSchema),
+    blockDemoCompany({ when: bodyHasAnyField('password', 'email', 'role', 'status') }),
     (req, res, next) => usersController.update(req, res, next),
   )
 
-  router.delete('/:id', authenticate, authorizeRoles('ADMIN'), (req, res, next) =>
-    usersController.delete(req, res, next),
+  router.delete(
+    '/:id',
+    authenticate,
+    authorizeRoles('ADMIN'),
+    blockDemoCompany(),
+    (req, res, next) => usersController.delete(req, res, next),
   )
 
   return router

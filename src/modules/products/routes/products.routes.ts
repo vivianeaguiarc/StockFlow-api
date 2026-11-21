@@ -2,6 +2,7 @@ import { Router } from 'express'
 
 import { authenticate } from '../../../shared/http/middlewares/authenticate.js'
 import { authorizeRoles } from '../../../shared/http/middlewares/authorize-roles.js'
+import { blockDemoCompany } from '../../../shared/http/middlewares/block-demo-company.js'
 import { validateRequest } from '../../../shared/http/middlewares/validate-request.js'
 import { ProductsController } from '../controllers/ProductsController.js'
 import { createProductSchema } from '../dtos/create-product.dto.js'
@@ -71,8 +72,12 @@ export function createProductsRoutes(): Router {
     (req, res, next) => productsController.update(req, res, next),
   )
 
-  router.delete('/:id', authenticate, authorizeRoles('ADMIN', 'MANAGER'), (req, res, next) =>
-    productsController.delete(req, res, next),
+  router.delete(
+    '/:id',
+    authenticate,
+    authorizeRoles('ADMIN', 'MANAGER'),
+    blockDemoCompany(),
+    (req, res, next) => productsController.delete(req, res, next),
   )
 
   return router

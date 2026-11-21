@@ -62,6 +62,18 @@ Credenciais para login na API de demonstração (local ou Render):
 
 > Senha exclusiva para ambiente demo — **nunca** use como secret real em produção.
 
+### Proteção da empresa demo
+
+As empresas criadas pelo seed são marcadas com `isDemo = true`. Nelas, ações que quebrariam o demo para o próximo visitante respondem **403** com `code: "DEMO_READ_ONLY"`:
+
+| Bloqueado na empresa demo                             | Continua liberado                                   |
+| ----------------------------------------------------- | --------------------------------------------------- |
+| Alterar senha, e-mail, papel ou status de usuários    | Login, listagens, dashboard e auditoria             |
+| Excluir usuários, produtos, categorias e fornecedores | Criar usuários, produtos, categorias e fornecedores |
+| Alterar ou excluir a empresa; criar novas empresas    | Editar nomes, produtos e registrar movimentações    |
+
+Para testar o fluxo completo sem restrições, registre uma empresa nova em `POST /api/v1/auth/register`.
+
 ---
 
 ## Funcionalidades principais

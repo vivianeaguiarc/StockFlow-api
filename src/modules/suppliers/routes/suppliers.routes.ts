@@ -2,6 +2,7 @@ import { Router } from 'express'
 
 import { authenticate } from '../../../shared/http/middlewares/authenticate.js'
 import { authorizeRoles } from '../../../shared/http/middlewares/authorize-roles.js'
+import { blockDemoCompany } from '../../../shared/http/middlewares/block-demo-company.js'
 import { validateRequest } from '../../../shared/http/middlewares/validate-request.js'
 import { SuppliersController } from '../controllers/SuppliersController.js'
 import { createSupplierSchema } from '../dtos/create-supplier.dto.js'
@@ -41,8 +42,12 @@ export function createSuppliersRoutes(): Router {
     (req, res, next) => suppliersController.update(req, res, next),
   )
 
-  router.delete('/:id', authenticate, authorizeRoles('ADMIN'), (req, res, next) =>
-    suppliersController.delete(req, res, next),
+  router.delete(
+    '/:id',
+    authenticate,
+    authorizeRoles('ADMIN'),
+    blockDemoCompany(),
+    (req, res, next) => suppliersController.delete(req, res, next),
   )
 
   return router

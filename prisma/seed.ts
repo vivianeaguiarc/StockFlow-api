@@ -33,6 +33,7 @@ async function upsertCompany(key: 'stockflow' | 'techSupplies'): Promise<Company
       email: data.email,
       phone: data.phone,
       active: true,
+      isDemo: true,
       deletedAt: null,
     },
     create: {
@@ -41,6 +42,7 @@ async function upsertCompany(key: 'stockflow' | 'techSupplies'): Promise<Company
       email: data.email,
       phone: data.phone,
       active: true,
+      isDemo: true,
     },
   })
 }

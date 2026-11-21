@@ -4,6 +4,7 @@ type UserWithCompany = User & {
   company: {
     deletedAt: Date | null
     active: boolean
+    isDemo?: boolean
   }
 }
 

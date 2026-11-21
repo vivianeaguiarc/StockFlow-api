@@ -2,6 +2,7 @@ import { Router } from 'express'
 
 import { authenticate } from '../../../shared/http/middlewares/authenticate.js'
 import { authorizeRoles } from '../../../shared/http/middlewares/authorize-roles.js'
+import { blockDemoCompany } from '../../../shared/http/middlewares/block-demo-company.js'
 import { validateRequest } from '../../../shared/http/middlewares/validate-request.js'
 import { CompaniesController } from '../controllers/CompaniesController.js'
 import { createCompanySchema } from '../dtos/create-company.dto.js'
@@ -18,6 +19,7 @@ export function createCompaniesRoutes(): Router {
     '/',
     authenticate,
     authorizeRoles('ADMIN'),
+    blockDemoCompany(),
     validateRequest(createCompanySchema),
     (req, res, next) => companiesController.create(req, res, next),
   )
@@ -36,6 +38,7 @@ export function createCompaniesRoutes(): Router {
     '/me',
     authenticate,
     authorizeRoles('ADMIN'),
+    blockDemoCompany(),
     validateRequest(updateCompanySchema),
     (req, res, next) => companiesController.updateMe(req, res, next),
   )
@@ -48,12 +51,17 @@ export function createCompaniesRoutes(): Router {
     '/:id',
     authenticate,
     authorizeRoles('ADMIN'),
+    blockDemoCompany(),
     validateRequest(updateCompanyCrudSchema),
     (req, res, next) => companiesController.updateById(req, res, next),
   )
 
-  router.delete('/:id', authenticate, authorizeRoles('ADMIN'), (req, res, next) =>
-    companiesController.deleteById(req, res, next),
+  router.delete(
+    '/:id',
+    authenticate,
+    authorizeRoles('ADMIN'),
+    blockDemoCompany(),
+    (req, res, next) => companiesController.deleteById(req, res, next),
   )
 
   return router
