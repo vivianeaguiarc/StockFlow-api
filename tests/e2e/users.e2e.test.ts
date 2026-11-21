@@ -84,6 +84,86 @@ describe('Users E2E', () => {
       .expect(403)
   })
 
+  it('blocks manager from taking over an admin account', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const manager = await createUserWithRole(admin.accessToken, 'MANAGER')
+
+    for (const payload of [
+      { password: 'Hijack@123456' },
+      { email: `hijack-${uniqueSuffix()}@test.com` },
+      { role: 'USER' },
+      { status: 'INACTIVE' },
+      { firstName: 'Hacked' },
+    ]) {
+      await request(app)
+        .patch(`/api/v1/users/${admin.userId}`)
+        .set(authHeader(manager.accessToken))
+        .send(payload)
+        .expect(403)
+    }
+
+    // A senha original do admin continua funcionando
+    await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: admin.email, password: admin.password })
+      .expect(200)
+  })
+
+  it('blocks manager from updating another manager', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const manager = await createUserWithRole(admin.accessToken, 'MANAGER')
+    const otherManager = await createUserWithRole(admin.accessToken, 'MANAGER')
+
+    await request(app)
+      .patch(`/api/v1/users/${otherManager.userId}`)
+      .set(authHeader(manager.accessToken))
+      .send({ firstName: 'Changed' })
+      .expect(403)
+  })
+
+  it('blocks manager from changing password, email or role of a user', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const target = await createUserWithRole(admin.accessToken, 'USER')
+    const manager = await createUserWithRole(admin.accessToken, 'MANAGER')
+
+    for (const payload of [
+      { password: 'Hijack@123456' },
+      { email: `hijack-${uniqueSuffix()}@test.com` },
+      { role: 'MANAGER' },
+    ]) {
+      await request(app)
+        .patch(`/api/v1/users/${target.userId}`)
+        .set(authHeader(manager.accessToken))
+        .send(payload)
+        .expect(403)
+    }
+  })
+
+  it('blocks manager from changing own role or status', async () => {
+    const admin = await registerCompanyAndAdmin()
+    companyIds.push(admin.companyId)
+
+    const manager = await createUserWithRole(admin.accessToken, 'MANAGER')
+
+    await request(app)
+      .patch(`/api/v1/users/${manager.userId}`)
+      .set(authHeader(manager.accessToken))
+      .send({ firstName: 'Me' })
+      .expect(200)
+
+    await request(app)
+      .patch(`/api/v1/users/${manager.userId}`)
+      .set(authHeader(manager.accessToken))
+      .send({ status: 'INACTIVE' })
+      .expect(403)
+  })
+
   it('returns 403 when user tries to list users', async () => {
     const admin = await registerCompanyAndAdmin()
     companyIds.push(admin.companyId)

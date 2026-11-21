@@ -71,7 +71,7 @@ export class UsersController {
       const data = req.body as UpdateUserDto
       const user = await this.usersService.update(
         req.user.companyId,
-        req.user.id,
+        { id: req.user.id, role: req.user.role },
         req.params['id'] as string,
         data,
         getAuditContext(req),

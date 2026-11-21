@@ -36,6 +36,8 @@ vi.mock('../../src/modules/companies/repositories/companies.repository.js', () =
   },
 }))
 
+const ADMIN_ACTOR = { id: 'admin-1', role: 'ADMIN' as const }
+
 describe('UsersService', () => {
   const repository = createUsersRepositoryMock()
 
@@ -136,13 +138,30 @@ describe('UsersService', () => {
     vi.mocked(repository.updateActive).mockResolvedValue(updated)
 
     const service = new UsersService(repository)
-    const result = await service.update('company-1', 'admin-1', 'user-1', { firstName: 'New' })
+    const result = await service.update('company-1', ADMIN_ACTOR, 'user-1', { firstName: 'New' })
 
     expect(result.firstName).toBe('New')
     expect(auditLogService.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: AuditAction.UPDATE_USER }),
     )
     expect(invalidateUserRelatedCache).toHaveBeenCalledWith('company-1', 'user-1')
+  })
+
+  it('rejects MANAGER changing an ADMIN password without touching the database', async () => {
+    vi.mocked(repository.findActiveInCompany).mockResolvedValue(
+      buildUser({ id: 'admin-2', role: 'ADMIN' }),
+    )
+
+    const service = new UsersService(repository)
+
+    await expect(
+      service.update('company-1', { id: 'manager-1', role: 'MANAGER' }, 'admin-2', {
+        password: 'Hijack@123',
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 } satisfies Partial<AppError>)
+
+    expect(repository.updateActive).not.toHaveBeenCalled()
+    expect(auditLogService.record).not.toHaveBeenCalled()
   })
 
   it('maps Prisma P2002 on update to 409', async () => {
@@ -157,7 +176,7 @@ describe('UsersService', () => {
     const service = new UsersService(repository)
 
     await expect(
-      service.update('company-1', 'admin-1', 'user-1', { email: 'dup@example.com' }),
+      service.update('company-1', ADMIN_ACTOR, 'user-1', { email: 'dup@example.com' }),
     ).rejects.toMatchObject({
       statusCode: 409,
     } satisfies Partial<AppError>)

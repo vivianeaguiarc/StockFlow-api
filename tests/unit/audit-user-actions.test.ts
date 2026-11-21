@@ -158,7 +158,7 @@ describe('Audit logs for user actions', () => {
 
     await createUsersService().update(
       'company-1',
-      'admin-1',
+      { id: 'admin-1', role: 'ADMIN' },
       'user-2',
       { firstName: 'New' },
       { ipAddress: '10.0.0.3', userAgent: 'vitest' },
